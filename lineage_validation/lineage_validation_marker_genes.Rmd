@@ -1,0 +1,223 @@
+---
+title: "Lineage validation using marker genes"
+---
+  
+```{r load_modules, echo=FALSE, include=FALSE}
+library(Seurat)
+library(SingleCellExperiment)
+library(scater)
+library(scran)
+library(ggpubr)
+# library(RColorBrewer)
+# library(umap)
+```
+
+# Define settings
+
+Define I/O
+```{r define_io, echo=FALSE}
+# Load default settings
+source("/Users/ricard/10x_gastrulation_DNMTs/settings.R")
+
+io$outdir <- paste0(io$basedir,"/results/lineage_validation")
+```
+
+Define options
+```{r}
+opts$batches <- c(
+  # "E125_DNMT3A_HET_A_L001", 
+  # "E125_DNMT3A_HET_A_L003", 
+  # "E125_DNMT3A_KO_B_L002", 
+  # "E125_DNMT3A_KO_E_L004", 
+  "SIGAA6_E85_2_Dnmt3aKO_Dnmt3b_WT_L001"
+  # "SIGAB6_E85_3_Dnmt3aWT_Dnmt3b_WT_L002", 
+  # "SIGAC6_E85_5_Dnmt3aKO_Dnmt3b_Het_L003", 
+  # "SIGAD6_E85_8_Dnmt3aHet_Dnmt3b_KO_L004"
+)
+
+
+opts$stages <- c(
+  "E8.5"
+  # "E12.5"
+)
+
+# opts$target <- c("TKO","WT")
+```
+
+```{r}
+# table(sample_metadata$batch)
+# table(sample_metadata$stage)
+```
+
+Update sample metadata
+```{r load_metadata, echo=FALSE}
+sample_metadata <- sample_metadata %>%
+  .[batch%in%opts$batches & stage%in%opts$stages & pass_QC==T]
+
+# sample_metadata[,celltype.mapped:=stringr::str_replace_all(celltype.mapped,c(" "="_","/"="_"))]
+```
+
+```{r}
+table(sample_metadata$batch)
+table(sample_metadata$stage)
+```
+
+```{r}
+sample_metadata[,.N,by=c("celltype.mapped","batch")] %>%
+  dcast(celltype.mapped~batch)
+```
+
+
+# Load data
+
+Load RNA expression data as a SingleCellExperiment object
+```{r load_data, echo=FALSE}
+sce <- readRDS(io$sce)[,sample_metadata$cell]
+dim(sce)
+```
+
+Add metadata to the SingleCellExperiment object
+```{r}
+foo <- sample_metadata %>% as.data.frame %>% tibble::column_to_rownames("cell") %>%
+  .[colnames(sce),]
+stopifnot(colnames(sce) == rownames(foo))
+colData(sce) <- foo %>% DataFrame()
+```
+
+# Parse data 
+
+Remove genes that are not expressed
+```{r}
+# foo <- Matrix::rowMeans(seurat@assays$RNA@counts)
+# seurat <- subset(seurat, features = names(which(foo>1e-6)))
+```
+
+Change gene names
+```{r}
+# rownames(sce) <- rowData(sce)$symbol
+```
+
+
+Load precomputed marker genes
+```{r}
+marker_genes.dt <- fread(io$atlas.marker_genes)
+hvg <- unique(marker_genes.dt$ens_id)
+hvg <- hvg[hvg%in%rownames(sce)]
+
+marker_genes.dt[,celltype:=stringr::str_replace_all(celltype,c(" "="_","/"="_"))]
+```
+
+Subset SingleCellExperiment to marker genes
+```{r}
+sce <- sce[hvg,]
+```
+
+# Create data.table
+
+Load precomputed average gene expression per cell type from the atlas
+```{r}
+avg_expr_atlas.dt <- fread(io$atlas.average_expression_per_celltype) %>%
+  .[ens_id%in%hvg] %>% 
+  setnames("group","celltype")
+
+avg_expr_atlas.dt[,class:="ATLAS"]
+avg_expr_atlas.dt[,gene:=NULL]
+```
+
+Calculate average gene expression per cell type and genotype in the chimera
+```{r}
+avg_expr_chimera.dt <- unique(sce$class) %>% map(function(i) {
+  sce_filt <- sce[,sce$class==i]
+  avg_expr_atlas.dt <- unique(sce_filt$celltype.mapped) %>% map(function(j) {
+    dt <- logcounts(sce_filt[,sce_filt$celltype.mapped==j]) %>% as.matrix %>% as.data.table(keep.rownames = T) %>%
+      melt(id.vars="rn") %>% setnames(c("ens_id","cell","value")) %>%
+      .[,.(mean_expr=round(mean(value),3), detection_rate=round(mean(value>0),3)),by="ens_id"] %>%
+      .[,celltype:=j]
+    return(dt)
+  }) %>% rbindlist %>% .[,class:=i]
+}) %>% rbindlist
+```
+
+Concatenate
+```{r}
+avg_expr.dt <- rbind(
+  avg_expr_chimera.dt,
+  avg_expr_atlas.dt
+)
+avg_expr.dt[,celltype:=stringr::str_replace_all(celltype,c(" "="_","/"="_"))]
+```
+
+# Plot
+
+Compare distribution of expression values
+```{r}
+gghistogram(avg_expr.dt, x="mean_expr", fill="class", y="..density..") +
+  labs(x="Mean expression", y="Density")
+```
+
+
+Consider only lineages with sufficient number of cells
+```{r}
+opts$min.cells <- 10
+foo <- sample_metadata[,.N,by=c("celltype.mapped","class")] %>% 
+  setnames("celltype.mapped","celltype") %>%
+  .[!is.na(celltype)] %>%
+  .[N>=opts$min.cells] %>%
+  .[,.N,by="celltype"] %>%
+  .[N==2,celltype]
+
+avg_expr.dt <- avg_expr.dt[celltype%in%foo]
+```
+
+Scatterplot of atlas expression vs chimera expression per cell type and genotype
+
+```{r}
+foo.dt <- sample_metadata[,.N,by=c("celltype.mapped","class")] %>%
+  setnames("celltype.mapped","celltype")
+```
+
+```{r}
+for (i in unique(avg_expr.dt$celltype)) {
+  
+  to.plot <- avg_expr.dt[celltype==i] %>%
+    dcast(ens_id~class,value.var="mean_expr") %>%
+    melt(id.vars=c("ens_id","ATLAS"), variable.name="class", value.name="mean_expr") %>%
+    setorder(-mean_expr)
+  
+  # Add (N=) to the genotypes
+  to.rename <- c(
+    "WT" = sprintf("WT (N=%s)",foo.dt[class=="WT" & celltype==i,N]),
+    "TET_TKO" = sprintf("TET_TKO (N=%s)",foo.dt[class=="TET_TKO" & celltype==i,N])
+  )
+  to.plot[,class:=stringr::str_replace_all(class,to.rename)] 
+  
+  # Subset lineage-specific genes
+  to.plot <- to.plot[ens_id %in% marker_genes.dt[celltype==i,ens_id]]
+
+  p <- ggplot(to.plot, aes(x=ATLAS, y=mean_expr)) +
+    # ggrastr::geom_point_rast(color="black", shape=21, size=2, stroke=0.5) +
+    # geom_point(color="black", shape=21, size=2, stroke=0.5) +
+    scattermore::geom_scattermore(pointsize=3, pixels=c(1000,1000), interpolate=TRUE) +
+    stat_smooth(method="lm", color="black", alpha=0.5) +
+    stat_cor(method = "pearson") +
+
+    facet_wrap(~class) +
+    labs(x="RNA expression atlas", y="RNA expression query") +
+    theme_classic()
+  
+  pdf(sprintf("%s/%s_%s.pdf",io$outdir,i,paste(opts$stages,collapse="-")), width = 8, height = 5)
+  print(p)
+  dev.off()
+}
+```
+
+```{r}
+  
+  # genes.to.label <- marker_genes.dt[celltype==i] %>%
+  #   setorder(-score) %>%
+  #   head(n=10) %>% .$ens_id
+  # to.label <- to.plot[ens_id%in%genes.to.label]
+
+    # ggrepel::geom_text_repel(aes(label=ens_id), size=4, data=to.label) +  
+```
+
