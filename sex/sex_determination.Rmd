@@ -1,0 +1,152 @@
+---
+title: "Sex determination using RNA expression counts of genes on the Y chromosome."
+---
+
+```{r echo=FALSE, include=FALSE}
+library(scater)
+library(ggpubr)
+```
+
+```{r define_opts, echo=FALSE, include=FALSE}
+
+if (grepl("ricard",Sys.info()['nodename'])) {
+  source("/Users/ricard/10x_gastrulation_DNMTs/settings.R")
+} else if (grepl("yoda",Sys.info()['nodename'])) {
+  source("/homes/ricard/10x_gastrulation_DNMTs/settings.R")
+} else {
+  stop("Computer not recognised")
+}
+io$outdir <- paste0(io$basedir,"/results/sex")
+
+# Define embryos (= batch)
+opts$batches <- c(
+  # "E125_DNMT3A_HET_A_L001", 
+  # "E125_DNMT3A_HET_A_L003", 
+  # "E125_DNMT3A_KO_B_L002", 
+  # "E125_DNMT3A_KO_E_L004", 
+  "SIGAA6_E85_2_Dnmt3aKO_Dnmt3b_WT_L001", 
+  "SIGAB6_E85_3_Dnmt3aWT_Dnmt3b_WT_L002", 
+  "SIGAC6_E85_5_Dnmt3aKO_Dnmt3b_Het_L003", 
+  "SIGAD6_E85_8_Dnmt3aHet_Dnmt3b_KO_L004"
+)
+# Define which cells to use
+opts$cells <- sample_metadata %>% 
+  .[batch%in%opts$batches,cell]
+```
+
+# Load data
+
+Load SingleCellExperiment
+```{r load_expr, echo=FALSE, include=FALSE}
+sce <- readRDS(io$sce)[,opts$cells]
+```
+
+Load gene metadata
+```{r}
+gene_metadata <- fread(io$gene_metadata) %>% 
+  .[ens_id%in%rownames(sce)]
+```
+
+# Parse data
+
+Group genes by chromosome
+```{r}
+genes.chrY <- gene_metadata[chr=="chrY",ens_id]
+genes.chrX <- gene_metadata[chr=="chrX",ens_id]
+genes.chr1 <- gene_metadata[chr=="chr1",ens_id]
+```
+
+Filter
+```{r}
+# For some reason Erdr1 is predicted as Ychr, but the last version of ENSEMBL is in the Xchr
+genes.chrY <- genes.chrY[!genes.chrY=="ENSMUSG00000096768"]
+```
+
+
+
+TO-DO: FILTER OUT GENES THAT ARE HOMOLOGOUS BETWEEN X-CHR AND Y-CHR
+```{r}
+
+```
+
+Create data.table from SingleCellExperiment object
+```{r}
+dt <- counts(sce[c(genes.chrY,genes.chrX,genes.chr1)]) %>% t %>%
+  as.data.table(keep.rownames="cell") %>% 
+  melt(id.vars="cell", value.name="counts", variable.name="ens_id") %>%
+  merge(sample_metadata[,c("cell","batch","class")], by="cell")  %>%
+  merge(gene_metadata[,c("chr","ens_id","symbol")], by="ens_id")
+```
+
+# Plot
+
+## Individual genes
+
+```{r}
+to.plot <- dt[chr=="chrY"] %>% 
+  .[,.(counts=sum(counts)),by=c("batch","chr","ens_id","symbol")] %>%
+  .[,mean:=mean(counts),by="ens_id"] %>% .[mean>0] %>% .[,mean:=NULL]
+```
+
+
+```{r}
+p <- ggbarplot(to.plot, x="symbol", y="counts", facet="batch") +
+  labs(x="", y="Read counts") +
+  theme(
+  axis.text.x = element_text(colour="black",size=rel(0.7), angle=45, hjust=1, vjust=1),
+  axis.text.y = element_text(colour="black",size=rel(0.8))
+  )
+
+pdf(sprintf("%s/pdf/sex_ychr_expr_per_gene.pdf",io$outdir), width=8, height=6, useDingbats = F)
+print(p)
+dev.off()
+```
+
+## Agregated genes
+
+```{r}
+to.plot <- dt %>% 
+  .[,.(counts=sum(counts)),by=c("batch","chr")] %>%
+  dcast(batch~chr, value.var="counts") %>%
+  .[,ratioY:=chrY/chr1] %>% .[,ratioX:=chrX/chr1]
+```
+
+Scatter of chrY/chr1 vs chrX/chr1 count ratio per embryo
+```{r}
+# ggscatter(to.plot, x="ratioX", y="ratioY") +
+#   labs(x="chrX/chr1 ratio", y="chrY/chr1 ratio") +
+#   theme(
+#     # axis.text.x = element_text(colour="black",size=rel(0.8), angle=45, hjust=1, vjust=1),
+#     # axis.title.x = element_blank(),
+#     # axis.ticks.x = element_blank()
+#   )
+```
+
+Barplots of chrXY/chr1 count ratio per embryo
+```{r}
+p <- ggbarplot(to.plot, x="batch", y="ratioY", fill="batch", sort.val = "asc", palette="Dark2") +
+  labs(x="", y="chrY/chr1 counts ratio") +
+  theme(
+    legend.position = "right",
+    # axis.text.x = element_text(colour="black",size=rel(0.8), angle=45, hjust=1, vjust=1),
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank()
+  )
+
+pdf(sprintf("%s/pdf/sex_ychr_expr_aggregated.pdf",io$outdir), width=8, height=6, useDingbats = F)
+print(p)
+dev.off()
+```
+
+# Sex assignment
+```{r}
+opts$threshold.ratioY <- 1e-3 
+to.plot %>% .[,sex:=c("female","male")[as.numeric(ratioY>=opts$threshold.ratioY)+1]]
+```
+
+# Save
+
+```{r}
+fwrite(to.plot, paste0(io$outdir,"/sex_assignment.txt.gz"))
+```
+

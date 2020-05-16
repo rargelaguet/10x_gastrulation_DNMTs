@@ -17,21 +17,61 @@ io$outdir <- paste0(io$basedir,"/results/dimensionality_reduction")
 Define options
 ```{r}
 opts$batches <- c(
-  "E125_DNMT3A_HET_A_L001", 
-  "E125_DNMT3A_HET_A_L003", 
-  "E125_DNMT3A_KO_B_L002", 
-  "E125_DNMT3A_KO_E_L004", 
-  "SIGAA6_E85_2_Dnmt3aKO_Dnmt3b_WT_L001", 
-  "SIGAB6_E85_3_Dnmt3aWT_Dnmt3b_WT_L002", 
-  "SIGAC6_E85_5_Dnmt3aKO_Dnmt3b_Het_L003", 
+  # "E125_DNMT3A_HET_A_L001", 
+  # "E125_DNMT3A_HET_A_L003", 
+  # "E125_DNMT3A_KO_B_L002", 
+  # "E125_DNMT3A_KO_E_L004", 
+  "SIGAA6_E85_2_Dnmt3aKO_Dnmt3b_WT_L001",
+  "SIGAB6_E85_3_Dnmt3aWT_Dnmt3b_WT_L002",
+  "SIGAC6_E85_5_Dnmt3aKO_Dnmt3b_Het_L003",
   "SIGAD6_E85_8_Dnmt3aHet_Dnmt3b_KO_L004"
+)
+
+opts$celltypes = c(
+	# "Epiblast",
+	# "Primitive_Streak",
+	# "Caudal_epiblast",
+	# "PGC",
+	# "Anterior_Primitive_Streak",
+	# "Notochord",
+	# "Def._endoderm",
+	# "Gut",
+	# "Nascent_mesoderm",
+	# "Mixed_mesoderm",
+	# "Intermediate_mesoderm",
+	# "Caudal_Mesoderm",
+	# "Paraxial_mesoderm",
+	# "Somitic_mesoderm",
+	# "Pharyngeal_mesoderm",
+	# "Cardiomyocytes",
+	# "Allantois",
+	# "ExE_mesoderm",
+	# "Mesenchyme",
+	"Haematoendothelial_progenitors",
+	"Endothelium",
+	"Blood_progenitors_1",
+	"Blood_progenitors_2",
+	"Erythroid1",
+	"Erythroid2",
+	"Erythroid3"
+	# "NMP",
+	# "Rostral_neurectoderm",
+	# "Caudal_neurectoderm",
+	# "Neural_crest",
+	# "Forebrain_Midbrain_Hindbrain",
+	# "Spinal_cord",
+	# "Surface_ectoderm",
+	# "Visceral_endoderm",
+	# "ExE_endoderm",
+	# "ExE_ectoderm",
+	# "Parietal_endoderm"
 )
 ```
 
 Update sample metadata
 ```{r load_metadata, echo=FALSE}
 sample_metadata <- sample_metadata %>%
-  .[batch%in%opts$batches]
+  .[batch%in%opts$batches & celltype.mapped%in%opts$celltypes]
 table(sample_metadata$batch)
 ```
 
@@ -79,7 +119,6 @@ Change gene names from ENSEMBL to symbols
 gene_metadata <- fread(io$gene_metadata) %>% .[,c("ens_id","symbol")] %>%
   .[symbol!="" & ens_id%in%rownames(seurat)]
 
-gene_metadata$symbol[duplicated(gene_metadata$symbol)]
 seurat <- seurat[rownames(seurat)%in%gene_metadata$ens_id,]
 foo <- gene_metadata$symbol; names(foo) <- gene_metadata$ens_id
 new.names <- foo[rownames(seurat)]
@@ -87,6 +126,8 @@ new.names <- foo[rownames(seurat)]
 # Sanity cehcks
 stopifnot(sum(is.na(new.names))==0)
 stopifnot(sum(duplicated(new.names))==0)
+
+new.names[duplicated(new.names)]
 
 # Rename seurat objects manually
 rownames(seurat@assays$RNA@counts) <- new.names
@@ -124,7 +165,7 @@ seurat <- RunPCA(seurat,
 )
 ```
 
-Correlation between PCs and batch
+<!-- Correlation between PCs and batch -->
 ```{r}
 # r <- cor(
 #   seurat@reductions$pca@cell.embeddings,
@@ -145,21 +186,19 @@ seurat <- RunUMAP(seurat,
 # Plot 
 
 ```{r}
-# Idents(seurat) <- "batch"
 Idents(seurat) <- "celltype.mapped"
-# levels(seurat)
+DimPlot(seurat, label = FALSE, reduction = 'umap', cols = opts$celltype.colors)# + NoLegend()
 ```
 
 ```{r}
-DimPlot(seurat, label = FALSE, reduction = 'umap')
-DimPlot(seurat, label = FALSE, reduction = 'umap', cols = opts$celltype.colors) + NoLegend()
+Idents(seurat) <- "class"
+DimPlot(seurat, label = FALSE, reduction = 'umap')# + NoLegend()
 ```
 
 Explore marker genes
 ```{r}
-genes.to.plot <- c("Apom")
-
-FeaturePlot(seurat, features = genes.to.plot, reduction='umap')
+# genes.to.plot <- c("Apom")
+# FeaturePlot(seurat, features = genes.to.plot, reduction='umap')
 ```
 
 

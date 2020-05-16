@@ -25,8 +25,16 @@ opts$statistical.test <- "edgeR"
 opts$test_mode <- TRUE
 
 # Define groups
-opts$groupA <- "Dnmt3aWT_Dnmt3bHET"
-opts$groupB <- "Dnmt3aWT_Dnmt3bKO"
+# opts$classes <- c(
+#   "E8.5_Dnmt3aKO_Dnmt3bWT", 
+#   "E8.5_Dnmt3aWT_Dnmt3bWT", 
+#   "E8.5_Dnmt3aKO_Dnmt3bHET", 
+#   "E8.5_Dnmt3aHET_Dnmt3bKO",
+#   "E12.5_Dnmt3aWT_Dnmt3bHET", 
+#   "E12.5_Dnmt3aWT_Dnmt3bKO" 
+# )
+opts$groupA <- "E8.5_Dnmt3aWT_Dnmt3bWT"
+opts$groupB <- "E8.5_Dnmt3aHET_Dnmt3bKO"
 
 # Define cell types with sufficient number of cells for differential comparison
 opts$min.cells <- 25
