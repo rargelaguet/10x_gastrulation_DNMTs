@@ -29,3 +29,9 @@
 # Ignore local folders
 **/local-data
 *.Rproj.user
+
+# Ignore .ipynb stuff
+*.ipynb*
+
+# Ignore snakemake stuff
+.snakemake/
