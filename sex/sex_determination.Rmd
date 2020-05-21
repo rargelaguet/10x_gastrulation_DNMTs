@@ -138,6 +138,31 @@ print(p)
 dev.off()
 ```
 
+# Plot expression of Xist
+
+```{r}
+to.plot <- data.table(
+  cell = colnames(sce),
+  expr = logcounts(sce["ENSMUSG00000086503",])[1,]
+) %>% merge(sample_metadata,by="cell")
+to.plot[,class:=sapply(stringr::str_split(class,"_"),"[[",2)]
+```
+
+```{r}
+p <- ggboxplot(to.plot, x="class", y="expr", fill="class", facet="embryo") +
+  labs(x="", y="Xist expression") +
+  theme(
+    legend.position = "right",
+    # axis.text.x = element_text(colour="black",size=rel(0.8), angle=45, hjust=1, vjust=1),
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank()
+  )
+
+pdf(sprintf("%s/pdf/Xist_expr.pdf",io$outdir), width=8, height=6, useDingbats = F)
+print(p)
+dev.off()
+```
+
 # Sex assignment
 ```{r}
 opts$threshold.ratioY <- 1e-3 

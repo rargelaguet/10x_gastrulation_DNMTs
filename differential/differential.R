@@ -128,10 +128,10 @@ out <- doDiffExpr(sce, opts$groups, args$test, opts$min_detection_rate_per_group
   # Add sample statistics
   .[,c("groupA_N","groupB_N"):=list(table(sample_metadata$group)[1],table(sample_metadata$group)[2])]%>% 
   setnames(c("groupA_N","groupB_N"),c(sprintf("N_%s",opts$groups[1]),sprintf("N_%s",opts$groups[2]))) %>%
-  # Add gene statistics and metadata
+  # Add gene statistics
   merge(cdr.dt, all.y=T, by="ens_id") %>%
   merge(gene_metadata, all.y=T, by="ens_id") %>%
-  # Add statistical significance
+  # Calculate statistical significance
  .[, sig := (padj_fdr<=opts$threshold_fdr & abs(logFC)>=opts$min.logFC)] %>%
   setorder(-sig, padj_fdr, na.last=T)
   
