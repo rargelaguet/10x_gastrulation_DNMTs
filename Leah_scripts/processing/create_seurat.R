@@ -60,8 +60,8 @@ if ((!is.null(io$qc)) && (io$qc != TRUE)){
     stop("In the settings file, subset.proteincoding must be NULL or a path.n", call.=FALSE)
 } else if ((!is.null(io$scaledata)) && (io$scaledata != TRUE)){
     stop("In the settings file, scaledatav must be NULL or TRUE.n", call.=FALSE)
-} else if ((opts$experiment != "second_batch") && (opts$experiment != "third_batch")) {
-    stop("The experiment must be either second_batch or third_batch.n", call.=FALSE)
+} else if ((opts$experiment != "second_batch") && (opts$experiment != "third_batch") && (opts$experiment != "fourth_batch")) {
+    stop("The experiment must be either second_batch, third_batch, or fourth_batch.n", call.=FALSE)
 }
 
 
@@ -134,6 +134,49 @@ for (i in toiter) {
     }
     cell.info[[i]]$lane <- tmp[7]
   
+  } else if (opts$experiment == "fourth_batch") {
+  
+    print("fourth_batch")
+    tmp <- strsplit(toupper(i),"_")[[1]]
+    cell.info[[i]]$lib_num <- tmp[1]
+    cell.info[[i]]$stage <- paste(tmp[2],tmp[3],sep=".")
+    cell.info[[i]]$target <- "Dnmt3a_Dnmt3b"
+    if ((grepl("D3A", toupper(i), fixed=TRUE)) && (grepl("D3B", toupper(i), fixed=TRUE))) {
+        cell.info[[i]]$class <- paste0(tmp[2],tmp[3],"_","Dnmt3a",tmp[which(tmp=="D3A")+1],"_","Dnmt3b",tmp[which(tmp=="D3B")+1])
+        cell.info[[i]]$modification <- paste0(tmp[which(tmp=="D3A")+1],"_",tmp[which(tmp=="D3B")+1])
+        if ((tmp[which(tmp=="D3A")+1] == "WT") && (tmp[which(tmp=="D3B")+1] == "WT")) {
+            cell.info[[i]]$modification <- "WT"
+        } else if ((tmp[which(tmp=="D3A")+1] == "WT") && (tmp[which(tmp=="D3B")+1] != "WT")) {
+            cell.info[[i]]$modification <- "SingleMutant"
+        } else if ((tmp[which(tmp=="D3A")+1] != "WT") && (tmp[which(tmp=="D3B")+1] == "WT")) {
+            cell.info[[i]]$modification <- "SingleMutant"
+        } else if ((tmp[which(tmp=="D3A")+1] != "WT") && (tmp[which(tmp=="D3B")+1] != "WT")) {
+            cell.info[[i]]$modification <- "DoubleMutant"
+        }
+        cell.info[[i]]$Dnmt3a <- tmp[which(tmp=="D3A")+1]
+        cell.info[[i]]$Dnmt3b <- tmp[which(tmp=="D3B")+1]
+    } else if (grepl("D3A", toupper(i), fixed=TRUE)) {
+        cell.info[[i]]$class <- paste0(tmp[2],tmp[3],"_","Dnmt3a",tmp[which(tmp=="D3A")+1],"_","Dnmt3b","WT")
+        cell.info[[i]]$modification <- paste0(tmp[which(tmp=="D3A")+1],"_","WT")
+        if (tmp[which(tmp=="D3A")+1] == "WT") {
+            cell.info[[i]]$modification <- "WT"
+        } else {
+            cell.info[[i]]$modification <- "SingleMutant"
+        }
+        cell.info[[i]]$Dnmt3a <- tmp[which(tmp=="D3A")+1]
+        cell.info[[i]]$Dnmt3b <- "WT"
+    } else if (grepl("D3B", toupper(i), fixed=TRUE)) {
+        cell.info[[i]]$class <- paste0(tmp[2],tmp[3],"_","Dnmt3a","WT","_","Dnmt3b",tmp[which(tmp=="D3B")+1])
+        cell.info[[i]]$modification <- paste0("WT","_",tmp[which(tmp=="D3b")+1])
+        if (tmp[which(tmp=="D3B")+1] == "WT") {
+            cell.info[[i]]$modification <- "WT"
+        } else {
+            cell.info[[i]]$modification <- "SingleMutant"
+        }
+        cell.info[[i]]$Dnmt3a <- "WT"
+        cell.info[[i]]$Dnmt3b <- tmp[which(tmp=="D3B")+1]
+    }
+  
   }
   
   # Load gene metadata (note we could just load this once)
@@ -152,10 +195,12 @@ for (i in toiter) {
 gene.info <- do.call("rbind", gene.info)
 rownames(gene.info) <- NULL
 gene.info <- unique(gene.info)
-gene.info <- gene.info[grepl('mm10', gene.info$symbol),]
-gene.info$ens_id <- stringr::str_split_fixed(gene.info$ens_id,"___",2)[,2]
-gene.info$symbol <- stringr::str_split_fixed(gene.info$symbol,"___",2)[,2]
-rownames(gene.info) <- NULL
+if (opts$experiment != "fourth_batch") {
+    gene.info <- gene.info[grepl('mm10', gene.info$symbol),]
+    gene.info$ens_id <- stringr::str_split_fixed(gene.info$ens_id,"___",2)[,2]
+    gene.info$symbol <- stringr::str_split_fixed(gene.info$symbol,"___",2)[,2]
+    rownames(gene.info) <- NULL
+}
 
 # Concatenate cell  metadata
 cell.info <- do.call("rbind",cell.info)
@@ -165,8 +210,10 @@ rownames(cell.info) <- cell.info$cell
 # Concatenate matrices
 mtx <- do.call("cbind",mtx)
 colnames(mtx) <- cell.info$cell
-mtx <- mtx[grepl('mm10', rownames(mtx)),]
-rownames(mtx) <- stringr::str_split_fixed(rownames(mtx),"___",2)[,2]
+if (opts$experiment != "fourth_batch") {
+    mtx <- mtx[grepl('mm10', rownames(mtx)),]
+    rownames(mtx) <- stringr::str_split_fixed(rownames(mtx),"___",2)[,2]
+}
 
 ################
 ## Processing ##

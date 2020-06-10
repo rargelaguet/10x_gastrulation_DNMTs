@@ -30,8 +30,8 @@
 **/local-data
 *.Rproj.user
 
-# Ignore .ipynb stuff
-*.ipynb*
+# Ignore .ipynb stuff. NOTE 11.06.2020 I've decided to add them back
+#*.ipynb*
 
 # Ignore snakemake stuff
 .snakemake/

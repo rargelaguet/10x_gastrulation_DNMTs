@@ -4,23 +4,25 @@ mapping_methods:
 experiments:
     - second_batch
     - third_batch
+    - fourth_batch
 
 types:
-    first_batch:
-        - WT
-        - TKO
     second_batch:
-        - TET_TKO
-        - WT
         - DNMT3B_HET
         - DNMT3B_KO
     third_batch:
-        - TET_TKO
-        - TET_Host
         - Dnmt3aKO_Dnmt3bWT
         - Dnmt3aWT_Dnmt3bWT
         - Dnmt3aKO_Dnmt3bHet
         - Dnmt3aHet_Dnmt3bKO
+    fourth_batch:
+        - E85_Dnmt3aWT_Dnmt3bKO
+        - E85_Dnmt3aHET_Dnmt3bWT
+        - E85_Dnmt3aKO_Dnmt3bKO
+        - E85_Dnmt3aWT_Dnmt3bWT
+        - E85_Dnmt3aKO_Dnmt3bWT
+        - E125_Dnmt3aHET_Dnmt3bWT
+        - E125_Dnmt3aKO_Dnmt3bWT
 
 subset_celltypes:
     - Haematoendothelial
@@ -29,25 +31,24 @@ subset_celltypes:
     - Mesoderm
 
 scripts:
-    CreateSeurat: /nfs/research1/marioni/Leah/scNMTseq/ModelSystems/mapping_chimera/processing/create_seurat.R
-    Plotting: /nfs/research1/marioni/Leah/scNMTseq/ModelSystems/mapping_chimera/evaluating/plotting.R
+    CreateSeurat: /nfs/research1/marioni/Leah/scNMTseq/ModelSystems/mapping_DNMT/processing/create_seurat.R
+    Plotting: /nfs/research1/marioni/Leah/scNMTseq/ModelSystems/mapping_DNMT/evaluating/plotting.R
 
 directories:
     base: /nfs/research1/marioni/Leah/scNMTseq/ModelSystems/
-    extention: TettKOchimera/
-    output: processed/
-    mapping_scripts: mapping_chimera/mapping/
+    extention: 10x_gastrulation_DNMTs_Data/
+    mapping_scripts: mapping_DNMT/mapping/
     atlas: /nfs/research1/marioni/Leah/gastrulation10x/data/fromRpackage/
-    outfiles: mapping_chimera/20200512/outfiles/
-    errfiles: mapping_chimera/20200512/errfiles/
+    outfiles: mapping_DNMT/20200605_2/outfiles/
+    errfiles: mapping_DNMT/20200605_2/errfiles/
 
 settings:
-    CreateSeurat: /nfs/research1/marioni/Leah/scNMTseq/ModelSystems/mapping_chimera/processing/settings.R
-    Mapping: /nfs/research1/marioni/Leah/scNMTseq/ModelSystems/mapping_chimera/mapping/settings.R
-    Plotting: /nfs/research1/marioni/Leah/scNMTseq/ModelSystems/mapping_chimera/evaluating/settings.R
+    CreateSeurat: /nfs/research1/marioni/Leah/scNMTseq/ModelSystems/mapping_DNMT/processing/settings.R
+    Mapping: /nfs/research1/marioni/Leah/scNMTseq/ModelSystems/mapping_DNMT/mapping/settings.R
+    Plotting: /nfs/research1/marioni/Leah/scNMTseq/ModelSystems/mapping_DNMT/evaluating/settings.R
 
 functions:
-    Mapping: /nfs/research1/marioni/Leah/scNMTseq/ModelSystems/mapping_chimera/mapping/mapping_functions.R
+    Mapping: /nfs/research1/marioni/Leah/scNMTseq/ModelSystems/mapping_DNMT/mapping/mapping_functions.R
 
 lsf:
     Mapping:
