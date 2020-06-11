@@ -18,18 +18,40 @@ if (grepl("ricard",Sys.info()['nodename'])) {
 }
 io$outdir <- paste0(io$basedir,"/results/sex")
 
-# Define embryos (= batch)
+# # Define embryos (= batch)
+# opts$batches <- c(
+#   # "E125_DNMT3A_HET_A_L001", 
+#   # "E125_DNMT3A_HET_A_L003", 
+#   # "E125_DNMT3A_KO_B_L002", 
+#   # "E125_DNMT3A_KO_E_L004", 
+#   "SIGAA6_E85_2_Dnmt3aKO_Dnmt3b_WT_L001", 
+#   "SIGAB6_E85_3_Dnmt3aWT_Dnmt3b_WT_L002", 
+#   "SIGAC6_E85_5_Dnmt3aKO_Dnmt3b_Het_L003", 
+#   "SIGAD6_E85_8_Dnmt3aHet_Dnmt3b_KO_L004"
+# )
+# # Define which cells to use
+# opts$cells <- sample_metadata %>% 
+#   .[batch%in%opts$batches,cell]
+```
+
+
+```{r}
+io$seurat <- "/Users/ricard/data/10x_gastrulation_DNMTs/processed/fourth_batch/seurat.rds"
+io$sample_metadata <- "/Users/ricard/data/10x_gastrulation_DNMTs/processed/fourth_batch/sample_metadata.txt.gz"
+
 opts$batches <- c(
-  # "E125_DNMT3A_HET_A_L001", 
-  # "E125_DNMT3A_HET_A_L003", 
-  # "E125_DNMT3A_KO_B_L002", 
-  # "E125_DNMT3A_KO_E_L004", 
-  "SIGAA6_E85_2_Dnmt3aKO_Dnmt3b_WT_L001", 
-  "SIGAB6_E85_3_Dnmt3aWT_Dnmt3b_WT_L002", 
-  "SIGAC6_E85_5_Dnmt3aKO_Dnmt3b_Het_L003", 
-  "SIGAD6_E85_8_Dnmt3aHet_Dnmt3b_KO_L004"
+  "2_E8_5_D3A_WT_D3B_KO_L003",
+  "3_E8_5_D3A_HET_D3B_WT_L004",
+  "7_E8_5_D3A_WT_D3B_KO_L005",
+  "8_E8_5_D3A_KO_D3B_KO_L006",
+  "15_E8_5_D3A_WT_D3B_WT_L007",
+  "17_E8_5_D3A_KO_D3B_WT_L008"
+  # "A_E12_5_D3a_Het_L001",
+  # "B_E12_5_D3a_KO_L002"
 )
+
 # Define which cells to use
+sample_metadata <- fread(io$sample_metadata) %>% .[pass_QC==T]
 opts$cells <- sample_metadata %>% 
   .[batch%in%opts$batches,cell]
 ```
@@ -38,7 +60,8 @@ opts$cells <- sample_metadata %>%
 
 Load SingleCellExperiment
 ```{r load_expr, echo=FALSE, include=FALSE}
-sce <- readRDS(io$sce)[,opts$cells]
+# sce <- readRDS(io$sce)[,opts$cells]
+sce <- readRDS(io$seurat) %>% as.SingleCellExperiment(.) %>% .[,opts$cells]
 ```
 
 Load gene metadata
@@ -62,12 +85,6 @@ Filter
 genes.chrY <- genes.chrY[!genes.chrY=="ENSMUSG00000096768"]
 ```
 
-
-
-TO-DO: FILTER OUT GENES THAT ARE HOMOLOGOUS BETWEEN X-CHR AND Y-CHR
-```{r}
-
-```
 
 Create data.table from SingleCellExperiment object
 ```{r}
@@ -97,9 +114,9 @@ p <- ggbarplot(to.plot, x="symbol", y="counts", facet="batch") +
   axis.text.y = element_text(colour="black",size=rel(0.8))
   )
 
-pdf(sprintf("%s/pdf/sex_ychr_expr_per_gene.pdf",io$outdir), width=8, height=6, useDingbats = F)
+# pdf(sprintf("%s/pdf/sex_ychr_expr_per_gene.pdf",io$outdir), width=8, height=6, useDingbats = F)
 print(p)
-dev.off()
+# dev.off()
 ```
 
 ## Agregated genes
@@ -133,9 +150,9 @@ p <- ggbarplot(to.plot, x="batch", y="ratioY", fill="batch", sort.val = "asc", p
     axis.ticks.x = element_blank()
   )
 
-pdf(sprintf("%s/pdf/sex_ychr_expr_aggregated.pdf",io$outdir), width=8, height=6, useDingbats = F)
+# pdf(sprintf("%s/pdf/sex_ychr_expr_aggregated.pdf",io$outdir), width=8, height=6, useDingbats = F)
 print(p)
-dev.off()
+# dev.off()
 ```
 
 # Plot expression of Xist
@@ -143,24 +160,22 @@ dev.off()
 ```{r}
 to.plot <- data.table(
   cell = colnames(sce),
-  expr = logcounts(sce["ENSMUSG00000086503",])[1,]
-) %>% merge(sample_metadata,by="cell")
-to.plot[,class:=sapply(stringr::str_split(class,"_"),"[[",2)]
+  counts = counts(sce["ENSMUSG00000086503",])[1,]
+) %>% merge(sample_metadata,by="cell") %>%
+  .[,.(xist=sum(counts)),by="batch"] 
+# to.plot[,class:=sapply(stringr::str_split(class,"_"),"[[",2)]
 ```
 
 ```{r}
-p <- ggboxplot(to.plot, x="class", y="expr", fill="class", facet="embryo") +
+p <- ggbarplot(to.plot, x="batch", y="xist", fill="gray70") +
   labs(x="", y="Xist expression") +
   theme(
-    legend.position = "right",
-    # axis.text.x = element_text(colour="black",size=rel(0.8), angle=45, hjust=1, vjust=1),
-    axis.text.x = element_blank(),
-    axis.ticks.x = element_blank()
+    axis.text.x = element_text(colour="black",size=rel(0.8), angle=45, hjust=1, vjust=1),
   )
 
-pdf(sprintf("%s/pdf/Xist_expr.pdf",io$outdir), width=8, height=6, useDingbats = F)
+# pdf(sprintf("%s/pdf/Xist_expr.pdf",io$outdir), width=8, height=6, useDingbats = F)
 print(p)
-dev.off()
+# dev.off()
 ```
 
 # Sex assignment
