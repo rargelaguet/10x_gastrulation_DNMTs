@@ -22,6 +22,7 @@ if (grepl("ricard",Sys.info()['nodename'])) {
 io$metadata <- paste0(io$basedir,"/sample_metadata.txt.gz")
 io$seurat <- paste0(io$basedir,"/processed/seurat.rds")
 io$sce <- paste0(io$basedir,"/processed/SingleCellExperiment.rds")
+io$sex <- paste0(io$basedir,"/results/sex/sex_assignment.txt.gz")
 
 # Atlas information
 io$atlas.metadata <- paste0(io$atlas.basedir,"/sample_metadata.txt.gz")
@@ -114,7 +115,11 @@ opts$celltype.colors = c(
   "Visceral_endoderm" = "#F6BFCB",
   "ExE_endoderm" = "#7F6874",
   "ExE_ectoderm" = "#989898",
-  "Parietal_endoderm" = "#1A1A1A"
+  "Parietal_endoderm" = "#1A1A1A",
+  
+  # Additional
+  "Erythroid" = "#EF4E22",
+  "Blood_progenitors" = "#c9a997"
 )
 
 opts$batches <- c(
