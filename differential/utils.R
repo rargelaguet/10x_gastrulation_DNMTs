@@ -4,27 +4,27 @@
 # - groups: the names of the two groups
 # - test: one of "edgeR","t-test","wilcoxon".
 # - min_detection_rate_per_group: minimum detection rate per group
-doDiffExpr <- function(sce, groups, test=c("edgeR","t-test","wilcoxon"), min_detection_rate_per_group = 0.50) {
+doDiffExpr <- function(sce, groups, min_detection_rate_per_group = 0.50) {
     
   # Sanity checks
   if (!is(sce, "SingleCellExperiment")) stop("'sce' has to be an instance of SingleCellExperiment")
   stopifnot(length(groups)==2)
-  test <- match.arg(test)
 
   # Filter genes by detection rate per group
   cdr_A <- rowMeans(logcounts(sce[,sce$group==groups[1]])>0) >= min_detection_rate_per_group
   cdr_B <- rowMeans(logcounts(sce[,sce$group==groups[2]])>0) >= min_detection_rate_per_group
   sce <- sce[cdr_B | cdr_A,]
   
-  if (test=="edgeR") {
-    out <- .edgeR(sce)
-  } else if (test=="t-test") {
-    out <- .t_test(sce)
-  } else if (test=="wilcoxon") {
-    out <- .wilcoxon(sce)
-  } else {
-    stop("Test not recognised")
-  }
+  out <- .edgeR(sce)
+  # if (test=="edgeR") {
+  #   out <- .edgeR(sce)
+  # } else if (test=="t-test") {
+  #   out <- .t_test(sce)
+  # } else if (test=="wilcoxon") {
+  #   out <- .wilcoxon(sce)
+  # } else {
+  #   stop("Test not recognised")
+  # }
   
   out %>% .[,log_padj_fdr:= -log10(padj_fdr)]
   

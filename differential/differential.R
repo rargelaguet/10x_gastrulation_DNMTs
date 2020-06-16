@@ -9,16 +9,12 @@ suppressMessages(library(argparse))
 
 ## Initialize argument parser ##
 p <- ArgumentParser(description='')
-p$add_argument('--groupA',    type="character",    help='group A')
-p$add_argument('--groupB',    type="character",    help='group B')
-p$add_argument('--test',      type="character",    help='Statistical test')
+p$add_argument('--groupA',    type="character",    help='group A ("class" column in metadata)')
+p$add_argument('--groupB',    type="character",    help='group B ("class" column in metadata)')
 p$add_argument('--celltype',  type="character",    nargs="+", help='Cell type')
 p$add_argument('--test_mode', action="store_true", help='Test mode? subset number of cells')
 p$add_argument('--outfile',   type="character",    help='Output file')
 args <- p$parse_args(commandArgs(TRUE))
-
-# Sanity checks
-stopifnot(args$test%in%c("edgeR","t-test","wilcoxon"))
 
 #########
 ## I/O ##
@@ -41,7 +37,6 @@ if (grepl("ricard",Sys.info()['nodename'])) {
 # args$groupA <- c("Dnmt3aWT_Dnmt3bHET")
 # args$groupB <- c("Dnmt3aWT_Dnmt3bKO")
 # args$celltype <- opts$celltypes
-# args$test <- c("edgeR")
 # args$test_mode <- TRUE
 
 ##############
@@ -124,7 +119,7 @@ sce <- sce[rownames(sce)%in%gene_metadata$ens_id,]
 ## Differential expression testing with edgeR ##
 ################################################
 
-out <- doDiffExpr(sce, opts$groups, args$test, opts$min_detection_rate_per_group) %>%
+out <- doDiffExpr(sce, opts$groups, opts$min_detection_rate_per_group) %>%
   # Add sample statistics
   .[,c("groupA_N","groupB_N"):=list(table(sample_metadata$group)[1],table(sample_metadata$group)[2])]%>% 
   setnames(c("groupA_N","groupB_N"),c(sprintf("N_%s",opts$groups[1]),sprintf("N_%s",opts$groups[2]))) %>%

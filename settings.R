@@ -150,27 +150,23 @@ opts$stages <- c(
 opts$classes <- c(
   # "E12.5_Dnmt3aWT_Dnmt3bHET",
   # "E12.5_Dnmt3aWT_Dnmt3bKO",
-  # "E125_Dnmt3aHET_Dnmt3bWT",
-  # "E125_Dnmt3aKO_Dnmt3bWT",
-  # "E125_Dnmt3aWT_Dnmt3bHET",
-  # "E125_Dnmt3aWT_Dnmt3bKO",
-  "E8.5_Dnmt3aHET_Dnmt3bKO",
-  "E8.5_Dnmt3aKO_Dnmt3bHET",
-  "E8.5_Dnmt3aKO_Dnmt3bWT",
-  "E8.5_Dnmt3aWT_Dnmt3bWT",
-  "E85_Dnmt3aHet_Dnmt3bKO",
-  "E85_Dnmt3aHET_Dnmt3bWT",
-  "E85_Dnmt3aKO_Dnmt3bHet",
-  "E85_Dnmt3aKO_Dnmt3bKO",
-  "E85_Dnmt3aKO_Dnmt3bWT",
-  "E85_Dnmt3aWT_Dnmt3bKO",
-  "E85_Dnmt3aWT_Dnmt3bWT"
+  # "E12.5_Dnmt3aHET_Dnmt3bWT",
+  # "E12.5_Dnmt3aKO_Dnmt3bWT",
+  "E8.5_Dnmt3aHET_Dnmt3bKO", 
+  "E8.5_Dnmt3aKO_Dnmt3bHET", 
+  "E8.5_Dnmt3aKO_Dnmt3bWT", 
+  "E8.5_Dnmt3aWT_Dnmt3bWT", 
+  "E8.5_Dnmt3aHET_Dnmt3bKO", 
+  "E8.5_Dnmt3aHET_Dnmt3bWT", 
+  "E8.5_Dnmt3aKO_Dnmt3bHET", 
+  "E8.5_Dnmt3aKO_Dnmt3bKO", 
+  "E8.5_Dnmt3aWT_Dnmt3bKO"
 )
 
 ##########################
 ## Load sample metadata ##
 ##########################
 
-sample_metadata <- fread(io$metadata) %>% .[pass_QC==T] %>% 
-  .[,celltype.mapped:=stringr::str_replace_all(celltype.mapped," ","_")] %>%
-  .[,celltype.mapped:=stringr::str_replace_all(celltype.mapped,"/","_")]
+sample_metadata <- fread(io$metadata) %>% .[pass_QC==T]# %>% 
+  # .[,celltype.mapped:=stringr::str_replace_all(celltype.mapped," ","_")] %>%
+  # .[,celltype.mapped:=stringr::str_replace_all(celltype.mapped,"/","_")]
