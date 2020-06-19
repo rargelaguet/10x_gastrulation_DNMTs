@@ -1,0 +1,174 @@
+---
+title: "Dimensionality reduction using SingleCellExperiment"
+---
+  
+```{r load_modules, echo=FALSE, include=FALSE}
+library(SingleCellExperiment)
+library(scran)
+library(scater)
+```
+
+# Define settings
+
+Define I/O
+```{r define_io, echo=FALSE}
+source("/Users/ricard/10x_gastrulation_DNMTs/settings.R")
+io$outdir <- paste0(io$basedir,"/results/dimensionality_reduction")
+```
+
+Define options
+```{r}
+opts$batches <- c(
+  # "SIGAA6_E85_2_Dnmt3aKO_Dnmt3b_WT_L001", 
+  # "SIGAB6_E85_3_Dnmt3aWT_Dnmt3b_WT_L002", 
+  # "SIGAC6_E85_5_Dnmt3aKO_Dnmt3b_Het_L003", 
+  # "SIGAD6_E85_8_Dnmt3aHet_Dnmt3b_KO_L004",
+  "15_E8_5_D3A_WT_D3B_WT_L007"
+  # "17_E8_5_D3A_KO_D3B_WT_L008",
+  # "2_E8_5_D3A_WT_D3B_KO_L003",
+  # "3_E8_5_D3A_HET_D3B_WT_L004",
+  # "7_E8_5_D3A_WT_D3B_KO_L005",
+  # "8_E8_5_D3A_KO_D3B_KO_L006"
+)
+```
+
+Update sample metadata
+```{r load_metadata, echo=FALSE}
+sample_metadata <- sample_metadata %>%
+  .[batch%in%opts$batches]
+table(sample_metadata$batch)
+```
+
+# Load data
+
+Load RNA expression data as SingleCellExperiment object
+```{r load_data, echo=FALSE}
+sce <- readRDS(io$sce)[,sample_metadata$cell]
+dim(sce)
+```
+
+```{r}
+sce$celltype.mapped <- sample_metadata$celltype.mapped2
+```
+
+Change gene names from ENSEMBL to symbols
+```{r}
+gene_metadata <- fread(io$gene_metadata) %>% .[,c("ens_id","symbol")] %>%
+  .[symbol!="" & ens_id%in%rownames(sce)]
+
+gene_metadata$symbol[duplicated(gene_metadata$symbol)]
+
+sce <- sce[rownames(sce)%in%gene_metadata$ens_id,]
+foo <- gene_metadata$symbol; names(foo) <- gene_metadata$ens_id
+new.names <- foo[rownames(sce)]
+
+# Sanity cehcks
+stopifnot(sum(is.na(new.names))==0)
+stopifnot(sum(duplicated(new.names))==0)
+
+# Set names
+rownames(sce) <- new.names
+```
+
+# Parse data
+
+Select HVG
+```{r}
+decomp <- modelGeneVar(sce)
+decomp <- decomp[decomp$mean > 0.01,]
+hvgs <- rownames(decomp)[decomp$p.value <= 0.05]
+
+# Subset SingleCellExperiment
+sce_filt <- sce[hvgs,]
+```
+
+Use gene markers as HVGs
+```{r}
+# io$atlas.marker_genes <- "/Users/ricard/data/gastrulation10x/results/marker_genes/E8.5/marker_genes.txt.gz"
+# 
+# marker_genes.dt <- fread(io$atlas.marker_genes)
+# marker_genes.dt <- marker_genes.dt[,head(.SD,n=50),by="celltype"]
+# marker_genes <- unique(marker_genes.dt$gene)
+# marker_genes <- marker_genes[marker_genes%in%rownames(sce)]
+# length(marker_genes)
+```
+
+```{r}
+data <- scale(t(logcounts(sce_filt)), center = T, scale = F)
+```
+
+Regress out covariates (this is very slow...)
+```{r}
+# data <- apply(data, 2, function(x) {
+#   lm(formula=expr~covariate, data=data.frame(expr=x, covariate=factor(sce_filt$nFeature_RNA)))[["residuals"]]
+# })
+```
+
+
+# PCA
+
+Run PCA
+```{r}
+npcs <- 25
+reducedDim(sce_filt, "PCA") <- irlba::prcomp_irlba(data, n=npcs)$x[,1:npcs]
+```
+
+```{r}
+cor(sce_filt$nFeature_RNA, reducedDim(sce_filt,"PCA"))
+```
+
+Plot PCA
+```{r}
+plotPCA(sce_filt, colour_by="celltype.mapped", ncomponents = c(2,4)) +
+  scale_fill_manual(values=opts$celltype.colors) +
+  theme(
+    legend.position = "none"
+  )
+```
+
+# UMAP
+
+Run UMAP
+```{r}
+set.seed(42)
+# sce_filt <- runUMAP(sce_filt, dimred="PCA")
+sce_filt <- runUMAP(sce_filt, dimred="PCA", n_neighbors = 30, min_dist = 0.3)
+reducedDim(sce, "UMAP") <- reducedDim(sce_filt, "UMAP") 
+```
+
+Plot UMAP
+
+```{r}
+to.plot <- reducedDim(sce_filt,"UMAP") %>% as.data.table %>% 
+  .[,cell:=colnames(sce_filt)] %>%
+    merge(sample_metadata, by="cell")
+```
+
+```{r}
+p <- ggplot(to.plot, aes(x=V1, y=V2, fill=celltype.mapped)) +
+  geom_point(size=1.5, shape=21, stroke=0.2) +
+  # scale_color_manual(values=opts$stage.colors) +
+  scale_fill_manual(values=opts$celltype.colors) +
+  theme_classic() +
+  theme(
+    axis.title = element_blank(),
+    axis.text = element_blank(),
+    axis.ticks = element_blank(),
+    legend.position="none",
+    legend.title=element_blank()
+  )
+
+# pdf(paste0(io$outdir,"/rna_umap.pdf"), width=5, height=3, useDingbats = F)
+print(p)
+# dev.off()
+```
+
+```{r}
+ggplot(to.plot, aes(x=V1, y=V2, fill=log2(nCount_RNA))) +
+  geom_point(size=1.5, shape=21, stroke=0.2) +
+  theme_classic() +
+  theme(
+    legend.position="right"
+  )
+```
+

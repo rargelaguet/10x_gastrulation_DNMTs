@@ -31,7 +31,7 @@ opts$test_mode <- FALSE
 #   "E12.5_Dnmt3aWT_Dnmt3bKO" 
 # )
 
-opts$query.groups <- opts$classes[opts$classes!="E8.5_Dnmt3aWT_Dnmt3bWT"] %>% head(n=1)
+opts$query.groups <- opts$classes[opts$classes!="E8.5_Dnmt3aWT_Dnmt3bWT"]# %>% head(n=1)
 opts$reference.groups <- c("E8.5_Dnmt3aWT_Dnmt3bWT")
 # opts$groupA <- "E8.5_Dnmt3aWT_Dnmt3bWT"
 # opts$groupB <- "E85_Dnmt3aWT_Dnmt3bWT"
@@ -44,7 +44,6 @@ opts$min.cells <- 25
 ## Run ##
 #########
 
-i <- opts$query.groups[1]
 for (i in opts$query.groups) {
   
   # Define groups
@@ -57,7 +56,6 @@ for (i in opts$query.groups) {
     .[,.N,by=c("class","celltype.mapped2")] %>%
     .[N>=opts$min.cells] %>% .[,.N,by="celltype.mapped2"] %>% .[N==2,celltype.mapped2]
   
-    j <- opts$celltypes[1]
     for (j in opts$celltypes) {
       outfile <- sprintf("%s/%s_vs_%s_%s.txt.gz", io$outdir,opts$groupA,opts$groupB,j)
 

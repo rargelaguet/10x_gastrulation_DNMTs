@@ -1,0 +1,195 @@
+---
+title: "Dimensionality reduction using Seurat"
+---
+  
+```{r load_modules, echo=FALSE, include=FALSE}
+library(Seurat)
+```
+
+# Define settings
+
+Define I/O
+```{r define_io, echo=FALSE}
+source("/Users/ricard/10x_gastrulation_DNMTs/settings.R")
+io$outdir <- paste0(io$basedir,"/results/dimensionality_reduction")
+```
+
+Define options
+```{r}
+opts$batches <- c(
+  # "SIGAA6_E85_2_Dnmt3aKO_Dnmt3b_WT_L001", 
+  # "SIGAB6_E85_3_Dnmt3aWT_Dnmt3b_WT_L002", 
+  # "SIGAC6_E85_5_Dnmt3aKO_Dnmt3b_Het_L003", 
+  # "SIGAD6_E85_8_Dnmt3aHet_Dnmt3b_KO_L004",
+  # "15_E8_5_D3A_WT_D3B_WT_L007"
+  # "17_E8_5_D3A_KO_D3B_WT_L008"
+  # "2_E8_5_D3A_WT_D3B_KO_L003"
+  # "3_E8_5_D3A_HET_D3B_WT_L004"
+  "7_E8_5_D3A_WT_D3B_KO_L005"
+  # "8_E8_5_D3A_KO_D3B_KO_L006"
+)
+```
+
+Update sample metadata
+```{r load_metadata, echo=FALSE}
+sample_metadata <- sample_metadata %>%
+  .[batch%in%opts$batches]
+table(sample_metadata$batch)
+```
+
+# Load data
+
+Load RNA expression data as Seurat object
+```{r load_data, echo=FALSE}
+seurat <- readRDS(io$seurat)[,sample_metadata$cell]
+dim(seurat)
+```
+
+Add metadata to the Seurat object
+```{r}
+foo <- sample_metadata %>% as.data.frame %>% tibble::column_to_rownames("cell") %>%
+  .[colnames(seurat),]
+
+stopifnot(colnames(seurat) == rownames(foo))
+# seurat <- AddMetaData(seurat, foo)  # not working????
+seurat@meta.data <- foo
+```
+
+
+# Parse data 
+
+Remove genes that are not expressed
+```{r}
+foo <- Matrix::rowMeans(seurat@assays$RNA@counts)
+seurat <- subset(seurat, features = names(which(foo>1e-6)))
+```
+
+Normalise
+```{r message=FALSE}
+# SCTransform
+seurat <- SCTransform(seurat, vars.to.regress = "percent.mt")
+
+# LogNormalize
+# seurat <- NormalizeData(seurat, normalization.method = "LogNormalize")
+
+# Scale
+```
+
+Scale (only if using logNorm)
+```{r}
+# seurat <- ScaleData(seurat, vars.to.regress = "nFeature_RNA")
+```
+
+Change gene names from ENSEMBL to symbols
+```{r}
+# gene_metadata <- fread(io$gene_metadata) %>% .[,c("ens_id","symbol")] %>%
+#   .[symbol!="" & ens_id%in%rownames(seurat)]
+# 
+# seurat <- seurat[rownames(seurat)%in%gene_metadata$ens_id,]
+# foo <- gene_metadata$symbol; names(foo) <- gene_metadata$ens_id
+# new.names <- foo[rownames(seurat)]
+# 
+# # Sanity cehcks
+# stopifnot(sum(is.na(new.names))==0)
+# stopifnot(sum(duplicated(new.names))==0)
+# 
+# new.names[duplicated(new.names)]
+# 
+# # Rename seurat objects manually
+# rownames(seurat@assays$SCT@counts) <- new.names
+# rownames(seurat@assays$SCT@data) <- new.names
+# # rownames(seurat@assays$SCT@scale.data) <- new.names
+# seurat[["SCT"]]@meta.features <- data.frame(row.names=new.names)
+```
+
+
+# Select HVG
+
+Option 1, using FindVariableFeatures
+```{r}
+seurat <- FindVariableFeatures(seurat, selection.method = 'vst', nfeatures = 1000, assay="SCT")
+# length(seurat@assays$RNA@var.features)
+```
+
+Option 2, using precomputed marker genes
+```{r}
+# marker_genes.dt <- fread(io$atlas.marker_genes)
+# hvg <- unique(marker_genes.dt$ens_id)
+# hvg <- hvg[hvg%in%rownames(seurat)]
+# 
+# seurat@assays$RNA@var.features <- hvg
+```
+
+# Dimensionality reduction
+
+PCA 
+```{r message=FALSE}
+seurat <- RunPCA(seurat, 
+  features = VariableFeatures(seurat, assay="SCT"),
+  assay = "SCT",
+  npcs = 25,
+  verbose = FALSE
+)
+```
+
+```{r}
+cor(seurat$percent.mt,seurat@reductions$pca@cell.embeddings)
+```
+
+<!-- Correlation between PCs and batch -->
+```{r}
+# r <- cor(
+#   seurat@reductions$pca@cell.embeddings,
+#   as.numeric(as.factor(seurat@meta.data$batch))
+# )[,1]
+# r
+```
+
+UMAP
+```{r}
+seurat <- RunUMAP(seurat, 
+  dims = 1:25,
+  reduction = "pca",
+  n.neighbors = 30,
+  min.dist = 0.3
+)
+```
+
+# Plot 
+
+```{r}
+Idents(seurat) <- "celltype.mapped"
+
+p <- DimPlot(seurat, label = FALSE, reduction = 'umap', cols = opts$celltype.colors) + 
+  NoLegend() +
+  theme(
+    axis.text = element_blank(),
+    axis.title = element_blank(),
+    axis.ticks = element_blank()
+  )
+
+print(p)
+```
+
+```{r}
+Idents(seurat) <- "batch"
+
+p <- DimPlot(seurat, label = FALSE, reduction = 'umap') + 
+  NoLegend() +
+  theme(
+    axis.text = element_blank(),
+    axis.title = element_blank(),
+    axis.ticks = element_blank()
+  )
+
+print(p)
+```
+
+Explore marker genes
+```{r}
+# genes.to.plot <- c("Apom")
+# FeaturePlot(seurat, features = genes.to.plot, reduction='umap')
+```
+
+
+

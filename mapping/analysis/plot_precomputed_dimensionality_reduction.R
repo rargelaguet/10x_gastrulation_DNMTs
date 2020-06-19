@@ -2,36 +2,44 @@
 ## Plot dimensionality reduction of EB cells mapped to the atlas ##
 ###################################################################
 
-# This script requires the cell metadata from the atlas, which contains the precomputed UMAP coordinates
+source("/Users/ricard/10x_gastrulation_DNMTs/settings.R")
+source("/Users/ricard/10x_gastrulation_DNMTs/mapping/analysis/plot_utils.R")
 
-library(data.table)
-library(purrr)
-library(ggplot2)
-
-source("/Users/ricard/10x_gastrulation_DNMTs/mapping/plot/plot_utils.R")
-
-#########
-## I/O ##
-#########
-
-io <- list()
-io$path2atlas <- "/Users/ricard/data/gastrulation10x"
-io$path2query <- "/Users/ricard/data/10x_gastrulation_DNMTs"
-io$mapping <- "/Users/ricard/data/10x_gastrulation_DNMTs/mapping/mapping10x_mnn.rds"
-io$outdir <- "/Users/ricard/data/10x_gastrulation_DNMTs/mapping/pdf"
+io$outdir <- paste0(io$basedir,"/results/mapping/pdf")
 
 #############
 ## Options ##
 #############
 
-opts <- list()
+# opts$batches <- c(
+#   "E8.5_Dnmt3aKO_Dnmt3bWT", 
+#   "E8.5_Dnmt3aHET_Dnmt3bKO", 
+#   "E8.5_Dnmt3aHET_Dnmt3bWT", 
+#   "E8.5_Dnmt3aKO_Dnmt3bHET", 
+#   "E8.5_Dnmt3aKO_Dnmt3bKO", 
+#   "E8.5_Dnmt3aWT_Dnmt3bKO"
+# )
+# # "E8.5_Dnmt3aWT_Dnmt3bWT",
+
+opts$batches <- c(
+  "SIGAA6_E85_2_Dnmt3aKO_Dnmt3b_WT_L001", 
+  # "SIGAB6_E85_3_Dnmt3aWT_Dnmt3b_WT_L002", 
+  "SIGAC6_E85_5_Dnmt3aKO_Dnmt3b_Het_L003", 
+  "SIGAD6_E85_8_Dnmt3aHet_Dnmt3b_KO_L004",
+  # "15_E8_5_D3A_WT_D3B_WT_L007",
+  "17_E8_5_D3A_KO_D3B_WT_L008",
+  "2_E8_5_D3A_WT_D3B_KO_L003",
+  "3_E8_5_D3A_HET_D3B_WT_L004",
+  "7_E8_5_D3A_WT_D3B_KO_L005",
+  "8_E8_5_D3A_KO_D3B_KO_L006"
+)
 
 # Dot size
-opts$size.mapped <- 0.5
+opts$size.mapped <- 0.3
 opts$size.nomapped <- 0.1
 
 # Transparency
-opts$alpha.mapped <- 1.0
+opts$alpha.mapped <- 0.9
 opts$alpha.nomapped <- 0.35
 
 ####################
@@ -39,56 +47,47 @@ opts$alpha.nomapped <- 0.35
 ####################
 
 # Load atlas cell metadata
-meta_atlas <- fread(paste0(io$path2atlas, "/sample_metadata.txt")) %>%
+meta_atlas <- fread(io$atlas.metadata) %>%
   .[stripped==F & doublet==F]
 
 # Extract precomputed dimensionality reduction coordinates
-umap <- meta_atlas[,c("cell","umapX","umapY","celltype")] %>%
+umap.dt <- meta_atlas[,c("cell","umapX","umapY","celltype")] %>%
   setnames(c("umapX","umapY"),c("V1","V2"))
 
-#####################
-## Load query data ##
-#####################
+########################################################
+## Plot dimensionality reduction: one batch at a time ##
+########################################################
 
-# Load query cell metadata
-meta_query <- fread(paste0(io$path2query, "/mapping/sample_metadata_mapping_mnn.txt"))
+for (i in opts$batches) {
+  to.plot <- umap.dt %>% copy %>%
+    .[,index:=match(cell, sample_metadata[batch==i,closest.cell] )] %>% 
+    .[,mapped:=as.factor(!is.na(index))] %>% 
+    .[,mapped:=plyr::mapvalues(mapped, from = c("FALSE","TRUE"), to = c("Atlas",i))] %>%
+    setorder(mapped) 
+  
+  p <- plot.dimred(to.plot, query.label = i, atlas.label = "Atlas")
+  
+  pdf(sprintf("%s/umap_mapped_%s.pdf",io$outdir,i), width=8, height=6.5)
+  print(p)
+  dev.off()
+}
 
-# Load precomputed mapping
-mapping <- readRDS(io$mapping)$mapping
-mapping.dt <- data.table(
-  cell            = mapping$cell, 
-  celltype.mapped = mapping$celltype.mapped,
-  stage.mapped    = mapping$stage.mapped,
-  closest.cell    = as.character(mapping$closest.cell)
-)
+######################################################
+## Plot dimensionality reduction: WT vs KO together ##
+######################################################
 
-################
-## Parse data ##
-################
-
-# Remove lineages
-mapping.dt <- mapping.dt[!celltype.mapped%in%c("ExE ectoderm","PGC", "Parietal endoderm")]
-umap <- umap[!celltype%in%c("ExE ectoderm","PGC", "Parietal endoderm")]
-
-###################################
-## Plot dimensionality reduction ##
-###################################
-
-# Prepare query data.frame to plot
-plot_df_query = mapping.dt %>% merge(meta_query, by="cell")
-
-# Prepare atlas data.frame to plot
-plot_df_atlas = umap %>% merge(meta_atlas, by="cell")
-
-plot_df_atlas[,index.wt:=match(plot_df_atlas$cell, plot_df_query[genotype=="WT",closest.cell] )]
-plot_df_atlas[,index.ko:=match(plot_df_atlas$cell, plot_df_query[genotype=="TKO",closest.cell] )]
-plot_df_atlas[,mapped.wt:=c(0,-10)[as.numeric(as.factor(!is.na(index.wt)))]]
-plot_df_atlas[,mapped.ko:=c(0,10)[as.numeric(as.factor(!is.na(index.ko)))]]
-plot_df_atlas[,mapped:=factor(mapped.wt + mapped.ko, levels=c("0","-10","10"))] %>% setorder(mapped)
-
-p <- plot.dimred.wtko(plot_df_atlas) +
-  theme(legend.position = "top", legend.title = element_blank())
-
-pdf(paste0(io$outdir,"/umap_mapped.pdf"), width=8, height=6.5)
-print(p)
-dev.off()
+for (i in opts$batches) {
+  to.plot <- umap.dt %>% copy %>%
+    .[,index.wt:=match(cell, sample_metadata[class=="E8.5_Dnmt3aWT_Dnmt3bWT",closest.cell] )] %>%
+    .[,index.ko:=match(cell, sample_metadata[batch==i,closest.cell] )] %>%
+    .[,mapped.wt:=c(0,-10)[as.numeric(as.factor(!is.na(index.wt)))]] %>%
+    .[,mapped.ko:=c(0,10)[as.numeric(as.factor(!is.na(index.ko)))]] %>%
+    .[,mapped:=factor(mapped.wt + mapped.ko, levels=c("0","-10","10"))] %>%
+    .[,mapped:=plyr::mapvalues(mapped, from = c("0","-10","10"), to = c("Atlas","WT",i))] %>% setorder(mapped)
+  
+  p <- plot.dimred.wtko(to.plot, wt.label = "WT", ko.label = i, nomapped.label = "Atlas")
+  
+  pdf(sprintf("%s/umap_mapped_%s.pdf",io$outdir,i), width=8, height=6.5)
+  print(p)
+  dev.off()
+}
