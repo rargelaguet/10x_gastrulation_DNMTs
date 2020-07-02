@@ -32,27 +32,77 @@ opts$batches <- c(
   "B_E12_5_D3a_KO_L002"
 )
 
-##########
-## Plot ##
-##########
+# sample_metadata <- sample_metadata[pass_QC==T]
+sample_metadata <- fread(io$metadata) %>% .[pass_QC==T]
 
-# sample_metadata <- fread(io$metadata)
+###############################################
+## Boxplots of general statistics per batch ##
+###############################################
 
 to.plot <- sample_metadata %>% 
-  .[batch%in%opts$batches] %>%
-  melt(id.vars=c("cell","batch","class","stage"), measure.vars=c("nCount_RNA","nFeature_RNA"))
+  melt(id.vars=c("cell","batch","stage"), measure.vars=c("nCount_RNA","nFeature_RNA"))
 
-p <- ggboxplot(to.plot, x = "batch", y = "value", fill="stage", outlier.shape=NA) +
+p <- ggboxplot(to.plot, x = "batch", y = "value", outlier.shape=NA) +
   yscale("log10", .format = TRUE) +
   labs(x="", y="") +
-  facet_wrap(~variable, scales="free_y") +
+  facet_wrap(~stage+variable, scales="free", nrow=1) +
   theme(
     legend.position = "right",
+    legend.title = element_blank(),
+    # axis.text.x = element_blank(),
+    axis.text.x = element_text(colour="black",size=rel(0.9), angle=50, hjust=1),
+    # axis.ticks.x = element_blank()
+  )
+
+pdf(paste0(io$outdir,"/general_stats_per_batch.pdf"), width=16, height=6, useDingbats = F)
+print(p)
+dev.off()
+
+########################################
+## Barplots number of cells per batch ##
+########################################
+
+to.plot <- sample_metadata[,.N,by=c("batch","stage")]
+
+p <- ggbarplot(to.plot, x = "batch", y = "N", fill="gray70") +
+  labs(x="", y="Number of cells (after QC)") +
+  facet_wrap(~stage, nrow=1, scales="free_x") +
+  theme(
+    legend.position = "right",
+    legend.title = element_blank(),
+    # axis.text.x = element_blank(),
+    axis.text.x = element_text(colour="black",size=rel(0.8), angle=40, hjust=1),
+    # axis.ticks.x = element_blank()
+  )
+
+pdf(paste0(io$outdir,"/N_per_batch.pdf"), width=8, height=6, useDingbats = F)
+print(p)
+dev.off()
+
+
+##################################################
+## Boxplots of general statistics per cell type ##
+##################################################
+
+to.plot <- sample_metadata %>% 
+  melt(id.vars=c("cell","celltype.mapped"), measure.vars=c("nCount_RNA","nFeature_RNA"))
+
+p <- ggboxplot(to.plot, x = "celltype.mapped", y = "value", fill="celltype.mapped", outlier.shape=NA) +
+  yscale("log10", .format = TRUE) +
+  labs(x="", y="") +
+  scale_fill_manual(values=opts$celltype.colors) +
+  facet_wrap(~variable, scales="free_y") +
+  guides(fill = guide_legend(override.aes = list(size=0.25), ncol=1)) +
+  scale_size(guide = 'none') +
+  theme(
+    legend.position = "right",
+    legend.text = element_text(size=rel(0.75)),
     legend.title = element_blank(),
     axis.text.x = element_blank(),
     axis.ticks.x = element_blank()
   )
 
-# pdf(paste0(io$outdir,"/rna_stats.pdf"), width=6, height=4, useDingbats = F)
+pdf(paste0(io$outdir,"/general_stats_per_celltype.pdf"), width=16, height=10, useDingbats = F)
 print(p)
-# dev.off()
+dev.off()
+

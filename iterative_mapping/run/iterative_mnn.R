@@ -90,7 +90,7 @@ sce.query$celltype_mapped <- paste(opts$celltypes,collapse="%")
 
 while (any(grepl("%",sce.query$celltype_mapped))) {
   print(table(sce.query$celltype_mapped))
-  mapping.dt <- recursive.fn(sce.query, sce.atlas, dist, cosineNorm = TRUE)
+  mapping.dt <- recursive.fn(sce.query, sce.atlas, dist, cosineNorm = FALSE)
   ids <- match(mapping.dt$cell,colnames(sce.query))
   sce.query$celltype_mapped[ids] <- mapping.dt$celltype_mapped
   sce.query$celltype_score[ids] <- mapping.dt$celltype_score
@@ -111,4 +111,4 @@ mapping.dt <- data.table(
 )
 # foo <- mapping.dt %>% merge(meta_query[,c("cell","celltype.mapped","celltype.score")] %>% setnames(c("cell","celltype_old","score_old")))
 
-fwrite(mapping.dt, sprintf("%s/%s_iterative_mnn.txt.gz",io$outdir,paste(args$test_samples,collapse="_")), sep="\t")
+fwrite(mapping.dt, sprintf("%s/%s_iterative_mnn.txt.gz",io$outdir,paste(args$query_batches,collapse="_")), sep="\t")

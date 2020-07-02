@@ -31,8 +31,8 @@ args <- p$parse_args(commandArgs(TRUE))
 # )
 # args$query_batches <- c(
 #   "SIGAA6_E85_2_Dnmt3aKO_Dnmt3b_WT_L001"
-#   # "SIGAB6_E85_3_Dnmt3aWT_Dnmt3b_WT_L002", 
-#   # "SIGAC6_E85_5_Dnmt3aKO_Dnmt3b_Het_L003", 
+#   # "SIGAB6_E85_3_Dnmt3aWT_Dnmt3b_WT_L002",
+#   # "SIGAC6_E85_5_Dnmt3aKO_Dnmt3b_Het_L003",
 #   # "SIGAD6_E85_8_Dnmt3aHet_Dnmt3b_KO_L004",
 #   # "15_E8_5_D3A_WT_D3B_WT_L007",
 #   # "17_E8_5_D3A_KO_D3B_WT_L008",
@@ -72,10 +72,11 @@ source(io$script_load_data)
 #############
 
 # Joint normalisation
-sce.all <- joint.normalisation(sce.query, sce.atlas, cosineNorm = TRUE)
+sce.all <- joint.normalisation(sce.query, sce.atlas, cosineNorm = FALSE)
 
 # Select HVGs
-genes <- getHVGs(sce.atlas, block=as.factor(sce.atlas$sample), p.value = 0.10)
+# genes <- getHVGs(sce.atlas, block=as.factor(sce.atlas$sample), p.value = 0.10)
+genes <- getHVGs(sce.all, block=sce.all$block, p.value = 0.05)
 
 # MNN
 mapping.dt <- mnn.fn(sce.all, sce.query, sce.atlas, genes = genes, npcs = 50, k = 25)

@@ -41,6 +41,9 @@ genes.intersect <- intersect(rownames(sce.query), rownames(sce.atlas))
 sce.query  <- sce.query[genes.intersect,]
 sce.atlas <- sce.atlas[genes.intersect,]
 
+print(dim(sce.query))
+print(dim(sce.atlas))
+
 #################
 ## Subset HVGs ##
 #################

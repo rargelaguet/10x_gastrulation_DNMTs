@@ -48,7 +48,7 @@ mapping.fn <- function(sce.query, sce.atlas, h, ...) {
   sce.all <- joint.normalisation(sce.query, sce.atlas, ...)
   
   # Run MNN
-  dt <- mnn.fn(sce.all, sce.query, sce.atlas, genes = genes, npcs = 25, k = 25, ...)
+  dt <- mnn.fn(sce.all, sce.query, sce.atlas, genes = genes, npcs = 5, k = 25)
   
   return(dt)
     
@@ -57,10 +57,9 @@ mapping.fn <- function(sce.query, sce.atlas, h, ...) {
 
 joint.normalisation <- function(sce.query, sce.atlas, cosineNorm = FALSE) {
   
-  block <- c(sce.atlas$sample,sce.query$sample) %>% as.factor
+  block <- c(sce.atlas$sample,sce.query$batch) %>% as.factor
   
   if (isTRUE(cosineNorm)) {
-    assay <- "cosineNorm"
     
     # Log normalisation per data set
     if (length(unique(sce.atlas$sample))>1) {
@@ -69,23 +68,22 @@ joint.normalisation <- function(sce.query, sce.atlas, cosineNorm = FALSE) {
       sce.atlas <- logNormCounts(sce.atlas)
     }
     
-    if (length(unique(sce.query$sample))>1) {
-      sce.query <- multiBatchNorm(sce.query, batch=as.factor(sce.query$sample))
+    if (length(unique(sce.query$batch))>1) {
+      sce.query <- multiBatchNorm(sce.query, batch=as.factor(sce.query$batch))
     } else {
       sce.query <- logNormCounts(sce.query)
     }
     
     # Cosine normalisation
-    assay(sce.atlas, assay) <- cosineNorm(assay(sce.atlas, "logcounts"))
-    assay(sce.query, assay) <- cosineNorm(assay(sce.query, "logcounts"))
+    assay(sce.atlas, "cosineNorm") <- cosineNorm(assay(sce.atlas, "logcounts"))
+    assay(sce.query, "cosineNorm") <- cosineNorm(assay(sce.query, "logcounts"))
     
     # Concatenate
     sce.all <- SingleCellExperiment(
-      list(cosineNorm=cbind(assay(sce.atlas,assay), assay(sce.query,assay)))
+      list(cosineNorm=cbind(assay(sce.atlas,"cosineNorm"), assay(sce.query,"cosineNorm")))
     )
     
   } else {
-    assay <- "logcounts"
     
     # Concatenate
     sce.all <- SingleCellExperiment(
@@ -96,8 +94,8 @@ joint.normalisation <- function(sce.query, sce.atlas, cosineNorm = FALSE) {
     sce.all <- multiBatchNorm(sce.all, batch=block)
   }
   
-  # Create block vector
-  sce.all$block <- c(sce.atlas$sample,sce.query$sample) %>% as.factor
+  # Add block vector to the sce object
+  sce.all$block <- block
   
   return(sce.all)
 }
