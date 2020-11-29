@@ -40,7 +40,7 @@ dt <- dt[N_groupA>opts$min.cells & N_groupB>opts$min.cells]
 dt <- dt[gene!="Xist"]
 
 # Remove hits that are differentially expressed in all cell type comparisons
-# foo <- dt[,mean(sig),by=c("gene")]
+foo <- dt[,mean(sig),by=c("gene")] %>% .[V1>0] %>% setorder(-V1)
 
 for (i in unique(dt$celltype)) {
   to.plot <- dt[celltype==i] %>% .[!is.na(sig)] 

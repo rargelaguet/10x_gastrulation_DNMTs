@@ -123,24 +123,76 @@ opts$celltype.colors = c(
 )
 
 opts$batches <- c(
-  "SIGAA6_E85_2_Dnmt3aKO_Dnmt3b_WT_L001", 
-  "SIGAB6_E85_3_Dnmt3aWT_Dnmt3b_WT_L002", 
-  "SIGAC6_E85_5_Dnmt3aKO_Dnmt3b_Het_L003", 
+  
+  # second batch
+  # "E125_DNMT3A_HET_A_L001",
+  # "E125_DNMT3A_HET_A_L003",
+  # "E125_DNMT3A_KO_B_L002",
+  # "E125_DNMT3A_KO_E_L004",
+  
+  # third batch
+  "SIGAA6_E85_2_Dnmt3aKO_Dnmt3b_WT_L001",
+  "SIGAB6_E85_3_Dnmt3aWT_Dnmt3b_WT_L002",
+  "SIGAC6_E85_5_Dnmt3aKO_Dnmt3b_Het_L003",
   "SIGAD6_E85_8_Dnmt3aHet_Dnmt3b_KO_L004",
+  
+  # fourth batch
   "15_E8_5_D3A_WT_D3B_WT_L007",
   "17_E8_5_D3A_KO_D3B_WT_L008",
   "2_E8_5_D3A_WT_D3B_KO_L003",
   "3_E8_5_D3A_HET_D3B_WT_L004",
   "7_E8_5_D3A_WT_D3B_KO_L005",
-  "8_E8_5_D3A_KO_D3B_KO_L006"
-  
-  # "E125_DNMT3A_HET_A_L001", 
-  # "E125_DNMT3A_HET_A_L003", 
-  # "E125_DNMT3A_KO_B_L002", 
-  # "E125_DNMT3A_KO_E_L004", 
+  "8_E8_5_D3A_KO_D3B_KO_L006",
   # "A_E12_5_D3a_Het_L001",
-  # "B_E12_5_D3a_KO_L002"
+  # "B_E12_5_D3a_KO_L002" ,
+  
+  # fifth batch
+  "E8_5_Dnmt1_KO_male_SIGAC8_L001",
+  "E8_5_Dnmt1_KO_male_SIGAD8_L002",
+  "E8_5_Dnmt1_KO_male_SIGAE8_L003",
+  "E8_5_Dnmt1_WT_female_SIGAB8_L004",
+  "E8_5_Dnmt1_WT_female_SIGAF8_L005",
+  "E8_5_Dnmt3ab_WT_female_SIGAA8_L006",
+  "SIGAH10_Dnmt3ab_WT_L002",
+  "SIGAH11_Dnmt3ab_WT_L003",
+  "SIGAH9_Dnmt3a_KO_Dnmt3b_Het_L001"
 )
+
+# opts$batches <- c(
+#   
+#   # second batch
+#   # "E125_DNMT3A_HET_A_L001" = "E12.5_Dnmt3aWT_Dnmt3bHET", # DNMT3B HET OR WT??
+#   # "E125_DNMT3A_HET_A_L003" = "E12.5_Dnmt3aWT_Dnmt3bWT", # DNMT3B HET OR WT??
+#   # "E125_DNMT3A_KO_B_L002" = "E12.5_Dnmt3aKO_Dnmt3bWT", 
+#   # "E125_DNMT3A_KO_E_L004" = "E12.5_Dnmt3aKO_Dnmt3bWT", 
+#   
+#   # third batch
+#   "SIGAA6_E85_2_Dnmt3aKO_Dnmt3b_WT_L001" = "E8.5_Dnmt3aKO_Dnmt3bWT", 
+#   "SIGAB6_E85_3_Dnmt3aWT_Dnmt3b_WT_L002" = "E8.5_WT", 
+#   "SIGAC6_E85_5_Dnmt3aKO_Dnmt3b_Het_L003" = "E8.5_Dnmt3aKO_Dnmt3bHET", 
+#   "SIGAD6_E85_8_Dnmt3aHet_Dnmt3b_KO_L004" = "E8.5_Dnmt3aHET_Dnmt3bKO",
+#   
+#   # fourth batch
+#   "15_E8_5_D3A_WT_D3B_WT_L007" = "E8.5_WT",
+#   "17_E8_5_D3A_KO_D3B_WT_L008" = "E8.5_Dnmt3aKO_Dnmt3bWT",
+#   "2_E8_5_D3A_WT_D3B_KO_L003" = "E8.5_Dnmt3aWT_Dnmt3bKO",
+#   "3_E8_5_D3A_HET_D3B_WT_L004" = "E8.5_Dnmt3aHET_Dnmt3bWT",
+#   "7_E8_5_D3A_WT_D3B_KO_L005" = "E8.5_Dnmt3aWT_Dnmt3bKO",
+#   "8_E8_5_D3A_KO_D3B_KO_L006" = "E8.5_Dnmt3aKO_Dnmt3bKO",
+#   # "A_E12_5_D3a_Het_L001" = "E12.5_Dnmt3aHET_Dnmt3bWT", # DNMT3B WT OR HET?
+#   # "B_E12_5_D3a_KO_L002"  = "E12.5_Dnmt3aKO_Dnmt3bWT ", # DNMT3B WT OR HET?
+#   
+#   # fifth batch
+#   "E8_5_Dnmt1_KO_male_SIGAC8_L001" = "E8.5_Dnmt1KO",
+#   "E8_5_Dnmt1_KO_male_SIGAD8_L002" = "E8.5_Dnmt1KO",
+#   "E8_5_Dnmt1_KO_male_SIGAE8_L003" = "E8.5_Dnmt1KO",
+#   "E8_5_Dnmt1_WT_female_SIGAB8_L004" = "E8.5_WT",
+#   "E8_5_Dnmt1_WT_female_SIGAF8_L005" = "E8.5_WT",
+#   "E8_5_Dnmt3ab_WT_female_SIGAA8_L006" = "E8.5_WT",
+#   "SIGAH10_Dnmt3ab_WT_L002" = "E8.5_WT",
+#   "SIGAH11_Dnmt3ab_WT_L003" = "E8.5_WT",
+#   "SIGAH9_Dnmt3a_KO_Dnmt3b_Het_L001" = "E8.5_Dnmt3aKO_Dnmt3bHET"
+# )
 
 opts$stages <- c(
   # "E12.5",

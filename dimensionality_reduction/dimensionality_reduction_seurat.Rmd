@@ -42,12 +42,6 @@ sample_metadata <- sample_metadata[grepl("Erythroid",celltype.mapped)]
 table(sample_metadata$celltype.mapped)
 ```
 
-```{r}
-foo <- fread("/Users/ricard/data/10x_gastrulation_DNMTs/results/iterative_mapping/15_E8_5_D3A_WT_D3B_WT_L007_iterative_mnn.txt.gz") %>% .[cell%in%sample_metadata$cell] %>% .[,c("cell","celltype_mapped")] %>%
-  setnames("celltype_mapped","celltype.mapped.iterative") 
-sample_metadata <- sample_metadata %>% merge(foo)
-```
-
 # Load data
 
 Load RNA expression data as Seurat object
