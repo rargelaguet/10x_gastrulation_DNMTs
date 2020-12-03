@@ -31,13 +31,12 @@ opts$test_mode <- FALSE
 #   "E12.5_Dnmt3aWT_Dnmt3bKO" 
 # )
 
-opts$query.groups <- opts$classes[opts$classes!="E8.5_Dnmt3aWT_Dnmt3bWT"]# %>% head(n=1)
+opts$query.groups <- opts$classes[opts$classes!="E8.5_Dnmt3aWT_Dnmt3bWT"] %>% head(n=1)
 opts$reference.groups <- c("E8.5_Dnmt3aWT_Dnmt3bWT")
 # opts$groupA <- "E8.5_Dnmt3aWT_Dnmt3bWT"
 # opts$groupB <- "E85_Dnmt3aWT_Dnmt3bWT"
 
-
-  # Define cell types with sufficient number of cells for differential comparison
+# Define cell types with sufficient number of cells for differential comparison
 opts$min.cells <- 25
 
 #########
@@ -52,9 +51,9 @@ for (i in opts$query.groups) {
   
   # Extract cell types
   opts$celltypes <- sample_metadata %>% 
-    .[!is.na(celltype.mapped2) & class%in%c(opts$groupA,opts$groupB)] %>%
-    .[,.N,by=c("class","celltype.mapped2")] %>%
-    .[N>=opts$min.cells] %>% .[,.N,by="celltype.mapped2"] %>% .[N==2,celltype.mapped2]
+    .[!is.na(celltype.mapped) & class%in%c(opts$groupA,opts$groupB)] %>%
+    .[,.N,by=c("class","celltype.mapped")] %>%
+    .[N>=opts$min.cells] %>% .[,.N,by="celltype.mapped"] %>% .[N==2,celltype.mapped]
   
     for (j in opts$celltypes) {
       outfile <- sprintf("%s/%s_vs_%s_%s.txt.gz", io$outdir,opts$groupA,opts$groupB,j)

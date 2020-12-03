@@ -161,9 +161,9 @@ seurat <- RunUMAP(seurat,
 Idents(seurat) <- "celltype.mapped"
 # Idents(seurat) <- "celltype.mapped.iterative"
 
-p <- DimPlot(seurat, label = FALSE, reduction = 'pca', pt.size=2) + 
-# p <- DimPlot(seurat, label = FALSE, reduction = 'pca', cols = opts$celltype.colors, pt.size=2) + 
-  # NoLegend() +
+# p <- DimPlot(seurat, label = FALSE, reduction = 'umap', pt.size=2) + 
+p <- DimPlot(seurat, label = FALSE, reduction = 'umap', cols = opts$celltype.colors, pt.size=1) +
+  NoLegend() +
   theme(
     axis.text = element_blank(),
     axis.title = element_blank(),
@@ -176,7 +176,7 @@ print(p)
 ```{r}
 Idents(seurat) <- "celltype.mapped"
 
-p <- DimPlot(seurat, label = FALSE, reduction = 'pca') + 
+p <- DimPlot(seurat, label = FALSE, reduction = 'umap') + 
   NoLegend() +
   theme(
     axis.text = element_blank(),
@@ -192,7 +192,7 @@ Explore marker genes
 # genes.to.plot <- c("Apom")
 # genes.to.plot <- c("Hbb-y","Hba-a2","Mgst3")
 genes.to.plot <- c("Hbb-y")
-FeaturePlot(seurat, features = genes.to.plot, reduction='pca', pt.size=2)
+FeaturePlot(seurat, features = genes.to.plot, reduction='umap', pt.size=2)
 
 ```
 

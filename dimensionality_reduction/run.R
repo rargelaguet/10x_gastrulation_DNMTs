@@ -5,30 +5,17 @@
 
 if (grepl("ricard",Sys.info()['nodename'])) {
   source("/Users/ricard/10x_gastrulation_DNMTs/settings.R")
-  io$script <- "/Users/ricard/10x_gastrulation_DNMTs/mapping/run/mnn/mapping_mnn.R"
+  io$script <- "/Users/ricard/10x_gastrulation_DNMTs/dimensionality_reduction/dimensionality_reduction_sce.R"
 } else {
   source("/homes/ricard/10x_gastrulation_DNMTs/settings.R")
-  io$script <- "/homes/ricard/10x_gastrulation_DNMTs/mapping/run/mnn/mapping_mnn.R"
-  io$tmpdir <- paste0(io$basedir,"/results/mapping/tmp"); dir.create(io$tmpdir)
+  io$script <- "/homes/ricard/10x_gastrulation_DNMTs/dimensionality_reduction/dimensionality_reduction_sce.R"
+  io$tmpdir <- paste0(io$basedir,"/results/dimensionality_reduction/tmp"); dir.create(io$tmpdir)
 }
-io$outdir <- paste0(io$basedir,"/results/mapping")
+io$outdir <- paste0(io$basedir,"/results/dimensionality_reduction")
 
 ####################
 ## Define options ##
 ####################
-
-opts$atlas_stages <- c(
-  "E6.5",
-  "E6.75",
-  "E7.0",
-  "E7.25",
-  "E7.5",
-  "E7.75",
-  "E8.0",
-  "E8.25",
-  "E8.5",
-  "mixed_gastrulation"
-)
 
 opts$batches <- c(
   # E12.5  
@@ -60,20 +47,21 @@ opts$batches <- c(
   # "SIGAH10_Dnmt3ab_WT_L002",
   # "SIGAH11_Dnmt3ab_WT_L003",
   # "SIGAH9_Dnmt3a_KO_Dnmt3b_Het_L001",
-
-  "SIGAG5_9_dnmt3ab_DKO_L005"
+  # "SIGAG5_9_dnmt3ab_DKO_L005"
 )
 
-# opts$batches <- "SIGAA6_E85_2_Dnmt3aKO_Dnmt3b_WT_L001"
+opts$batches <- "SIGAA6_E85_2_Dnmt3aKO_Dnmt3b_WT_L001"
 
 # Test mode (subsetting cells)?
 opts$test_mode <- FALSE
 
-if (opts$test_mode) {
-  opts$memory <- 25000
-} else {
-  opts$memory <- 40000
-}
+
+# Number of highly variable genes
+opts$features <- 1000
+
+# Number of PCs
+opts$npcs <- 30
+
 #########
 ## Run ##
 #########
@@ -84,9 +72,10 @@ for (i in opts$batches) {
   if (grepl("ricard",Sys.info()['nodename'])) {
     lsf <- ""
   } else if (grepl("ebi",Sys.info()['nodename'])) {
-    lsf <- sprintf("bsub -M %d -n 1 -o %s/%s.txt", opts$memory, io$tmpdir,paste(i,collapse=" "))
+    lsf <- sprintf("bsub -M 10000 -n 1 -o %s/%s.txt", io$tmpdir,paste(i,collapse=" "))
   }
-  cmd <- sprintf("%s Rscript %s --atlas_stages %s --query_batches %s --outdir %s", lsf, io$script, paste(opts$atlas_stages,collapse=" "), paste(i,collapse=" "),io$outdir)
+  cmd <- sprintf("%s Rscript %s --batches %s --features %d --npcs %d --outdir %s", lsf, io$script, i, opts$features, opts$npcs, io$outdir)
+  
   if (isTRUE(opts$test_mode)) cmd <- paste0(cmd, " --test")
   
   # Run

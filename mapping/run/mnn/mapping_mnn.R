@@ -79,9 +79,11 @@ sce_atlas <- sce_atlas[,meta_atlas$cell]
 ################
 
 # Load SingleCellExperiment
+io$sce <- "/hps/nobackup2/research/stegle/users/ricard/10x_gastrulation_DNMTs/processed/sixth_batch/SingleCellExperiment.rds"
 sce_query <- readRDS(io$sce)
 
 # Load cell metadata
+io$metadata <- "/hps/nobackup2/research/stegle/users/ricard/10x_gastrulation_DNMTs/processed/sixth_batch/metadata.txt.gz"
 meta_query <- fread(io$metadata) %>% .[pass_QC==T & batch%in%args$query_batches]
 
 # Filter
@@ -119,15 +121,6 @@ genes.intersect <- genes.intersect[grep("Rik",genes.intersect,invert = T)]
 # Subset SingleCellExperiment objects
 sce_query  <- sce_query[genes.intersect,]
 sce_atlas <- sce_atlas[genes.intersect,]
-
-
-# Load gene markers to be used as HVGs
-# marker_genes.dt <- fread(io$atlas.marker_genes)
-# marker_genes.dt <- marker_genes.dt[,head(.SD,n=50),by="celltype"]
-# marker_genes <- unique(marker_genes.dt$ens_id)
-# marker_genes <- marker_genes[marker_genes%in%genes.intersect]
-# print(marker_genes.dt[,.N,by="celltype"])
-# stopifnot(all(marker_genes%in%rownames(sce_atlas)))
 
 #########
 ## Map ##

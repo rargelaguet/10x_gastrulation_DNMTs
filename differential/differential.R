@@ -1,7 +1,3 @@
-######################################################################################
-## Script to do differential expression between WT and KO, separately per cell type ##
-######################################################################################
-
 suppressMessages(library(SingleCellExperiment))
 suppressMessages(library(scater))
 suppressMessages(library(edgeR))
@@ -66,20 +62,22 @@ opts$min.cells <- 25
 # For a given gene, the minimum fraction of cells that must express it in at least one group
 opts$min_detection_rate_per_group <- 0.40
 
-###############
-## Load data ##
-###############
+###################
+## sanity checks ##
+###################
 
 stopifnot(all(opts$groups%in%unique(sample_metadata$class)))
 
-# Update cell metadata
+############################
+## Update sample metadata ##
+############################
+
 sample_metadata <- sample_metadata %>%
   .[class%in%opts$groups & celltype.mapped%in%args$celltype] %>%
   setnames("class","group") %>%
-  .[,c("cell","group")]
-
-# Sort cells so that groupA comes before groupB
-sample_metadata[,group:=factor(group,levels=opts$groups)] %>% setorder(group)
+  .[,c("cell","group")] %>%
+  .[,group:=factor(group,levels=opts$groups)] %>% 
+  setorder(group)
 
 if (isTRUE(args$test_mode)) {
   print("Testing mode activated")
@@ -90,6 +88,10 @@ table(sample_metadata$group)
 if (any(table(sample_metadata$group)<opts$min.cells)) {
   stop("Not enough cells for differential testing")
 }
+
+###############
+## Load data ##
+###############
 
 # Load SingleCellExperiment object
 sce <- readRDS(io$sce)[,sample_metadata$cell]

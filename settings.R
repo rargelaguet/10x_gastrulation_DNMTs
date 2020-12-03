@@ -161,7 +161,8 @@ opts$batches <- c(
   "E8_5_Dnmt3ab_WT_female_SIGAA8_L006",
   "SIGAH10_Dnmt3ab_WT_L002",
   "SIGAH11_Dnmt3ab_WT_L003",
-  "SIGAH9_Dnmt3a_KO_Dnmt3b_Het_L001"
+  "SIGAH9_Dnmt3a_KO_Dnmt3b_Het_L001",
+  "SIGAG5_9_dnmt3ab_DKO_L005"
 )
 
 opts$batch.to.class <- c(
