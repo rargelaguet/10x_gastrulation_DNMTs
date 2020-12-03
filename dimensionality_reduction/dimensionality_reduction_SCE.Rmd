@@ -19,24 +19,47 @@ io$outdir <- paste0(io$basedir,"/results/dimensionality_reduction")
 Define options
 ```{r}
 opts$batches <- c(
-  # "SIGAA6_E85_2_Dnmt3aKO_Dnmt3b_WT_L001", 
-  # "SIGAB6_E85_3_Dnmt3aWT_Dnmt3b_WT_L002", 
-  # "SIGAC6_E85_5_Dnmt3aKO_Dnmt3b_Het_L003", 
+  # E12.5  
+  # "E125_DNMT3A_HET_A_L001",
+  # "E125_DNMT3A_HET_A_L003",
+  # "E125_DNMT3A_KO_B_L002",
+  # "E125_DNMT3A_KO_E_L004",
+  # "A_E12_5_D3a_Het_L001",
+  # "B_E12_5_D3a_KO_L002",
+  
+  
+  # E8.5  
+  # "SIGAA6_E85_2_Dnmt3aKO_Dnmt3b_WT_L001",
+  # "SIGAB6_E85_3_Dnmt3aWT_Dnmt3b_WT_L002",
+  # "SIGAC6_E85_5_Dnmt3aKO_Dnmt3b_Het_L003",
   # "SIGAD6_E85_8_Dnmt3aHet_Dnmt3b_KO_L004",
   "15_E8_5_D3A_WT_D3B_WT_L007"
   # "17_E8_5_D3A_KO_D3B_WT_L008",
   # "2_E8_5_D3A_WT_D3B_KO_L003",
   # "3_E8_5_D3A_HET_D3B_WT_L004",
   # "7_E8_5_D3A_WT_D3B_KO_L005",
-  # "8_E8_5_D3A_KO_D3B_KO_L006"
+  # "8_E8_5_D3A_KO_D3B_KO_L006",
+  # "E8_5_Dnmt1_KO_male_SIGAC8_L001",
+  # "E8_5_Dnmt1_KO_male_SIGAD8_L002",
+  # "E8_5_Dnmt1_KO_male_SIGAE8_L003",
+  # "E8_5_Dnmt1_WT_female_SIGAB8_L004",
+  # "E8_5_Dnmt1_WT_female_SIGAF8_L005",
+  # "E8_5_Dnmt3ab_WT_female_SIGAA8_L006",
+  # "SIGAH10_Dnmt3ab_WT_L002",
+  # "SIGAH11_Dnmt3ab_WT_L003",
+  # "SIGAH9_Dnmt3a_KO_Dnmt3b_Het_L001"
 )
 ```
 
 Update sample metadata
 ```{r load_metadata, echo=FALSE}
-sample_metadata <- sample_metadata %>%
-  .[batch%in%opts$batches]
+sample_metadata <- fread(io$metadata) %>%
+  .[pass_QC==TRUE & batch%in%opts$batches]
 table(sample_metadata$batch)
+```
+
+```{r}
+table(sample_metadata$celltype.mapped)
 ```
 
 # Load data
@@ -48,26 +71,25 @@ dim(sce)
 ```
 
 ```{r}
-sce$celltype.mapped <- sample_metadata$celltype.mapped2
+sce$celltype.mapped <- sample_metadata$celltype.mapped
 ```
 
 Change gene names from ENSEMBL to symbols
 ```{r}
-gene_metadata <- fread(io$gene_metadata) %>% .[,c("ens_id","symbol")] %>%
-  .[symbol!="" & ens_id%in%rownames(sce)]
-
-gene_metadata$symbol[duplicated(gene_metadata$symbol)]
-
-sce <- sce[rownames(sce)%in%gene_metadata$ens_id,]
-foo <- gene_metadata$symbol; names(foo) <- gene_metadata$ens_id
-new.names <- foo[rownames(sce)]
-
-# Sanity cehcks
-stopifnot(sum(is.na(new.names))==0)
-stopifnot(sum(duplicated(new.names))==0)
-
-# Set names
-rownames(sce) <- new.names
+# gene_metadata <- fread(io$gene_metadata) %>% .[,c("ens_id","symbol")] %>%
+#   .[symbol!="" & ens_id%in%rownames(sce)] %>%
+#   .[!duplicated(symbol)]
+# 
+# sce <- sce[rownames(sce)%in%gene_metadata$ens_id,]
+# foo <- gene_metadata$symbol; names(foo) <- gene_metadata$ens_id
+# new.names <- foo[rownames(sce)]
+# 
+# # Sanity cehcks
+# stopifnot(sum(is.na(new.names))==0)
+# stopifnot(sum(duplicated(new.names))==0)
+# 
+# # Set names
+# rownames(sce) <- new.names
 ```
 
 # Parse data
@@ -80,6 +102,7 @@ hvgs <- rownames(decomp)[decomp$p.value <= 0.05]
 
 # Subset SingleCellExperiment
 sce_filt <- sce[hvgs,]
+dim(sce_filt)
 ```
 
 Use gene markers as HVGs
@@ -119,11 +142,15 @@ cor(sce_filt$nFeature_RNA, reducedDim(sce_filt,"PCA"))
 
 Plot PCA
 ```{r}
-plotPCA(sce_filt, colour_by="celltype.mapped", ncomponents = c(2,4)) +
-  scale_fill_manual(values=opts$celltype.colors) +
+plotPCA(sce_filt, colour_by="celltype.mapped", ncomponents = c(1,3)) +
+  scale_color_manual(values=opts$celltype.colors) +
   theme(
     legend.position = "none"
   )
+```
+Filter PCS
+```{r}
+reducedDim(sce_filt, "PCA") <- reducedDim(sce_filt, "PCA")[,-3]
 ```
 
 # UMAP
@@ -146,7 +173,7 @@ to.plot <- reducedDim(sce_filt,"UMAP") %>% as.data.table %>%
 
 ```{r}
 p <- ggplot(to.plot, aes(x=V1, y=V2, fill=celltype.mapped)) +
-  geom_point(size=1.5, shape=21, stroke=0.2) +
+  geom_point(size=1, shape=21, stroke=0.2) +
   # scale_color_manual(values=opts$stage.colors) +
   scale_fill_manual(values=opts$celltype.colors) +
   theme_classic() +
@@ -164,7 +191,11 @@ print(p)
 ```
 
 ```{r}
-ggplot(to.plot, aes(x=V1, y=V2, fill=log2(nCount_RNA))) +
+plotUMAP(sce_filt, colour_by="Car7")
+```
+
+```{r}
+ggplot(to.plot, aes(x=V1, y=V2, fill=log10(nFeature_RNA))) +
   geom_point(size=1.5, shape=21, stroke=0.2) +
   theme_classic() +
   theme(

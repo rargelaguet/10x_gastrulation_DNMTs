@@ -1,6 +1,4 @@
-library(ggpubr)
-library(SingleCellExperiment)
-library(scran)
+suppressPackageStartupMessages(library(ggpubr))
 
 #####################
 ## Define settings ##
@@ -10,31 +8,47 @@ library(scran)
 source("/Users/ricard/10x_gastrulation_DNMTs/settings.R")
 
 # I/O
-io$outdir <- paste0(io$basedir,"/results/qc")
+io$outdir <- paste0(io$basedir,"/results/qc/sixth_batch")
 # io$seurat <- paste0(io$basedir,"/processed/all_batches/seurat.rds")
 # io$metadata <- paste0(io$basedir,"/processed/all_batches/metadata.txt.gz")
 
 # Options
-opts$nFeature_RNA <- 2000
-opts$nCount_RNA <- 4000
-opts$percent.mt <- 10
+opts$nFeature_RNA <- 1000
+opts$nCount_RNA <- 2000
+opts$percent.mt <- 15
 
 ###############
 ## Load data ##
 ###############
 
-# Load Seurat object
-srat <- readRDS(io$seurat)
-
-# Load cell metadata
-metadata <- fread(io$metadata)
+# io$metadata <- "/Users/ricard/data/10x_gastrulation_DNMTs/processed/all_batches/metadata.txt.gz"
+io$metadata <- "/Users/ricard/data/10x_gastrulation_DNMTs/processed/sixth_batch/metadata.txt.gz"
+metadata <- fread(io$metadata) %>% 
+    # .[batch%in%opts$batches] %>%
+    .[,pass_QC:=nFeature_RNA>opts$nFeature_RNA & nCount_RNA>opts$nCount_RNA & percent.mt<opts$percent.mt]
 
 #####################
 ## Plot QC metrics ##
 #####################
 
-to.plot <- srat@meta.data %>% as.data.table %>%
-    melt(id.vars=c("batch","cell"), measure.vars=c("nCount_RNA","nFeature_RNA","percent.mt"))
+to.plot <- metadata %>%
+    .[,log_nCount_RNA:=log2(nCount_RNA)] %>%
+    melt(id.vars=c("batch","cell"), measure.vars=c("log_nCount_RNA","nFeature_RNA","percent.mt"))
+
+## Box plot 
+
+p <- ggboxplot(to.plot, x="batch", y="value") +
+    facet_wrap(~variable, scales="free_y", nrow=3) +
+    theme(
+        axis.text.x = element_text(colour="black",size=rel(0.7), angle=90, hjust=1, vjust=0.5),  
+        axis.title.x = element_blank()
+    )
+
+pdf(sprintf("%s/qc_metrics_boxplot.pdf",io$outdir), width=6, height=12, useDingbats = F)
+print(p)
+dev.off()
+
+## histogram 
 
 tmp <- data.table(
     variable = c("nCount_RNA", "nFeature_RNA", "percent.mt"),
@@ -54,48 +68,29 @@ pdf(sprintf("%s/qc_metrics.pdf",io$outdir), width=12, height=5, useDingbats = F)
 print(p)
 dev.off()
 
-#############################
-## Calculate doublet score ##
-#############################
 
-# opts$max_doublet_score <- 10000
-# 
-# sce <- as.SingleCellExperiment(srat)
-# metadata[,doublet_score:=doubletCells(sce)]
-# 
-# # Plot
-# to.plot <- metadata %>% 
-#     melt(id.vars=c("batch","cell"), measure.vars=c("doublet_score"))
-# 
-# p <- gghistogram(to.plot, x="value", fill="batch", bins=50) +
-#     geom_vline(xintercept=opts$max_doublet_score, linetype="dashed") +
-#     theme(
-#         axis.text =  element_text(size=rel(0.8)),
-#         legend.position = "right"
-#     )
-# 
-# table(metadata$doublet_score<opts$max_doublet_score)
-# 
-# pdf(sprintf("%s/doublet_score.pdf",io$outdir), width=9, height=5, useDingbats = F)
-# print(p)
-# dev.off()
 
-############
-## Filter ##
-############
+########################################################
+## Plot fraction of cells that pass QC for each batch ##
+########################################################
 
-cells <- metadata %>%
-    .[ nFeature_RNA>opts$nFeature_RNA & nCount_RNA>opts$nCount_RNA & percent.mt<opts$percent.mt,cell]
-length(cells) / nrow(srat@meta.data)
+to.plot <- metadata %>%
+    .[,mean(pass_QC),by="batch"]
 
-# Subset cells that pass quality control
-metadata[,pass_QC:=cell%in%cells]
-srat <- srat[,cells]
+p <- ggbarplot(to.plot, x="batch", y="V1", fill="gray70") +
+    labs(x="", y="Fraction of cells that pass QC") +
+    # facet_wrap(~stage)
+    theme(
+        axis.text.x = element_text(colour="black",size=rel(0.75), angle=90, hjust=1, vjust=0.5)
+    )
+
+pdf(sprintf("%s/qc_metrics_barplot.pdf",io$outdir), width=9, height=7, useDingbats = F)
+print(p)
+dev.off()
 
 ##########
 ## Save ##
 ##########
 
-saveRDS(srat, io$seurat)
 fwrite(metadata, io$metadata, quote=F, na="NA", sep="\t")
 

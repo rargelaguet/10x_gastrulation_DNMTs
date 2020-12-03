@@ -32,14 +32,9 @@ opts$batches <- c(
 
 Update sample metadata
 ```{r load_metadata, echo=FALSE}
-sample_metadata <- sample_metadata %>%
-  .[batch%in%opts$batches]
+sample_metadata <- fread(io$metadata) %>%
+  .[pass_QC==TRUE & batch%in%opts$batches]
 table(sample_metadata$batch)
-```
-
-```{r}
-sample_metadata <- sample_metadata[grepl("Erythroid",celltype.mapped)]
-table(sample_metadata$celltype.mapped)
 ```
 
 # Load data
@@ -87,24 +82,24 @@ Scale (only if using logNorm)
 
 Change gene names from ENSEMBL to symbols
 ```{r}
-gene_metadata <- fread(io$gene_metadata) %>% .[,c("ens_id","symbol")] %>%
-  .[symbol!="" & ens_id%in%rownames(seurat)]
-
-seurat <- seurat[rownames(seurat)%in%gene_metadata$ens_id,]
-foo <- gene_metadata$symbol; names(foo) <- gene_metadata$ens_id
-new.names <- foo[rownames(seurat)]
-
-# Sanity cehcks
-stopifnot(sum(is.na(new.names))==0)
-stopifnot(sum(duplicated(new.names))==0)
-
-new.names[duplicated(new.names)]
-
-# Rename seurat objects manually
-rownames(seurat@assays$SCT@counts) <- new.names
-rownames(seurat@assays$SCT@data) <- new.names
-# rownames(seurat@assays$SCT@scale.data) <- new.names
-seurat[["SCT"]]@meta.features <- data.frame(row.names=new.names)
+# gene_metadata <- fread(io$gene_metadata) %>% .[,c("ens_id","symbol")] %>%
+#   .[symbol!="" & ens_id%in%rownames(seurat)]
+# 
+# seurat <- seurat[rownames(seurat)%in%gene_metadata$ens_id,]
+# foo <- gene_metadata$symbol; names(foo) <- gene_metadata$ens_id
+# new.names <- foo[rownames(seurat)]
+# 
+# # Sanity cehcks
+# stopifnot(sum(is.na(new.names))==0)
+# stopifnot(sum(duplicated(new.names))==0)
+# 
+# new.names[duplicated(new.names)]
+# 
+# # Rename seurat objects manually
+# rownames(seurat@assays$SCT@counts) <- new.names
+# rownames(seurat@assays$SCT@data) <- new.names
+# # rownames(seurat@assays$SCT@scale.data) <- new.names
+# seurat[["SCT"]]@meta.features <- data.frame(row.names=new.names)
 ```
 
 
@@ -112,7 +107,7 @@ seurat[["SCT"]]@meta.features <- data.frame(row.names=new.names)
 
 Option 1, using FindVariableFeatures
 ```{r}
-seurat <- FindVariableFeatures(seurat, selection.method = 'vst', nfeatures = 1000, assay = "SCT")
+seurat <- FindVariableFeatures(seurat, selection.method = 'vst', nfeatures = 1500, assay = "SCT")
 # length(seurat@assays$RNA@var.features)
 ```
 
