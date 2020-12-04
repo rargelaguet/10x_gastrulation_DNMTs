@@ -107,6 +107,7 @@ celltype.colors <- opts$celltype.colors[names(opts$celltype.colors)%in%unique(sc
 all(unique(sce_filt$celltype.mapped) %in% names(celltype.colors))
 all(names(celltype.colors)%in%unique(sce_filt$celltype.mapped))
 sce_filt$celltype.mapped <- factor(sce_filt$celltype.mapped, levels=names(celltype.colors))
+
 celltype_color_fun <- function(n){
   return(celltype.colors)
 }
@@ -139,8 +140,12 @@ ecm <- ExperimentColorMap(
   # global_continuous <- list()
 )
 
+#########################
+## Define iSEE options ##
+#########################
 
-
+str(iSEEOptions$get()) 
+iSEEOptions(color.maxlevels)
 ##############
 ## Run iSEE ##
 ##############
