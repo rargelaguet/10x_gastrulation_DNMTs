@@ -1,12 +1,13 @@
 source("/Users/ricard/10x_gastrulation_DNMTs/settings.R")
 
-io$metadata <- "/Users/ricard/data/10x_gastrulation_DNMTs/processed/sixth_batch/metadata.txt.gz"
-sample_metadata <- fread(io$metadata)
+sample_metadata.1 <- fread("/Users/ricard/data/10x_gastrulation_DNMTs/processed/sixth_batch/metadata.txt.gz")
+sample_metadata.2 <- fread("/Users/ricard/data/10x_gastrulation_DNMTs/sample_metadata.txt.gz")
 
-sample_metadata[,class:=stringr::str_replace_all(batch,opts$batch.to.class)]
-unique(sample_metadata$class)
+colnames(sample_metadata.1)
+colnames(sample_metadata.2)
 
-sample_metadata[,stage:="E8.5"] %>% .[grep("E12.5|E125|E12_5",batch),stage:="E12.5"]
-unique(sample_metadata$stage)
+cols <- c("cell", "batch", "barcode", "nFeature_RNA", "nCount_RNA", "percent.mt", "pass_QC", "class", "stage", "celltype.mapped")
 
-fwrite(sample_metadata, io$metadata, sep="\t", quote=F, na="NA")
+sample_metadata <- rbind(sample_metadata.1[,cols,with=F], sample_metadata.2[,cols,with=F])
+
+fwrite(sample_metadata, "/Users/ricard/data/10x_gastrulation_DNMTs/sample_metadata.txt.gz", sep="\t", quote=F, na="NA")

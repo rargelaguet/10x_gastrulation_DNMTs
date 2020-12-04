@@ -5,13 +5,13 @@
 
 if (grepl("ricard",Sys.info()['nodename'])) {
   source("/Users/ricard/10x_gastrulation_DNMTs/settings.R")
-  io$script <- "/Users/ricard/10x_gastrulation_DNMTs/dimensionality_reduction/dimensionality_reduction_sce.R"
+  io$script <- "/Users/ricard/10x_gastrulation_DNMTs/processing/doublets/doublet_detection.R"
 } else {
   source("/homes/ricard/10x_gastrulation_DNMTs/settings.R")
-  io$script <- "/homes/ricard/10x_gastrulation_DNMTs/dimensionality_reduction/dimensionality_reduction_sce.R"
-  io$tmpdir <- paste0(io$basedir,"/results/dimensionality_reduction/tmp"); dir.create(io$tmpdir)
+  io$script <- "/homes/ricard/10x_gastrulation_DNMTs/processing/doublets/doublet_detection.R"
+  io$tmpdir <- paste0(io$basedir,"/results/doublets/tmp"); dir.create(io$tmpdir)
 }
-io$outdir <- paste0(io$basedir,"/results/dimensionality_reduction")
+io$outdir <- paste0(io$basedir,"/results/doublets")
 
 ####################
 ## Define options ##
@@ -46,8 +46,8 @@ opts$batches <- c(
   "E8_5_Dnmt3ab_WT_female_SIGAA8_L006",
   "SIGAH10_Dnmt3ab_WT_L002",
   "SIGAH11_Dnmt3ab_WT_L003",
-  "SIGAH9_Dnmt3a_KO_Dnmt3b_Het_L001"
-  # "SIGAG5_9_dnmt3ab_DKO_L005"
+  "SIGAH9_Dnmt3a_KO_Dnmt3b_Het_L001",
+  "SIGAG5_9_dnmt3ab_DKO_L005"
 )
 
 # opts$batches <- "SIGAA6_E85_2_Dnmt3aKO_Dnmt3b_WT_L001"
@@ -57,32 +57,25 @@ opts$test_mode <- FALSE
 
 
 # Number of highly variable genes
-opts$features <- c(1000,2000)
-
-# Number of PCs
-opts$npcs <- c(25,50)
+opts$hybrid_score_threshold <- 1.0
 
 #########
 ## Run ##
 #########
 
 for (i in opts$batches) {
-  for (j in opts$features) {
-    for (k in opts$npcs) {
-      
-      # Define LSF command
-      if (grepl("ricard",Sys.info()['nodename'])) {
-        lsf <- ""
-      } else if (grepl("ebi",Sys.info()['nodename'])) {
-        lsf <- sprintf("bsub -M 20000 -n 1 -o %s/%s_%d_%d.txt", io$tmpdir,i,j,k)
-      }
-      cmd <- sprintf("%s Rscript %s --batches %s --features %d --npcs %d --outdir %s", lsf, io$script, i, j, k, io$outdir)
-      
-      if (isTRUE(opts$test_mode)) cmd <- paste0(cmd, " --test")
-      
-      # Run
-      print(cmd)
-      system(cmd)
-    }
+  
+  # Define LSF command
+  if (grepl("ricard",Sys.info()['nodename'])) {
+    lsf <- ""
+  } else if (grepl("ebi",Sys.info()['nodename'])) {
+    lsf <- sprintf("bsub -M 20000 -n 1 -o %s/%s_%d_%d.txt", io$tmpdir,i,j,k)
   }
+  cmd <- sprintf("%s Rscript %s --batches %s --hybrid_score_threshold %s --outdir %s", lsf, io$script, i, opts$hybrid_score_threshold, io$outdir)
+  
+  if (isTRUE(opts$test_mode)) cmd <- paste0(cmd, " --test")
+  
+  # Run
+  print(cmd)
+  system(cmd)
 }

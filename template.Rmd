@@ -1,0 +1,40 @@
+
+# Load libraries
+
+```{r}
+```
+
+# Define settings
+
+```{r}
+if (grepl("ricard",Sys.info()['nodename'])) {
+  source("/Users/ricard/gastrulation_DNMTs/settings.R")
+} else if (grepl("ebi",Sys.info()['nodename'])) {
+  source("/homes/ricard/gastrulation_DNMTs/settings.R")
+} else {
+  stop("Computer not recognised")
+}
+```
+
+Define I/O
+```{r}
+io$outdir <- paste0(io$basedir,"/results/differential")
+```
+
+Define options
+```{r}
+opts$test <- TRUE
+```
+
+Update metadata
+```{r}
+if (opts$test) sample_metadata <- head(sample_metadata,n=100)
+```
+
+# Load data
+
+Load SingleCellExperiment object
+```{r}
+sce <- readRDS(io$sce)
+dim(sce)
+```

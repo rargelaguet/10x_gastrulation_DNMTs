@@ -13,13 +13,13 @@ if (grepl("ricard",Sys.info()['nodename'])) {
 io$outdir <- paste0(io$basedir,"/results/individual_genes")
 
 # Define cell types to plot
-opts$celltypes = c(
+opts$celltypes <- c(
 	# "Epiblast",
 	# "Primitive_Streak",
 	# "Caudal_epiblast",
 	# "PGC",
 	# "Anterior_Primitive_Streak",
-	# "Notochord",
+	"Notochord",
 	"Def._endoderm",
 	"Gut",
 	# "Nascent_mesoderm",
@@ -48,44 +48,44 @@ opts$celltypes = c(
 	"Spinal_cord",
 	"Surface_ectoderm",
 	# "Visceral_endoderm",
-	"ExE_endoderm"
-	# "ExE_ectoderm"
+	"ExE_endoderm",
+	"ExE_ectoderm"
 	# "Parietal_endoderm"
 )
 
 # Define classes to plot
-# opts$classes <- c(
-#   # "E12.5_Dnmt3aWT_Dnmt3bHET",
-#   # "E12.5_Dnmt3aWT_Dnmt3bKO",
-#   # "E12.5_Dnmt3aHET_Dnmt3bWT",
-#   # "E12.5_Dnmt3aKO_Dnmt3bWT",
-#   "E8.5_Dnmt3aKO_Dnmt3bWT", 
-#   "E8.5_Dnmt3aWT_Dnmt3bWT", 
-#   "E8.5_Dnmt3aHET_Dnmt3bKO", 
-#   "E8.5_Dnmt3aHET_Dnmt3bWT", 
-#   "E8.5_Dnmt3aKO_Dnmt3bHET", 
-#   "E8.5_Dnmt3aKO_Dnmt3bKO", 
-#   "E8.5_Dnmt3aWT_Dnmt3bKO"
-# )
+opts$classes <- c(
+  # "E12.5_Dnmt3aWT_Dnmt3bHET",
+  # "E12.5_Dnmt3aWT_Dnmt3bKO",
+  # "E12.5_Dnmt3aHET_Dnmt3bWT",
+  # "E12.5_Dnmt3aKO_Dnmt3bWT",
+  "E8.5_Dnmt3aKO_Dnmt3bWT",
+  "E8.5_Dnmt3aWT_Dnmt3bWT",
+  # "E8.5_Dnmt3aHET_Dnmt3bKO",
+  # "E8.5_Dnmt3aHET_Dnmt3bWT",
+  # "E8.5_Dnmt3aKO_Dnmt3bHET",
+  "E8.5_Dnmt3aKO_Dnmt3bKO",
+  "E8.5_Dnmt3aWT_Dnmt3bKO"
+)
 
 # Define batches to plot
-opts$batches <- c(
-  "SIGAA6_E85_2_Dnmt3aKO_Dnmt3b_WT_L001", 
-  "SIGAB6_E85_3_Dnmt3aWT_Dnmt3b_WT_L002", 
-  # "SIGAC6_E85_5_Dnmt3aKO_Dnmt3b_Het_L003", 
-  # "SIGAD6_E85_8_Dnmt3aHet_Dnmt3b_KO_L004",
-  "15_E8_5_D3A_WT_D3B_WT_L007",
-  "17_E8_5_D3A_KO_D3B_WT_L008",
-  "2_E8_5_D3A_WT_D3B_KO_L003",
-  # "3_E8_5_D3A_HET_D3B_WT_L004",
-  "7_E8_5_D3A_WT_D3B_KO_L005",
-  "8_E8_5_D3A_KO_D3B_KO_L006"
-)
+# opts$batches <- c(
+#   "SIGAA6_E85_2_Dnmt3aKO_Dnmt3b_WT_L001", 
+#   "SIGAB6_E85_3_Dnmt3aWT_Dnmt3b_WT_L002", 
+#   # "SIGAC6_E85_5_Dnmt3aKO_Dnmt3b_Het_L003", 
+#   # "SIGAD6_E85_8_Dnmt3aHet_Dnmt3b_KO_L004",
+#   "15_E8_5_D3A_WT_D3B_WT_L007",
+#   "17_E8_5_D3A_KO_D3B_WT_L008",
+#   "2_E8_5_D3A_WT_D3B_KO_L003",
+#   # "3_E8_5_D3A_HET_D3B_WT_L004",
+#   "7_E8_5_D3A_WT_D3B_KO_L005",
+#   "8_E8_5_D3A_KO_D3B_KO_L006"
+# )
 
 # Update sample metadata
 sample_metadata <- sample_metadata %>% 
-  # .[class%in%opts$classes & celltype.mapped%in%opts$celltypes] %>%
-  .[batch%in%opts$batches & celltype.mapped%in%opts$celltypes] %>%
+  .[class%in%opts$classes & celltype.mapped%in%opts$celltypes] %>%
+  # .[batch%in%opts$batches & celltype.mapped%in%opts$celltypes] %>%
   .[,celltype.mapped:=factor(celltype.mapped, levels=opts$celltypes)]
 
 table(sample_metadata$class)
@@ -103,26 +103,24 @@ sce <- readRDS(io$sce)[,sample_metadata$cell]
 sce <- sce[rowMeans(counts(sce))>0,]
 
 # Load gene metadata
-gene_metadata <- fread(io$gene_metadata) %>%
-  .[symbol!="" & ens_id%in%rownames(sce)]
+# gene_metadata <- fread(io$gene_metadata) %>%
+#   .[symbol!="" & ens_id%in%rownames(sce)]
 
 ################
 ## Parse data ##
 ################
 
 ## Normalisation
-# sce1 <- batchelor::multiBatchNorm(sce, batch=as.factor(sce$batch))
-sce <- scater::logNormCounts(sce)
+# sce <- batchelor::multiBatchNorm(sce, batch=as.factor(sce$batch))
+# sce <- scater::logNormCounts(sce)
 
 # Rename genes
-new.names <- gene_metadata$symbol
-names(new.names) <- gene_metadata$ens_id
-sce <- sce[rownames(sce) %in% names(new.names),]
-rownames(sce) <- new.names[rownames(sce)]
-
-# Sanity cehcks
-stopifnot(sum(is.na(new.names))==0)
-stopifnot(sum(duplicated(new.names))==0)
+# new.names <- gene_metadata$symbol
+# names(new.names) <- gene_metadata$ens_id
+# sce <- sce[rownames(sce) %in% names(new.names),]
+# rownames(sce) <- new.names[rownames(sce)]
+# stopifnot(sum(is.na(new.names))==0)
+# stopifnot(sum(duplicated(new.names))==0)
 
 ##########
 ## Plot ##
