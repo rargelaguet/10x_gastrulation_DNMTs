@@ -45,7 +45,7 @@ opts$batches <- c(
   # "E8_5_Dnmt1_WT_female_SIGAB8_L004",
   # "E8_5_Dnmt1_WT_female_SIGAF8_L005",
   # "E8_5_Dnmt3ab_WT_female_SIGAA8_L006",
-  # "SIGAH10_Dnmt3ab_WT_L002",
+  "SIGAH10_Dnmt3ab_WT_L002"
   # "SIGAH11_Dnmt3ab_WT_L003",
   # "SIGAH9_Dnmt3a_KO_Dnmt3b_Het_L001"
 )
@@ -195,7 +195,14 @@ plotUMAP(sce_filt, colour_by="T")
 ```
 
 ```{r}
-ggplot(to.plot, aes(x=V1, y=V2, fill=nFeature_RNA)) +
+doublets.dt <- fread("/Users/ricard/data/10x_gastrulation_DNMTs/results/doublets/doublets.txt.gz") %>%
+  .[batch%in%opts$batches]
+to.plot <- to.plot %>% merge(doublets.dt,by=c("cell","batch"))
+colnames(to.plot)
+```
+
+```{r}
+ggplot(to.plot, aes(x=V1, y=V2, fill=hybrid_call)) +
   geom_point(size=1.5, shape=21, stroke=0.2) +
   theme_classic() +
   theme(

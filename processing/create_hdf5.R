@@ -65,6 +65,8 @@ h5write(m, file = io$h5File, name = "counts")
 #################################
 
 h5.uncmp <- HDF5Array(io$h5File, name = "counts", as.sparse=TRUE)
+h5read("myhdf5file.h5", "foo/S", index=list(2:3,c(1,2,4,5)))
+
 class(h5.uncmp)
 
 tenx.uncmp <- SingleCellExperiment(

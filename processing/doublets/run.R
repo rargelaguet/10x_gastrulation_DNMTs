@@ -69,7 +69,7 @@ for (i in opts$batches) {
   if (grepl("ricard",Sys.info()['nodename'])) {
     lsf <- ""
   } else if (grepl("ebi",Sys.info()['nodename'])) {
-    lsf <- sprintf("bsub -M 20000 -n 1 -o %s/%s_%d_%d.txt", io$tmpdir,i,j,k)
+    lsf <- sprintf("bsub -M 30000 -n 1 -o %s/%s_%s.txt", io$tmpdir,i,opts$hybrid_score_threshold)
   }
   cmd <- sprintf("%s Rscript %s --batches %s --hybrid_score_threshold %s --outdir %s", lsf, io$script, i, opts$hybrid_score_threshold, io$outdir)
   
