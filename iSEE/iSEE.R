@@ -145,7 +145,9 @@ ecm <- ExperimentColorMap(
 #########################
 
 str(iSEEOptions$get()) 
-iSEEOptions(color.maxlevels)
+iSEEOptions()
+iSEEOptions$set(color.maxlevels=40)
+
 ##############
 ## Run iSEE ##
 ##############

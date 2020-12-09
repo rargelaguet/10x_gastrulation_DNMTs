@@ -57,21 +57,48 @@ h5createDataset(
   level = 0, 
   storage.mode = "integer"
 )
-h5write(m, file = io$h5File, name = "counts")
+h5write(m, io$h5File, name = "counts")
 
+
+# print(object.size(m), units="auto")
+
+#################
+## HDF5 matrix ##
+#################
+
+# Does not read it into memory
+m.hdf5 <- HDF5Array(io$h5File, name = "counts", as.sparse=TRUE)
+class(m.hdf5)
+dim(m.hdf5)
+print(object.size(m.hdf5), units="auto")
+is(m.hdf5, "DelayedArray")
+
+# Reads it into memory
+m.hdf5 <- h5read(io$h5File, "counts")
+class(m.hdf5)
+dim(m.hdf5)
+print(object.size(m.hdf5), units="auto")
+
+colnames(m.hdf5) <- colnames(sce)
+rownames(m.hdf5) <- rownames(sce)
+
+################################
+## Create DelayedArray matrix ##
+################################
+
+library(DelayedArray)
+
+foo <- m.hdf5[,1:100]
 
 #################################
 ## Create SingleCellExperiment ##
 #################################
 
-h5.uncmp <- HDF5Array(io$h5File, name = "counts", as.sparse=TRUE)
-h5read("myhdf5file.h5", "foo/S", index=list(2:3,c(1,2,4,5)))
 
-class(h5.uncmp)
-
-tenx.uncmp <- SingleCellExperiment(
-    list(counts = h5.uncmp), 
-    rowData = rowData(tenx), 
-    colData = colData(tenx)
+sce.hdf5 <- SingleCellExperiment(
+    list(counts = m.hdf5), 
+    rowData = rowData(sce), 
+    colData = colData(sce)
 )
+print(object.size(sce.hdf5), units="auto")
 

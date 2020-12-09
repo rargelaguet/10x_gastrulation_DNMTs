@@ -1,4 +1,17 @@
 suppressPackageStartupMessages(library(Seurat))
+suppressPackageStartupMessages(library(argparse))
+
+#####################
+## Define arguments ##
+#####################
+
+p <- ArgumentParser(description='')
+p$add_argument('--inputdir',        type="character",                    help='Input directory')
+p$add_argument('--outputdir',       type="character",                    help='Output directory')
+p$add_argument('--test',            action="store_true",                 help='Testing mode')
+p$add_argument('--samples',         type="character",       nargs="+",   help='Samples')
+args <- p$parse_args(commandArgs(TRUE))
+
 
 #####################
 ## Define settings ##
@@ -10,43 +23,45 @@ if (grepl("ricard",Sys.info()['nodename'])) {
   source("/homes/ricard/10x_gastrulation_DNMTs/settings.R")
 }
 
-# Define options
-opts$test <- FALSE
+## START TEST ##
+# args <- list()
+# args$inputdir <- paste0(io$basedir,"/original/all_batches")
+# args$outputdir <- paste0(io$basedir,"/processed/all_batches")
+# args$samples <- opts$batches
+# args$test <- TRUE
+## END TEST ##
 
-# Define I/O
-io$inputdir <- paste0(io$basedir,"/original/sixth_batch")
-io$outputdir <- paste0(io$basedir,"/processed/sixth_batch")
 
 ##############################
 ## Load and merge data sets ##
 ##############################
 
-opts$batches <- "SIGAG5_9_dnmt3ab_DKO_L005"
-if (opts$test) opts$batches <- head(opts$batches,n=2)
+stopifnot(args$samples%in%opts$batches)
+if (args$test) args$samples <- head(args$samples,n=2)
 
 mtx <- list()
 cell.info <- list()
 gene.info <- list()
 
-for (i in opts$batches) {
+for (i in args$samples) {
   print(i)
     
   # Load gene metadata
-  gene.loc <- sprintf("%s/%s_features.tsv.gz",io$inputdir,i)
+  gene.loc <- sprintf("%s/%s_features.tsv.gz",args$inputdir,i)
   gene.info[[i]] <- read.delim(gene.loc, header = FALSE, colClasses = "character", stringsAsFactors = FALSE, sep="\t")[,c(1,2)]
   colnames(gene.info[[i]]) <- c("ens_id","symbol")
   rownames(gene.info[[i]]) <- NULL
   
   # Load cell metadata
-  barcode.loc <- sprintf("%s/%s_barcodes.tsv.gz",io$inputdir,i)
+  barcode.loc <- sprintf("%s/%s_barcodes.tsv.gz",args$inputdir,i)
   cell.info[[i]] <- read.delim(barcode.loc, header = FALSE, colClasses = "character", stringsAsFactors = FALSE, sep="\t")
   colnames(cell.info[[i]]) <- c("barcode")
   cell.info[[i]]$batch <- i
   cell.info[[i]]$cell <- sprintf("%s_%s",i,cell.info[[i]]$barcode)
   
   # Load matrix  
-  matrix.loc <- sprintf("%s/%s_matrix.mtx.gz",io$inputdir,i)
-  # matrix.loc <- sprintf("%s/%s/soup/soupX_adjusted_matrix.mtx.gz",io$inputdir,i)
+  matrix.loc <- sprintf("%s/%s_matrix.mtx.gz",args$inputdir,i)
+  # matrix.loc <- sprintf("%s/%s/soup/soupX_adjusted_matrix.mtx.gz",args$inputdir,i)
   mtx[[i]] <- Matrix::readMM(matrix.loc)
   rownames(mtx[[i]]) <- gene.info[[i]]$symbol
   colnames(mtx[[i]]) <- cell.info[[i]]$barcode
@@ -56,8 +71,8 @@ for (i in opts$batches) {
 ## Sanity checks ##
 ###################
 
-# remove human genes for batches that are mapped to the mixed transcriptome
-for (i in opts$batches) {
+# remove human genes for samples that are mapped to the mixed transcriptome
+for (i in args$samples) {
   if (any(grep("mm10",gene.info[[i]]$ens_id))) {
     idx <- grep("mm10",gene.info[[i]]$ens_id)
     gene.info[[i]] <- gene.info[[i]][idx,]
@@ -136,8 +151,8 @@ srat[["percent.mt"]] <- PercentageFeatureSet(srat, pattern = "^mt-")
 metadata <- srat@meta.data %>% as.data.table %>% .[,orig.ident:=NULL] %>%
   .[,c("cell","barcode","batch","nFeature_RNA","nCount_RNA","percent.mt")]
 
-saveRDS(srat, paste0(io$outputdir,"/seurat.rds"))
-fwrite(cell.info, paste0(io$outputdir,"/cell_info.txt.gz"), quote=F, na="NA", sep="\t")
-fwrite(gene.info, paste0(io$outputdir,"/gene_info.txt.gz"), quote=F, na="NA", sep="\t")
-fwrite(metadata, paste0(io$outputdir,"/metadata.txt.gz"), quote=F, na="NA", sep="\t")
+saveRDS(srat, paste0(args$outputdir,"/seurat.rds"))
+fwrite(cell.info, paste0(args$outputdir,"/cell_info.txt.gz"), quote=F, na="NA", sep="\t")
+fwrite(gene.info, paste0(args$outputdir,"/gene_info.txt.gz"), quote=F, na="NA", sep="\t")
+fwrite(metadata, paste0(args$outputdir,"/metadata.txt.gz"), quote=F, na="NA", sep="\t")
 

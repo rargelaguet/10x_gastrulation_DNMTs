@@ -1,0 +1,101 @@
+mapping_methods:
+    - mnn
+
+experiments:
+    - second_batch
+    - third_batch
+    - fourth_batch
+
+types:
+    second_batch:
+        - DNMT3B_HET
+        - DNMT3B_KO
+    third_batch:
+        - Dnmt3aKO_Dnmt3bWT
+        - Dnmt3aWT_Dnmt3bWT
+        - Dnmt3aKO_Dnmt3bHet
+        - Dnmt3aHet_Dnmt3bKO
+    fourth_batch:
+        - E85_Dnmt3aWT_Dnmt3bKO
+        - E85_Dnmt3aHET_Dnmt3bWT
+        - E85_Dnmt3aKO_Dnmt3bKO
+        - E85_Dnmt3aWT_Dnmt3bWT
+        - E85_Dnmt3aKO_Dnmt3bWT
+        - E125_Dnmt3aHET_Dnmt3bWT
+        - E125_Dnmt3aKO_Dnmt3bWT
+
+subset_celltypes:
+    - Haematoendothelial
+    - Endoderm
+    - EpiblastPSNeuro
+    - Mesoderm
+
+scripts:
+    CreateSeurat: /nfs/research1/marioni/Leah/scNMTseq/ModelSystems/mapping_DNMT/processing/create_seurat.R
+    Plotting: /nfs/research1/marioni/Leah/scNMTseq/ModelSystems/mapping_DNMT/evaluating/plotting.R
+
+directories:
+    base: /nfs/research1/marioni/Leah/scNMTseq/ModelSystems/
+    extention: 10x_gastrulation_DNMTs_Data/
+    mapping_scripts: mapping_DNMT/mapping/
+    atlas: /nfs/research1/marioni/Leah/gastrulation10x/data/fromRpackage/
+    outfiles: mapping_DNMT/20200605_2/outfiles/
+    errfiles: mapping_DNMT/20200605_2/errfiles/
+
+settings:
+    CreateSeurat: /nfs/research1/marioni/Leah/scNMTseq/ModelSystems/mapping_DNMT/processing/settings.R
+    Mapping: /nfs/research1/marioni/Leah/scNMTseq/ModelSystems/mapping_DNMT/mapping/settings.R
+    Plotting: /nfs/research1/marioni/Leah/scNMTseq/ModelSystems/mapping_DNMT/evaluating/settings.R
+
+functions:
+    Mapping: /nfs/research1/marioni/Leah/scNMTseq/ModelSystems/mapping_DNMT/mapping/mapping_functions.R
+
+lsf:
+    Mapping:
+        memory:
+            mnn: 80000
+            liger: 80000
+            harmony: 80000
+            seurat: 800000
+        rusage:
+            mnn: 40000
+            liger: 40000
+            harmony: 40000
+            seurat: 100000
+        other:
+            seurat: -P bigmem
+            mnn: ''
+            liger: ''
+            harmony: ''
+    MappingSubset:
+        memory:
+            mnn: 80000
+            liger: 35000
+            harmony: 35000
+            seurat: 200000
+        rusage:
+            mnn: 10000
+            liger: 10000
+            harmony: 10000
+            seurat: 50000
+        other:
+            seurat: ''
+            mnn: ''
+            liger: ''
+            harmony: ''
+    CreateSeurat:
+        memory: 25000
+        rusage: 20000
+        other: ''
+    CorrectAtlas:
+        memory: 115000
+        rusage: 70000
+        other: ''
+    Plotting:
+        memory: 20000
+        rusage: 1000
+        other: ''
+    PlottingSubset:
+        memory: 10000
+        rusage: 5000
+        other: ''

@@ -1,0 +1,33 @@
+configfile: "config.yaml"
+
+# Create directories
+# shell("mkdir -p " + config["directories"]["base"]+config["directories"]["errfiles"])
+# shell("mkdir -p " + config["directories"]["base"]+config["directories"]["outfiles"])
+# for r in ["create_seurat", "Mapping", "Plotting"]:
+#     shell("mkdir -p " + config["directories"]["base"]+config["directories"]["errfiles"] + r + "/")
+#     shell("mkdir -p " + config["directories"]["base"]+config["directories"]["outfiles"] + r + "/")
+
+rule all:
+    input:
+        expand( config["directories"]["processed_data"]+"/seurat.rds")
+
+rule create_seurat:
+    input:
+        script=config["scripts"]["create_seurat"],
+        input_dir=config["directories"]["original_data"],
+        output_dir=config["directories"]["processed_data"],
+    params:
+        sample=expand("{sample}", sample=config["samples"])[:2]
+    output:
+        seurat=config["directories"]["processed_data"]+"/seurat.rds",
+        cell_info=config["directories"]["processed_data"]+"/cell_info.txt.gz",
+        gene_info=config["directories"]["processed_data"]+"/gene_info.txt.gz",
+        metadata=config["directories"]["processed_data"]+"/metadata.txt.gz"
+    params:
+        memory=config["lsf"]["create_seurat"]["memory"],
+        rusage=config["lsf"]["create_seurat"]["rusage"],
+        other=config["lsf"]["create_seurat"]["other"]
+        # outfile = config["directories"]["base"]+config["directories"]["outfiles"]+"create_seurat/{samples}.txt",
+        # errfile = config["directories"]["base"]+config["directories"]["errfiles"]+"create_seurat/{samples}.txt"
+    shell:
+        "Rscript {input.script} --inputdir {input.input_dir} --outputdir {input.output_dir} --samples {params.sample} --test"

@@ -131,10 +131,10 @@ opts$celltype.colors = c(
 opts$batches <- c(
   
   # second batch
-  "E125_DNMT3A_HET_A_L001",
-  "E125_DNMT3A_HET_A_L003",
-  "E125_DNMT3A_KO_B_L002",
-  "E125_DNMT3A_KO_E_L004",
+  # "E125_DNMT3A_HET_A_L001",
+  # "E125_DNMT3A_HET_A_L003",
+  # "E125_DNMT3A_KO_B_L002",
+  # "E125_DNMT3A_KO_E_L004",
   
   # third batch
   "SIGAA6_E85_2_Dnmt3aKO_Dnmt3b_WT_L001",
@@ -149,8 +149,8 @@ opts$batches <- c(
   "3_E8_5_D3A_HET_D3B_WT_L004",
   "7_E8_5_D3A_WT_D3B_KO_L005",
   "8_E8_5_D3A_KO_D3B_KO_L006",
-  "A_E12_5_D3a_Het_L001",
-  "B_E12_5_D3a_KO_L002",
+  # "A_E12_5_D3a_Het_L001",
+  # "B_E12_5_D3a_KO_L002",
   
   # fifth batch
   "E8_5_Dnmt1_KO_male_SIGAC8_L001",
@@ -168,10 +168,10 @@ opts$batches <- c(
 opts$batch.to.class <- c(
 
   # second batch
-  "E125_DNMT3A_HET_A_L001" = "E12.5_Dnmt3aWT_Dnmt3bHET",
-  "E125_DNMT3A_HET_A_L003" = "E12.5_Dnmt3aWT_Dnmt3bHET",
-  "E125_DNMT3A_KO_B_L002" = "E12.5_Dnmt3aWT_Dnmt3bKO",
-  "E125_DNMT3A_KO_E_L004" = "E12.5_Dnmt3aWT_Dnmt3bKO",
+  # "E125_DNMT3A_HET_A_L001" = "E12.5_Dnmt3aWT_Dnmt3bHET",
+  # "E125_DNMT3A_HET_A_L003" = "E12.5_Dnmt3aWT_Dnmt3bHET",
+  # "E125_DNMT3A_KO_B_L002" = "E12.5_Dnmt3aWT_Dnmt3bKO",
+  # "E125_DNMT3A_KO_E_L004" = "E12.5_Dnmt3aWT_Dnmt3bKO",
 
   # third batch
   "SIGAA6_E85_2_Dnmt3aKO_Dnmt3b_WT_L001" = "E8.5_Dnmt3aKO_Dnmt3bWT",
@@ -186,8 +186,8 @@ opts$batch.to.class <- c(
   "3_E8_5_D3A_HET_D3B_WT_L004" = "E8.5_Dnmt3aHET_Dnmt3bWT",
   "7_E8_5_D3A_WT_D3B_KO_L005" = "E8.5_Dnmt3aWT_Dnmt3bKO",
   "8_E8_5_D3A_KO_D3B_KO_L006" = "E8.5_Dnmt3aKO_Dnmt3bKO",
-  "A_E12_5_D3a_Het_L001" = "E12.5_Dnmt3aHET_Dnmt3bWT",
-  "B_E12_5_D3a_KO_L002"  = "E12.5_Dnmt3aKO_Dnmt3bWT ",
+  # "A_E12_5_D3a_Het_L001" = "E12.5_Dnmt3aHET_Dnmt3bWT",
+  # "B_E12_5_D3a_KO_L002"  = "E12.5_Dnmt3aKO_Dnmt3bWT ",
 
   # fifth batch
   "E8_5_Dnmt1_KO_male_SIGAC8_L001" = "E8.5_Dnmt1KO",
@@ -205,15 +205,15 @@ opts$batch.to.class <- c(
 )
 
 opts$stages <- c(
-  "E12.5",
+  # "E12.5",
   "E8.5"
 )
 
 opts$classes <- c(
-  "E12.5_Dnmt3aWT_Dnmt3bHET",
-  "E12.5_Dnmt3aWT_Dnmt3bKO",
-  "E12.5_Dnmt3aHET_Dnmt3bWT",
-  "E12.5_Dnmt3aKO_Dnmt3bWT",
+  # "E12.5_Dnmt3aWT_Dnmt3bHET",
+  # "E12.5_Dnmt3aWT_Dnmt3bKO",
+  # "E12.5_Dnmt3aHET_Dnmt3bWT",
+  # "E12.5_Dnmt3aKO_Dnmt3bWT",
   "E8.5_Dnmt3aKO_Dnmt3bWT", 
   "E8.5_WT", 
   "E8.5_Dnmt3aHET_Dnmt3bKO", 
@@ -231,3 +231,12 @@ opts$classes <- c(
 # sample_metadata <- fread(io$metadata) %>% .[pass_QC==T]# %>%
   # .[,celltype.mapped:=stringr::str_replace_all(celltype.mapped," ","_")] %>%
   # .[,celltype.mapped:=stringr::str_replace_all(celltype.mapped,"/","_")]
+
+load_SingleCellExperiment <- function(file, normalise = TRUE, features = NULL, cells = NULL, recompute_qc_metrics = FALSE) {
+  sce <- readRDS(io$sce)
+  if (!is.null(cells)) sce <- sce[,cells]
+  if (!is.null(features)) sce <- sce[features,]
+  if (normalise) sce <- logNormCounts(sce)
+  if(recompute_qc_metrics) sce <- perCellQCMetrics(sce); sce <- perFeatureQCMetrics(sce)
+  return(sce)
+}
