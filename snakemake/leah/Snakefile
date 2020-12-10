@@ -1,10 +1,10 @@
 configfile: "config.yaml"
 
-shell("mkdir -p " + config["directories"]["base"]+config["directories"]["errfiles"])
-shell("mkdir -p " + config["directories"]["base"]+config["directories"]["outfiles"])
-for r in ["CreateSeurat", "Mapping", "Plotting"]:
-    shell("mkdir -p " + config["directories"]["base"]+config["directories"]["errfiles"] + r + "/")
-    shell("mkdir -p " + config["directories"]["base"]+config["directories"]["outfiles"] + r + "/")
+# shell("mkdir -p " + config["directories"]["base"]+config["directories"]["errfiles"])
+# shell("mkdir -p " + config["directories"]["base"]+config["directories"]["outfiles"])
+# for r in ["CreateSeurat", "Mapping", "Plotting"]:
+#     shell("mkdir -p " + config["directories"]["base"]+config["directories"]["errfiles"] + r + "/")
+#     shell("mkdir -p " + config["directories"]["base"]+config["directories"]["outfiles"] + r + "/")
 
 
 rule all:

@@ -27,25 +27,32 @@ samples:
     SIGAG5_9_dnmt3ab_DKO_L005: SIGAG5_9_dnmt3ab_DKO_L005
 
 # Cluster
-directories:
-    base: /hps/nobackup2/research/stegle/users/ricard/10x_gastrulation_DNMTs
-    original_data: /hps/nobackup2/research/stegle/users/ricard/10x_gastrulation_DNMTs/original/all_batches
-    processed_data: /hps/nobackup2/research/stegle/users/ricard/10x_gastrulation_DNMTs/processed/all_batches/test
-
-
-scripts:
-    create_seurat: /homes/ricard/10x_gastrulation_DNMTs/processing/1_create_seurat.R
-    QC: /homes/ricard/10x_gastrulation_DNMTs/processing/2_QC.R
-    seurat_to_sce: /homes/ricard/10x_gastrulation_DNMTs/processing/3_seurat_to_SCE.R
-    
-# Local computer
 # directories:
-#     base: /Users/ricard/data/10x_gastrulation_DNMTs
-#     original_data: /Users/ricard/data/10x_gastrulation_DNMTs/original/all_batches
-#     processed_data: /Users/ricard/data/10x_gastrulation_DNMTs/processed/all_batches/test
+#     base: /hps/nobackup2/research/stegle/users/ricard/10x_gastrulation_DNMTs
+#     original_data: /hps/nobackup2/research/stegle/users/ricard/10x_gastrulation_DNMTs/original/all_batches
+#     processed_data: /hps/nobackup2/research/stegle/users/ricard/10x_gastrulation_DNMTs/processed/all_batches/test
 
 
 # scripts:
-#     create_seurat: /Users/ricard/10x_gastrulation_DNMTs/processing/1_create_seurat.R
-#     QC: /Users/ricard/10x_gastrulation_DNMTs/processing/2_QC.R
-#     seurat_to_sce: /Users/ricard/10x_gastrulation_DNMTs/processing/3_seurat_to_SCE.R
+#     create_seurat: /homes/ricard/10x_gastrulation_DNMTs/processing/1_create_seurat.R
+#     qc: /homes/ricard/10x_gastrulation_DNMTs/processing/2_QC.R
+#     seurat_to_sce: /homes/ricard/10x_gastrulation_DNMTs/processing/3_seurat_to_SCE.R
+
+# Local computer
+directories:
+    base: /Users/ricard/data/10x_gastrulation_DNMTs
+    original_data: /Users/ricard/data/10x_gastrulation_DNMTs/original/all_batches
+    processed_data: /Users/ricard/data/10x_gastrulation_DNMTs/processed/all_batches/test
+    results: /Users/ricard/data/10x_gastrulation_DNMTs/results
+
+
+scripts:
+    create_seurat: /Users/ricard/10x_gastrulation_DNMTs/processing/1_create_seurat.R
+    qc: /Users/ricard/10x_gastrulation_DNMTs/processing/2_QC.R
+    seurat_to_sce: /Users/ricard/10x_gastrulation_DNMTs/processing/3_seurat_to_SCE.R
+
+
+lsf:
+    create_seurat:
+        memory:
+            20000

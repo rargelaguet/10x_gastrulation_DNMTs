@@ -1,9 +1,9 @@
 suppressPackageStartupMessages(library(Seurat))
 suppressPackageStartupMessages(library(argparse))
 
-#####################
+######################
 ## Define arguments ##
-#####################
+######################
 
 p <- ArgumentParser(description='')
 p$add_argument('--inputdir',        type="character",                    help='Input directory')

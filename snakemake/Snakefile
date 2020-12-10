@@ -9,25 +9,56 @@ configfile: "config.yaml"
 
 rule all:
     input:
-        expand( config["directories"]["processed_data"]+"/seurat.rds")
+        sce=config["directories"]["processed_data"]+"/SingleCellExperiment.rds"
+    # params:
+    #     sample=expand("{sample}", sample=config["samples"])[:2]
 
 rule create_seurat:
     input:
         script=config["scripts"]["create_seurat"],
         input_dir=config["directories"]["original_data"],
         output_dir=config["directories"]["processed_data"],
-    params:
-        sample=expand("{sample}", sample=config["samples"])[:2]
     output:
         seurat=config["directories"]["processed_data"]+"/seurat.rds",
         cell_info=config["directories"]["processed_data"]+"/cell_info.txt.gz",
         gene_info=config["directories"]["processed_data"]+"/gene_info.txt.gz",
         metadata=config["directories"]["processed_data"]+"/metadata.txt.gz"
     params:
-        memory=config["lsf"]["create_seurat"]["memory"],
-        rusage=config["lsf"]["create_seurat"]["rusage"],
-        other=config["lsf"]["create_seurat"]["other"]
-        # outfile = config["directories"]["base"]+config["directories"]["outfiles"]+"create_seurat/{samples}.txt",
-        # errfile = config["directories"]["base"]+config["directories"]["errfiles"]+"create_seurat/{samples}.txt"
+        sample=expand("{sample}", sample=config["samples"])[:2]
+        # memory=config["lsf"]["create_seurat"]["memory"]
     shell:
         "Rscript {input.script} --inputdir {input.input_dir} --outputdir {input.output_dir} --samples {params.sample} --test"
+
+rule qc:
+    input:
+    	metadata=rules.create_seurat.output.metadata,
+        script=config["scripts"]["qc"],
+        output_dir=config["directories"]["results"]+"/qc"
+    output:
+        qc_metrics_boxplot=config["directories"]["results"]+"/qc/qc_metrics_boxplot.pdf",
+        qc_metrics_histogram=config["directories"]["results"]+"/qc/qc_metrics_histogram.pdf",
+        qc_metrics_barplot=config["directories"]["results"]+"/qc/qc_metrics_barplot.pdf",
+        metadata=config["directories"]["results"]+"/qc/sample_metadata_after_qc.txt.gz"
+    params:
+        sample=expand("{sample}", sample=config["samples"])[:2],
+        # memory=config["lsf"]["qc"]["memory"],
+        nFeature_RNA=1500,
+        nCount_RNA=3000,
+        percent_mt=15
+    shell:
+        "Rscript {input.script} --outputdir {input.output_dir} --samples {params.sample} --nFeature_RNA {params.nFeature_RNA} --nCount_RNA {params.nCount_RNA} --percent.mt {params.percent_mt}"
+
+
+rule seurat_to_sce:
+    input:
+        seurat=config["directories"]["processed_data"]+"/seurat.rds",
+    	metadata=rules.qc.output.metadata,
+        script=config["scripts"]["seurat_to_sce"],
+    output:
+        sce=config["directories"]["processed_data"]+"/SingleCellExperiment.rds",
+    params:
+        sample=expand("{sample}", sample=config["samples"])[:2]
+        # memory=config["lsf"]["seurat_to_sce"]["memory"],
+    shell:
+        "Rscript {input.script} --samples {params.sample} --seurat {input.seurat} --metadata {input.metadata} --outfile {output.sce} --test"
+
