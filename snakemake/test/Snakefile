@@ -9,9 +9,9 @@ configfile: "config.yaml"
 
 rule all:
     input:
-    	# config["directories"]["processed_data"]+"/seurat.rds"
+        # config["directories"]["processed_data"]+"/seurat.rds"
         # sce=config["directories"]["processed_data"]+"/SingleCellExperiment.rds"
-        expand("%s/mapping/mapping_mnn_{sample}.rds" % config["directories"]["results"], sample=config["samples"])[:2]
+        # expand("%s/mapping/mapping_mnn_{sample}.rds" % config["directories"]["results"], sample=config["samples"])[:2]
         # config["directories"]["results"]+expand("mapping/mapping_mnn_{sample}.rds", sample=config["samples"])[:2]
     # params:
     #     sample=expand("{sample}", sample=config["samples"])[:2]
@@ -34,7 +34,7 @@ rule create_seurat:
 
 rule qc:
     input:
-    	metadata=rules.create_seurat.output.metadata,
+        metadata=rules.create_seurat.output.metadata,
         script=config["scripts"]["qc"]
     output:
         qc_metrics_boxplot=config["directories"]["results"]+"/qc/qc_metrics_boxplot.pdf",
@@ -55,7 +55,7 @@ rule qc:
 rule seurat_to_sce:
     input:
         seurat=config["directories"]["processed_data"]+"/seurat.rds",
-    	metadata=rules.qc.output.metadata,
+        metadata=rules.qc.output.metadata,
         script=config["scripts"]["seurat_to_sce"],
     output:
         sce=config["directories"]["processed_data"]+"/SingleCellExperiment.rds",
@@ -66,26 +66,25 @@ rule seurat_to_sce:
         "Rscript {input.script} --samples {params.sample} --seurat {input.seurat} --metadata {input.metadata} --outfile {output.sce} --test"
 
 
-
-rule mapping:
-    input:
-        atlas_sce=config["directories"]["atlas"]+"/processed/SingleCellExperiment.rds",
-    	atlas_metadata=config["directories"]["atlas"]+"/sample_metadata.txt.gz",
-        query_sce=config["directories"]["processed_data"]+"/SingleCellExperiment.rds",
-    	query_metadata=rules.qc.output.metadata,
-        script=config["scripts"]["mapping"],
-        outdir=config["directories"]["results"]+"/mapping"
-    output:
-        config["directories"]["results"]+"/mapping/mapping_mnn_{sample}.rds",
-    params:
-        sample=expand("{sample}", sample=config["samples"])[:2],
-        atlas_stages=" ".join(["E6.5","E6.75"]),
-        # atlas_stages=["E6.5","E6.75","E7.0","E7.25","E7.5","E7.75","E8.0","E8.25","E8.5","mixed_gastrulation"]
-        npcs=25,
-        n_neighbours=25
-        memory=config["lsf"]["mapping"]["memory"],
-    shell:
-        "Rscript {input.script} --query_batches {params.sample} --atlas_stages {params.atlas_stages} --query_sce {input.query_sce} --atlas_sce {input.atlas_sce} --atlas_metadata {input.atlas_metadata} --query_metadata {input.query_metadata} --outdir {input.outdir} --npcs {params.npcs} --n_neighbours {params.n_neighbours}"
+# rule mapping:
+#     input:
+#         atlas_sce=config["directories"]["atlas"]+"/processed/SingleCellExperiment.rds",
+#         atlas_metadata=config["directories"]["atlas"]+"/sample_metadata.txt.gz",
+#         query_sce=config["directories"]["processed_data"]+"/SingleCellExperiment.rds",
+#         query_metadata=rules.qc.output.metadata,
+#         script=config["scripts"]["mapping"],
+#         outdir=config["directories"]["results"]+"/mapping"
+#     output:
+#         config["directories"]["results"]+"/mapping/mapping_mnn_{sample}.rds",
+#     params:
+#         sample=expand("{sample}", sample=config["samples"])[:2],
+#         atlas_stages=" ".join(["E6.5","E6.75"]),
+#         # atlas_stages=["E6.5","E6.75","E7.0","E7.25","E7.5","E7.75","E8.0","E8.25","E8.5","mixed_gastrulation"]
+#         npcs=25,
+#         n_neighbours=25
+#         memory=config["lsf"]["mapping"]["memory"],
+#     shell:
+#         "Rscript {input.script} --query_batches {params.sample} --atlas_stages {params.atlas_stages} --query_sce {input.query_sce} --atlas_sce {input.atlas_sce} --atlas_metadata {input.atlas_metadata} --query_metadata {input.query_metadata} --outdir {input.outdir} --npcs {params.npcs} --n_neighbours {params.n_neighbours}"
 
 
 # rule sex_assignment:
@@ -108,3 +107,32 @@ rule mapping:
 
 # (TO-DO) rule doublet_detection:
 
+npcs = [25,50]
+features = [1000,2000]
+colour_by = "sample"
+min_dist=0.3
+n_neighbors=25
+
+rule all:
+        input: expand(sprintf("%s/dimensionality_reduction/{sample}_umap_{features}_{npcs}_{n_neighbors}_{min_dist}_{colour_by}.bed" % (config["directories"]["results"]), 
+            sample=config["samples"])[:2], npcs=npcs, features=features, n_neighbors=n_neighbors, min_dist=min_dist, colour_by=colour_by)
+
+
+rule dimensionality_reduction: 
+    input:
+        sce=rules.seurat_to_sce.output.sce,
+        metadata=rules.qc.output.metadata,
+        script=config["scripts"]["dimensionality_reduction"]
+    output:
+        # X=config["directories"]["results"]+"/sex/sex_ychr_expr_per_gene.pdf",
+    params:
+        outdir=config["directories"]["results"]+"/dimensionality_reduction"
+        samples=expand("{sample}", sample=config["samples"])[:2],
+        # memory=config["lsf"]["sex"]["memory"],
+        npcs=25,
+        features=1000,
+        n_neighbors=25,
+        min_dist=0.3,
+        colour_by="batch",
+    shell:
+        "Rscript {input.script} --sce {input.sce} --metadata {input.metadata} --samples {params.samples} --npcs {params.npcs} --features {params.features} --n_neighbors {params.n_neighbors} --min_dist {params.min_dist} --colour_by {params.colour_by} --outdir {params.outdir}"

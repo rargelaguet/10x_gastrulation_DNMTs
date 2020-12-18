@@ -17,7 +17,7 @@ io$outdir <- paste0(io$basedir,"/results/dimensionality_reduction")
 ## Define options ##
 ####################
 
-opts$batches <- c(
+opts$samples <- c(
   # E12.5  
   # "E125_DNMT3A_HET_A_L001",
   # "E125_DNMT3A_HET_A_L003",
@@ -50,7 +50,7 @@ opts$batches <- c(
   # "SIGAG5_9_dnmt3ab_DKO_L005"
 )
 
-# opts$batches <- "SIGAA6_E85_2_Dnmt3aKO_Dnmt3b_WT_L001"
+# opts$samples <- "SIGAA6_E85_2_Dnmt3aKO_Dnmt3b_WT_L001"
 
 # Test mode (subsetting cells)?
 opts$test_mode <- FALSE
@@ -66,7 +66,7 @@ opts$npcs <- c(25,50)
 ## Run ##
 #########
 
-for (i in opts$batches) {
+for (i in opts$samples) {
   for (j in opts$features) {
     for (k in opts$npcs) {
       
@@ -76,7 +76,7 @@ for (i in opts$batches) {
       } else if (grepl("ebi",Sys.info()['nodename'])) {
         lsf <- sprintf("bsub -M 20000 -n 1 -o %s/%s_%d_%d.txt", io$tmpdir,i,j,k)
       }
-      cmd <- sprintf("%s Rscript %s --batches %s --features %d --npcs %d --outdir %s", lsf, io$script, i, j, k, io$outdir)
+      cmd <- sprintf("%s Rscript %s --samples %s --features %d --npcs %d --outdir %s", lsf, io$script, i, j, k, io$outdir)
       
       if (isTRUE(opts$test_mode)) cmd <- paste0(cmd, " --test")
       

@@ -232,11 +232,11 @@ opts$classes <- c(
   # .[,celltype.mapped:=stringr::str_replace_all(celltype.mapped," ","_")] %>%
   # .[,celltype.mapped:=stringr::str_replace_all(celltype.mapped,"/","_")]
 
-load_SingleCellExperiment <- function(file, normalise = TRUE, features = NULL, cells = NULL, recompute_qc_metrics = FALSE) {
+load_SingleCellExperiment <- function(file, normalise = FALSE, features = NULL, cells = NULL, recompute_qc_metrics = FALSE) {
   sce <- readRDS(io$sce)
   if (!is.null(cells)) sce <- sce[,cells]
   if (!is.null(features)) sce <- sce[features,]
   if (normalise) sce <- logNormCounts(sce)
-  if(recompute_qc_metrics) sce <- perCellQCMetrics(sce); sce <- perFeatureQCMetrics(sce)
+  # if(recompute_qc_metrics) { sce <- perCellQCMetrics(sce); sce <- perFeatureQCMetrics(sce) } 
   return(sce)
 }

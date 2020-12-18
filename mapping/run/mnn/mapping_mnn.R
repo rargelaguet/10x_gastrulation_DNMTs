@@ -11,9 +11,29 @@ suppressPackageStartupMessages(library(argparse))
 p <- ArgumentParser(description='')
 p$add_argument('--atlas_stages',    type="character",   nargs='+',  help='Atlas stage(s)')
 p$add_argument('--query_batches',   type="character",   nargs='+',  help='Query batch(es)')
+p$add_argument('--query_sce',       type="character",               help='SingleCellExperiment file for the query')
+p$add_argument('--atlas_sce',       type="character",               help='SingleCellExperiment file for the atlas')
+p$add_argument('--query_metadata',  type="character",               help='metadata file for the query')
+p$add_argument('--atlas_metadata',  type="character",               help='metadata file for the atlas')
+p$add_argument('--npcs',            type="integer",                 help='Number of principal components')
+p$add_argument('--n_neighbours',    type="integer",                 help='Number of neighbours')
 p$add_argument('--test',            action = "store_true",          help='Testing mode')
 p$add_argument('--outdir',          type="character",               help='Output directory')
 args <- p$parse_args(commandArgs(TRUE))
+
+#####################
+## Define settings ##
+#####################
+
+if (grepl("ricard",Sys.info()['nodename'])) {
+  source("/Users/ricard/10x_gastrulation_DNMTs/settings.R")
+  source("/Users/ricard/10x_gastrulation_DNMTs/mapping/run/mapping_functions.R")
+} else {
+  source("/homes/ricard/10x_gastrulation_DNMTs/settings.R")
+  source("/homes/ricard/10x_gastrulation_DNMTs/mapping/run/mapping_functions.R")
+}
+io$path2atlas <- io$atlas.basedir
+io$path2query <- io$basedir
 
 ## START TEST ##
 # args$atlas_stages <- c(
@@ -32,23 +52,14 @@ args <- p$parse_args(commandArgs(TRUE))
 # args$query_batches <- c(
 #   "SIGAA6_E85_2_Dnmt3aKO_Dnmt3b_WT_L001"
 # )
-# 
+# args$query_sce <- io$sce
+# args$atlas_sce <- io$atlas.sce
+# args$query_metadata <- io$metadata
+# args$atlas_metadata <- io$atlas.metadata
 # args$test <- TRUE
+# args$npcs <- 50
+# args$n_neighbours <- 25
 ## END TEST ##
-
-################
-## Define I/O ##
-################
-
-if (grepl("ricard",Sys.info()['nodename'])) {
-  source("/Users/ricard/10x_gastrulation_DNMTs/settings.R")
-  source("/Users/ricard/10x_gastrulation_DNMTs/mapping/run/mapping_functions.R")
-} else {
-  source("/homes/ricard/10x_gastrulation_DNMTs/settings.R")
-  source("/homes/ricard/10x_gastrulation_DNMTs/mapping/run/mapping_functions.R")
-}
-io$path2atlas <- io$atlas.basedir
-io$path2query <- io$basedir
 
 if (isTRUE(args$test)) print("Test mode activated...")
 
@@ -56,39 +67,39 @@ if (isTRUE(args$test)) print("Test mode activated...")
 ## Define options ##
 ####################
 
-opts$npcs <- 50
-opts$k <- 25
-
 ################
 ## Load atlas ##
 ################
 
-# Load SingleCellExperiment
-sce_atlas  <- readRDS(io$atlas.sce)
-
 # Load cell metadata
-meta_atlas <- fread(io$atlas.metadata) %>%
+meta_atlas <- fread(args$atlas_metadata) %>%
   .[stripped==F & doublet==F & stage%in%args$atlas_stages]
 
 # Filter
 if (isTRUE(args$test)) meta_atlas <- head(meta_atlas,n=1000)
-sce_atlas <- sce_atlas[,meta_atlas$cell] 
+
+# Load SingleCellExperiment
+# sce_atlas  <- readRDS(args$atlas_sce)
+sce_atlas <- load_SingleCellExperiment(args$atlas_sce)
+# sce_atlas <- sce_atlas[,meta_atlas$cell] 
 
 ################
 ## Load query ##
 ################
 
-# Load SingleCellExperiment
-io$sce <- "/hps/nobackup2/research/stegle/users/ricard/10x_gastrulation_DNMTs/processed/sixth_batch/SingleCellExperiment.rds"
-sce_query <- readRDS(io$sce)
 
 # Load cell metadata
-io$metadata <- "/hps/nobackup2/research/stegle/users/ricard/10x_gastrulation_DNMTs/processed/sixth_batch/metadata.txt.gz"
-meta_query <- fread(io$metadata) %>% .[pass_QC==T & batch%in%args$query_batches]
+# args$query_metadata <- "/hps/nobackup2/research/stegle/users/ricard/10x_gastrulation_DNMTs/processed/sixth_batch/metadata.txt.gz"
+meta_query <- fread(args$query_metadata) %>% .[pass_QC==T & batch%in%args$query_batches]
 
 # Filter
 if (isTRUE(args$test)) meta_query <- head(meta_query,n=1000)
-sce_query <- sce_query[,meta_query$cell]
+
+# Load SingleCellExperiment
+# io$sce <- "/hps/nobackup2/research/stegle/users/ricard/10x_gastrulation_DNMTs/processed/sixth_batch/SingleCellExperiment.rds"
+# sce_query <- readRDS(io$sce)
+sce_query <- load_SingleCellExperiment(args$query_sce, cells = meta_query$cell)
+# sce_query <- sce_query[,meta_query$cell]
 
 #############
 ## Prepare ## 
@@ -116,7 +127,7 @@ genes.intersect <- intersect(rownames(sce_query), rownames(sce_atlas))
 
 # Remove mitochondrial genes
 genes.intersect <- genes.intersect[grep("mt-",genes.intersect,invert = T)]
-genes.intersect <- genes.intersect[grep("Rik",genes.intersect,invert = T)]
+# genes.intersect <- genes.intersect[grep("Rik",genes.intersect,invert = T)]
 
 # Subset SingleCellExperiment objects
 sce_query  <- sce_query[genes.intersect,]
@@ -130,7 +141,8 @@ mapping  <- mapWrap(
   atlas_sce = sce_atlas, atlas_meta = meta_atlas,
   map_sce = sce_query, map_meta = meta_query, 
   # genes = marker_genes, 
-  npcs = opts$npcs, k = opts$k
+  npcs = args$npcs, 
+  k = args$n_neighbours
 )
 
 ##########

@@ -10,6 +10,7 @@ suppressPackageStartupMessages(library(argparse))
 
 p <- ArgumentParser(description='')
 p$add_argument('--test',            action="store_true",                 help='Testing mode')
+p$add_argument('--normalise',       action="store_true",                 help='Log-Normalise?')
 p$add_argument('--samples',         type="character",       nargs="+",   help='Samples')
 p$add_argument('--seurat',         type="character", help='Seurat object (input)')
 p$add_argument('--metadata',         type="character", help='Metadata file')
@@ -81,7 +82,9 @@ sce <- computeSumFactors(sce, clusters = clusts, sizes = new_sizes, max.cluster.
 ## Log Normalise ##
 ###################
 
-sce <- logNormCounts(sce)
+if (args$normalise) {
+	sce <- logNormCounts(sce)
+}
 
 ##########
 ## Plot ##

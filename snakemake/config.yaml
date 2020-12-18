@@ -31,12 +31,15 @@ samples:
 #     base: /hps/nobackup2/research/stegle/users/ricard/10x_gastrulation_DNMTs
 #     original_data: /hps/nobackup2/research/stegle/users/ricard/10x_gastrulation_DNMTs/original/all_batches
 #     processed_data: /hps/nobackup2/research/stegle/users/ricard/10x_gastrulation_DNMTs/processed/all_batches/test
+#     results: /hps/nobackup2/research/stegle/users/ricard/10x_gastrulation_DNMTs/results
+#     atlas: /hps/nobackup2/research/stegle/users/ricard/gasrulation10x
 
 
 # scripts:
 #     create_seurat: /homes/ricard/10x_gastrulation_DNMTs/processing/1_create_seurat.R
 #     qc: /homes/ricard/10x_gastrulation_DNMTs/processing/2_QC.R
 #     seurat_to_sce: /homes/ricard/10x_gastrulation_DNMTs/processing/3_seurat_to_SCE.R
+#     mapping: /homes/ricard/10x_gastrulation_DNMTs/mapping/run/mnn/mapping_mnn.R
 
 # Local computer
 directories:
@@ -44,12 +47,13 @@ directories:
     original_data: /Users/ricard/data/10x_gastrulation_DNMTs/original/all_batches
     processed_data: /Users/ricard/data/10x_gastrulation_DNMTs/processed/all_batches/test
     results: /Users/ricard/data/10x_gastrulation_DNMTs/results
-
+    atlas: /Users/ricard/data/gastrulation10x
 
 scripts:
     create_seurat: /Users/ricard/10x_gastrulation_DNMTs/processing/1_create_seurat.R
     qc: /Users/ricard/10x_gastrulation_DNMTs/processing/2_QC.R
     seurat_to_sce: /Users/ricard/10x_gastrulation_DNMTs/processing/3_seurat_to_SCE.R
+    mapping: /Users/ricard/10x_gastrulation_DNMTs/mapping/run/mnn/mapping_mnn.R
 
 
 lsf:
