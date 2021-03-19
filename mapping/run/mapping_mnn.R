@@ -73,15 +73,13 @@ if (isTRUE(args$test)) print("Test mode activated...")
 
 # Load cell metadata
 meta_atlas <- fread(args$atlas_metadata) %>%
-  .[stripped==F & doublet==F & stage%in%args$atlas_stages]
+  .[stripped==FALSE & doublet==FALSE & stage%in%args$atlas_stages]
 
 # Filter
 if (isTRUE(args$test)) meta_atlas <- head(meta_atlas,n=1000)
 
 # Load SingleCellExperiment
-# sce_atlas  <- readRDS(args$atlas_sce)
-sce_atlas <- load_SingleCellExperiment(args$atlas_sce)
-# sce_atlas <- sce_atlas[,meta_atlas$cell] 
+sce_atlas <- load_SingleCellExperiment(args$atlas_sce, cells=meta_atlas$cell, normalise = TRUE, remove_non_expressed_genes = TRUE)
 
 ################
 ## Load query ##
@@ -89,25 +87,17 @@ sce_atlas <- load_SingleCellExperiment(args$atlas_sce)
 
 
 # Load cell metadata
-# args$query_metadata <- "/hps/nobackup2/research/stegle/users/ricard/10x_gastrulation_DNMTs/processed/sixth_batch/metadata.txt.gz"
-meta_query <- fread(args$query_metadata) %>% .[pass_QC==T & batch%in%args$query_batches]
+meta_query <- fread(args$query_metadata) %>% .[pass_QC==TRUE & batch%in%args$query_batches]
 
 # Filter
 if (isTRUE(args$test)) meta_query <- head(meta_query,n=1000)
 
 # Load SingleCellExperiment
-# io$sce <- "/hps/nobackup2/research/stegle/users/ricard/10x_gastrulation_DNMTs/processed/sixth_batch/SingleCellExperiment.rds"
-# sce_query <- readRDS(io$sce)
-sce_query <- load_SingleCellExperiment(args$query_sce, cells = meta_query$cell)
-# sce_query <- sce_query[,meta_query$cell]
+sce_query <- load_SingleCellExperiment(args$query_sce, cells = meta_query$cell, normalise = FALSE, remove_non_expressed_genes = TRUE)
 
 #############
 ## Prepare ## 
 #############
-
-# Filter out non-expressed genes
-sce_query <- sce_query[rowSums(counts(sce_query))>10,]
-sce_atlas <- sce_atlas[rowSums(counts(sce_atlas))>10,]
 
 # Rename ensemble IDs to gene names
 gene_metadata <- fread(io$gene_metadata) %>% .[,c("ens_id","symbol")] %>%
@@ -151,3 +141,15 @@ mapping  <- mapWrap(
 
 outfile <- sprintf("%s/mapping_mnn_%s.rds",args$outdir,paste(args$query_batches,collapse="-"))
 saveRDS(mapping, outfile)
+
+##########
+## TEST ##
+##########
+
+# foo <- mapping$mapping %>% as.data.table() %>% .[,c("cell","celltype.mapped","celltype.score")]
+# bar <- fread("/Users/ricard/data/gastrulation_multiome_10x/results/rna/mapping/sample_metadata_after_mapping.txt.gz") %>% 
+#   .[,c("cell","celltype.mapped","celltype.score")]
+# foobar <- merge(foo,bar,by=c("cell"))
+# foobar[celltype.mapped.x!=celltype.mapped.y] %>% View
+# mean(foobar$celltype.mapped.x==foobar$celltype.mapped.y)
+# fwrite(foo,"/Users/ricard/data/gastrulation_multiome_10x/results/rna/mapping/E7.5_rep2_test.txt.gz")

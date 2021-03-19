@@ -1,30 +1,25 @@
-linMap <- function(x, from, to) return( (x - min(x)) / max(x - min(x)) * (to - from) + from )
-
 source("/Users/ricard/10x_gastrulation_DNMTs/settings.R")
+source("/Users/ricard/10x_gastrulation_DNMTs/utils.R")
 
 ################
 ## Define I/O ##
 ################
 
-io$outdir <- paste0(io$basedir,"/results/mapping/pdf")
+io$outdir <- paste0(io$basedir,"/results/celltype_proportions")
 
 ####################
 ## Define options ##
 ####################
 
 opts$classes <- c(
-  # "E12.5_Dnmt3aWT_Dnmt3bHET",
-  # "E12.5_Dnmt3aWT_Dnmt3bKO",
-  # "E12.5_Dnmt3aHET_Dnmt3bWT",
-  # "E12.5_Dnmt3aKO_Dnmt3bWT",
   "E8.5_Dnmt3aKO_Dnmt3bWT",
   "E8.5_WT",
   "E8.5_Dnmt3aHET_Dnmt3bKO",
-  "E8.5_Dnmt3aHET_Dnmt3bWT",
+  # "E8.5_Dnmt3aHET_Dnmt3bWT",
   "E8.5_Dnmt3aKO_Dnmt3bHET",
   "E8.5_Dnmt3aKO_Dnmt3bKO",
-  "E8.5_Dnmt3aWT_Dnmt3bKO",
-  "E8.5_Dnmt1KO"
+  "E8.5_Dnmt3aWT_Dnmt3bKO"
+  # "E8.5_Dnmt1KO"
   )
 
 opts$to.merge <- c(
@@ -40,24 +35,41 @@ opts$to.merge <- c(
   "Visceral_endoderm" = "ExE_endoderm"
 )
 
+opts$remove.ExE.celltypes <- TRUE
+opts$remove.blood <- TRUE
+
 ############################
 ## Update sample metadata ##
 ############################
 
 sample_metadata <- fread(io$metadata) %>%
-  .[pass_QC==TRUE] %>%
-  .[class%in%opts$classes & !is.na(celltype.mapped)] %>%
-  .[,celltype.mapped:=stringr::str_replace_all(celltype.mapped,opts$to.merge)]# %>%
-  # .[!celltype.mapped%in%c("Erythroid")]
+  .[pass_QC==TRUE & class%in%opts$classes & !is.na(celltype.mapped)] %>%
+  .[,celltype.mapped:=stringr::str_replace_all(celltype.mapped,opts$to.merge)]
+
+# Filter cells
+if (opts$remove.blood) {
+  sample_metadata <- sample_metadata %>% .[!celltype.mapped=="Erythroid"]
+}
+
+if (opts$remove.ExE.celltypes) {
+  sample_metadata <- sample_metadata %>%
+    # .[!celltype.mapped%in%c("Visceral_endoderm","ExE_endoderm","ExE_ectoderm","Parietal_endoderm")]
+    .[!celltype.mapped%in%c("ExE_ectoderm","Parietal_endoderm")]
+}
+
+if (opts$remove.small.lineages) {
+  opts$min.cells <- 100
+  sample_metadata <- sample_metadata %>%
+    .[,N:=.N,by=c("celltype.mapped")] %>% .[N>opts$min.cells] %>% .[,N:=NULL]
+}
 
 table(sample_metadata$batch)
-
 
 ################
 ## Parse data ##
 ################
 
-matrix <- sample_metadata %>%
+mtx <- sample_metadata %>%
   .[,ncells:=.N,by="batch"] %>%
   .[,.(proportion=.N/unique(ncells), N=.N),by=c("celltype.mapped","batch")] %>%
   dcast(batch~celltype.mapped, fill=0, value.var="proportion") %>%
@@ -67,26 +79,26 @@ matrix <- sample_metadata %>%
 ## PCA ##
 #########
 
-pca <- prcomp(matrix, rank.=5)
+pca <- prcomp(mtx, rank.=5)
 
 variance.explained.by.pc <- 100*(pca$sdev / sum(pca$sdev))
 
 plot(variance.explained.by.pc)
 
-##########
-## Plot ##
-##########
+##########################
+## Plot feature weights ##
+##########################
 
 to.plot <- pca$rotation %>% as.data.table %>% 
   .[,celltype:=rownames(pca$rotation)]
 
-p <- ggplot(to.plot, aes(x=PC1, y=PC3, fill=celltype)) +
+p <- ggplot(to.plot, aes(x=PC1, y=PC2, fill=celltype)) +
   geom_point(shape=21, stroke=0.5, color="black", size=5) +
   scale_fill_manual(values=opts$celltype.colors) +
   # labs(x=sprintf("PC1 (%.2f%%)",variance.explained.by.pc[1]), y=sprintf("PC2 (%.2f%%)",variance.explained.by.pc[2])) +
   theme_classic() +
   theme(
-    legend.position = "right",
+    legend.position = "none",
     legend.title = element_blank(),
     # axis.text = element_blank(),
     axis.text = element_text(color="black", size=rel(0.75)),
@@ -97,15 +109,15 @@ p <- ggplot(to.plot, aes(x=PC1, y=PC3, fill=celltype)) +
 print(p)
 # dev.off()
 
-##########
-## Plot ##
-##########
+##################
+## Plot samples ##
+##################
 
 to.plot <- pca$x %>% as.data.table %>% 
   .[,batch:=rownames(pca$x)] %>%
   merge(unique(sample_metadata[,c("batch","class")]), by="batch")
 
-p <- ggplot(to.plot, aes(x=PC1, y=PC4, fill=class)) +
+p <- ggplot(to.plot, aes(x=PC1, y=PC3, fill=class)) +
   geom_point(shape=21, stroke=0.5, color="black", size=5) +
   scale_fill_brewer(palette="Dark2") +
   # scale_shape_manual(values=c(21,24)) +

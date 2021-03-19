@@ -60,6 +60,9 @@ seurat <- readRDS(args$seurat)[,sample_metadata$cell]
 
 sce <- as.SingleCellExperiment(seurat)
 
+# remove logcounts assays
+sce@assays@data[["logcounts"]] <- NULL
+
 # Add metadata
 # stopifnot(sample_metadata$cell%in%colnames(sce))
 # stopifnot(colnames(sce)%in%sample_metadata$cell)
@@ -73,7 +76,7 @@ colData(sce) <- sample_metadata %>% as.data.frame %>% tibble::column_to_rownames
 ##########################
 
 clusts <- as.numeric(quickCluster(sce, method = "igraph", min.size = 100, BPPARAM = mcparam))
-clusts <- as.numeric(quickCluster(sce))
+# clusts <- as.numeric(quickCluster(sce))
 min.clust <- min(table(clusts))/2
 new_sizes <- c(floor(min.clust/3), floor(min.clust/2), floor(min.clust))
 sce <- computeSumFactors(sce, clusters = clusts, sizes = new_sizes, max.cluster.size = 3000)

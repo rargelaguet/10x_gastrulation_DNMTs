@@ -84,10 +84,10 @@ dim(sce_filt)
 ## Dimensionality reduction ##
 ##############################
 
-data <- scale(t(logcounts(sce_filt)), center = T, scale = F)
-
 # PCA
-reducedDim(sce_filt, "PCA") <- irlba::prcomp_irlba(data, n=args$npcs)$x#[,1:npcs]
+# data <- scale(t(logcounts(sce_filt)), center = T, scale = F)
+# reducedDim(sce_filt, "PCA") <- irlba::prcomp_irlba(data, n=args$npcs)$x#[,1:npcs]
+sce_filt <- runPCA(sce_filt, ncomponents = args$npcs, ntop=args$features)
 
 # Filter PCA solution
 # reducedDim(sce_filt, "PCA") <- reducedDim(sce_filt, "PCA")[,-3]
@@ -120,7 +120,7 @@ for (i in args$colour_by) {
     )
   
   # Save
-  outfile <- sprintf("%s/%s_umap_%d_%d_%d_%s_%s.pdf",args$outdir, paste(args$samples,collapse="-"), args$features,args$npcs,args$n_neighbors,args$min_dist,args$colour_by)
+  outfile <- sprintf("%s/%s_umap_%d_%d_%d_%s_%s.pdf",args$outdir, paste(args$samples,collapse="-"), args$features,args$npcs,args$n_neighbors,args$min_dist,i)
   pdf(outfile, width=7, height=5)
   print(p)
   dev.off()

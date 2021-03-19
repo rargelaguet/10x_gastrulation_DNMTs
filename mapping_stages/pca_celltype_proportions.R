@@ -1,17 +1,42 @@
-matrix.please <- function(x) {
-  m<-as.matrix(x[,-1])
-  rownames(m)<-x[[1]]
-  m
-}
 
 #####################
 ## Define settings ##
 #####################
 
 source("/Users/ricard/10x_gastrulation_DNMTs/settings.R")
+source("/Users/ricard/10x_gastrulation_DNMTs/utils.R")
+
+# I/O
 io$outdir <- paste0(io$basedir,"/results/mapping_stages")
 
-sample_metadata <- sample_metadata[stage!="E12.5"]
+# Options
+opts$classes <- c(
+  "E8.5_Dnmt3aKO_Dnmt3bWT", 
+  "E8.5_WT", 
+  "E8.5_Dnmt3aHET_Dnmt3bKO", 
+  "E8.5_Dnmt3aHET_Dnmt3bWT", 
+  "E8.5_Dnmt3aKO_Dnmt3bHET", 
+  "E8.5_Dnmt3aKO_Dnmt3bKO", 
+  "E8.5_Dnmt3aWT_Dnmt3bKO",
+  "E8.5_Dnmt1KO"
+)
+
+opts$remove.ExE.celltypes <- TRUE
+
+##########################
+## Load sample metadata ##
+##########################
+
+sample_metadata <- fread(io$metadata) %>% 
+  .[pass_QC==TRUE & class%in%opts$classes] %>%
+  .[,celltype.mapped:=stringr::str_replace_all(celltype.mapped," ","_")] %>%
+  .[,celltype.mapped:=stringr::str_replace_all(celltype.mapped,"/","_")]
+
+if (opts$remove.ExE.celltypes) {
+  sample_metadata <- sample_metadata %>%
+    .[!celltype.mapped%in%c("Visceral_endoderm","ExE_endoderm","ExE_ectoderm","Parietal_endoderm")]
+}
+table(sample_metadata$class)
 
 ################
 ## Load query ##
@@ -37,22 +62,31 @@ sample_metadata.atlas <- fread(io$atlas.metadata) %>%
   .[,c("class","dataset"):="Atlas"]
 
 # Load cell type proportions in the atlas
-dt.atlas <- fread(paste0(io$atlas.basedir,"/results/general_stats/celltype_proportions.txt.gz")) %>%
+dt.atlas <- fread(paste0(io$atlas.basedir,"/results/celltype_proportions/celltype_proportions.txt.gz")) %>%
   .[sample%in%sample_metadata.atlas$batch] %>%
   setnames("sample","batch")
+
 
 #################
 ## Concatenate ##
 #################
 
-sample_metadata <- rbind(sample_metadata.query, sample_metadata.atlas)
-dt <- rbind(dt.query,dt.atlas)
+sample_metadata <- rbind(
+  sample_metadata.query[,c("batch", "stage", "nCount_RNA", "class", "dataset")], 
+  sample_metadata.atlas[,c("batch", "stage", "nCount_RNA", "class", "dataset")]
+)
+
+dt <- rbind(
+  dt.query[,c("batch", "celltype", "celltype_proportion")],
+  dt.atlas[,c("batch", "celltype", "celltype_proportion")]
+)
 
 ##############################
 ## Dimensionality reduction ##
 ##############################
 
-matrix <- dt %>% dcast(batch~celltype, fill=0, value.var="celltype_proportion") %>% 
+matrix <- dt %>% 
+  dcast(batch~celltype, fill=0, value.var="celltype_proportion") %>% 
   matrix.please
 
 # PCA
