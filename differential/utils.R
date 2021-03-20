@@ -58,7 +58,7 @@ doDiffExpr <- function(sce, groups, min_detection_rate_per_group = 0.50) {
   
   # Construct output data.frame
   out <- topTags(lrt, n=nrow(lrt))$table %>% as.data.table(keep.rownames=T) %>%
-    setnames(c("ens_id","logFC","logCPM","LR","p.value","padj_fdr")) %>%
+    setnames(c("gene","logFC","logCPM","LR","p.value","padj_fdr")) %>%
     .[,c("logCPM","LR"):=NULL]
   
   return(out)
@@ -106,9 +106,3 @@ gg_volcano_plot <- function(tmp, top_genes=10, xlim=NULL, ylim=NULL) {
   return(p)
 }
 
-
-matrix.please<-function(x) {
-  m<-as.matrix(x[,-1])
-  rownames(m)<-x[[1]]
-  m
-}

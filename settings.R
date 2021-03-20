@@ -1,6 +1,7 @@
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(purrr))
 suppressPackageStartupMessages(library(ggplot2))
+suppressPackageStartupMessages(library(SingleCellExperiment))
 
 #########
 ## I/O ##
@@ -216,6 +217,35 @@ opts$classes <- c(
   "E8.5_Dnmt3aKO_Dnmt3bKO", 
   "E8.5_Dnmt3aWT_Dnmt3bKO",
   "E8.5_Dnmt1KO"
+)
+
+opts$samples <- c(
+  # "E12.5_Dnmt3aHET_Dnmt3bWT_1",
+  # "E12.5_Dnmt3aKO_Dnmt3bWT_1",
+  # "E12.5_Dnmt3aWT_Dnmt3bHET_1",
+  # "E12.5_Dnmt3aWT_Dnmt3bHET_2",
+  # "E12.5_Dnmt3aWT_Dnmt3bKO_1",
+  # "E12.5_Dnmt3aWT_Dnmt3bKO_2",
+  "E8.5_Dnmt1KO_1",
+  "E8.5_Dnmt1KO_2",
+  "E8.5_Dnmt1KO_3",
+  "E8.5_Dnmt3aHET_Dnmt3bKO_1",
+  "E8.5_Dnmt3aHET_Dnmt3bWT_1",
+  "E8.5_Dnmt3aKO_Dnmt3bHET_1",
+  "E8.5_Dnmt3aKO_Dnmt3bHET_2",
+  "E8.5_Dnmt3aKO_Dnmt3bKO_1",
+  "E8.5_Dnmt3aKO_Dnmt3bKO_2",
+  "E8.5_Dnmt3aKO_Dnmt3bWT_1",
+  "E8.5_Dnmt3aKO_Dnmt3bWT_2",
+  "E8.5_Dnmt3aWT_Dnmt3bKO_1",
+  "E8.5_Dnmt3aWT_Dnmt3bKO_2",
+  "E8.5_WT_1",
+  "E8.5_WT_2",
+  "E8.5_WT_3",
+  "E8.5_WT_4",
+  "E8.5_WT_5",
+  "E8.5_WT_6",
+  "E8.5_WT_7"
 )
 
 ##########################

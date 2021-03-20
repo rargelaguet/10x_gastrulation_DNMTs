@@ -243,3 +243,7 @@ smoother_aggregate_nearest_nb <- function(mat, D, k){
     return(Matrix::rowMeans(closest_mat))
   })
 }
+
+give.n <- function(x){
+  return(c(y = mean(x), label = length(x)))
+}

@@ -14,8 +14,8 @@ dir.create(paste0(io$outdir,"/boxplots/per_sample"), showWarnings = F)
 
 # Options 
 opts$classes <- c(
-  "E8.5_Dnmt3aKO_Dnmt3bWT",
   "E8.5_WT",
+  "E8.5_Dnmt3aKO_Dnmt3bWT",
   "E8.5_Dnmt3aHET_Dnmt3bKO",
   "E8.5_Dnmt3aHET_Dnmt3bWT",
   "E8.5_Dnmt3aKO_Dnmt3bHET",
@@ -109,7 +109,7 @@ if (opts$remove.small.lineages) {
     .[,N:=.N,by=c("celltype.mapped")] %>% .[N>opts$min.cells] %>% .[,N:=NULL]
 }
 
-# Rename samplees
+# Rename samples
 foo <- sample_metadata[,c("batch","class")] %>% unique %>% .[,sample:=paste(class,1:.N,sep="_"),by="class"]
 sample_metadata <- sample_metadata %>% merge(foo,by=c("batch","class"))
 
