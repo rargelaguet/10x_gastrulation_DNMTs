@@ -1,0 +1,212 @@
+---
+title: "Cell type validation"
+---
+  
+```{r load_modules, echo=FALSE, include=FALSE}
+library(SingleCellExperiment)
+library(scran)
+library(scater)
+```
+
+# Define settings
+
+Define I/O
+```{r define_io, echo=FALSE}
+source("/Users/ricard/10x_gastrulation_DNMTs/settings.R")
+source("/Users/ricard/10x_gastrulation_DNMTs/utils.R")
+io$outdir <- paste0(io$basedir,"/results/rna/celltype_validation/ExE")
+```
+
+Define options
+```{r}
+opts$classes <- c(
+  "E8.5_WT",
+  "E8.5_Dnmt3aKO_Dnmt3bWT",
+  "E8.5_Dnmt3aHET_Dnmt3bKO",
+  # "E8.5_Dnmt3aHET_Dnmt3bWT",
+  # "E8.5_Dnmt3aKO_Dnmt3bHET",
+  "E8.5_Dnmt3aWT_Dnmt3bKO",
+  "E8.5_Dnmt3aKO_Dnmt3bKO",
+  "E8.5_Dnmt1KO"
+)
+
+opts$celltypes <- c(
+	# "Epiblast",
+	# "Primitive_Streak",
+	# "Caudal_epiblast",
+	# "PGC",
+	# "Anterior_Primitive_Streak",
+	# "Notochord",
+	# "Def._endoderm",
+	# "Gut",
+	# "Nascent_mesoderm",
+	# "Mixed_mesoderm",
+	# "Intermediate_mesoderm",
+	# "Caudal_Mesoderm",
+	# "Paraxial_mesoderm",
+	# "Somitic_mesoderm",
+	# "Pharyngeal_mesoderm",
+	# "Cardiomyocytes",
+	# "Allantois",
+	# "ExE_mesoderm",
+	# "Mesenchyme",
+	# "Haematoendothelial_progenitors",
+	# "Endothelium",
+	# "Blood_progenitors_1",
+	# "Blood_progenitors_2",
+	# "Erythroid1",
+	# "Erythroid2",
+	# "Erythroid3",
+	# "NMP",
+	# "Rostral_neurectoderm",
+	# "Caudal_neurectoderm",
+	# "Neural_crest"
+	# "Forebrain_Midbrain_Hindbrain",
+	# "Spinal_cord",
+	# "Surface_ectoderm",
+	# "Visceral_endoderm",
+	"ExE_ectoderm",
+	"ExE_endoderm"
+	# "Parietal_endoderm"
+)
+```
+
+Load sample metadata
+```{r load_metadata, echo=FALSE}
+sample_metadata <- fread(io$metadata) %>% 
+  .[pass_QC==TRUE & class%in%opts$classes & celltype.mapped%in%opts$celltypes] %>%
+  .[,celltype.mapped:=factor(celltype.mapped, levels=opts$celltypes)] %>%
+  .[,class:=factor(class,levels=opts$classes)]
+```
+
+# Load data
+
+Load RNA expression data as SingleCellExperiment object
+```{r load_data, echo=FALSE}
+sce <- load_SingleCellExperiment(io$sce, normalise = TRUE, cells = sample_metadata$cell)
+dim(sce)
+```
+
+Add sample metadata to the colData of the SingleCellExperiment
+```{r}
+colData(sce) <- sample_metadata %>% as.data.frame %>% tibble::column_to_rownames("cell") %>%
+  .[colnames(sce),] %>% DataFrame()
+```
+
+# Load fiferential expression from the atlas
+
+```{r}
+io$diff.dir <- paste0(io$atlas.basedir,"/results/differential/celltypes/all_stages")
+file <- sprintf("%s/%s_vs_%s.txt.gz", io$diff.dir,opts$celltypes[1],opts$celltypes[2])
+diff.dt <- fread(file) %>% 
+  setorder(-log_padj_fdr,na.last=T) %>%
+  .[sig==T & abs(logFC)>2] %>%
+  .[,sign:=sprintf("Up in %s",opts$celltypes[2])] %>% .[logFC<0,sign:=c(sprintf("Up in %s",opts$celltypes[1]))] 
+```
+
+# Feature selection
+
+```{r}
+hvgs <- diff.dt$gene[diff.dt$gene%in%rownames(sce)]
+sce_filt <- sce[hvgs,]
+dim(sce_filt)
+```
+
+# Dimensionality reduction
+
+```{r}
+sce_filt <- runPCA(sce_filt, ncomponents = 5, ntop=nrow(sce_filt))
+reducedDim(sce, "PCA") <- reducedDim(sce_filt, "PCA")
+```
+
+```{r}
+# library(batchelor)
+# pca <- multiBatchPCA(sce_filt, batch=sce_filt$stage)
+# pca.corrected <- reducedMNN(pca)$corrected
+# colnames(pca.corrected) <- paste0("PC",1:ncol(pca.corrected))
+# reducedDim(sce_filt, "PCA") <- pca.corrected
+```
+
+```{r}
+sce_filt$foo <- sce_filt$class!="E8.5_Dnmt3aKO_Dnmt3bKO"
+sce_filt$foo <- sce_filt$class!="E8.5_Dnmt1KO"
+plotPCA(sce_filt, colour_by="foo", ncomponents = c(1,2))
+```
+
+```{r}
+plotPCA(sce_filt, colour_by="celltype.mapped", ncomponents = c(1,2))# +
+  # scale_colour_manual(values=opts$celltype.colors)
+```
+
+Scatterplot of PC1 vs PC2
+```{r}
+genes.to.plot <- rownames(sce_filt) %>% head(n=3)
+genes.to.plot <- diff.dt[logFC<0,gene] %>% head(n=3)
+# genes.to.plot <- c("Utf1","Cited2","Slc7a3","Tdgf1")
+
+for (i in genes.to.plot) {
+  
+  p <- plotPCA(sce, colour_by=i, ncomponents = c(1,2))
+  
+  # pdf(sprintf("%s/%s_Rostral_neurectoderm_vs_caudalepi.pdf",io$outdir,i), width=6, height=4)
+  print(p)
+  # dev.off()
+}
+```
+
+```{r}
+genes.to.plot <- diff.dt$gene[diff.dt$gene%in%rownames(sce)] 
+
+to.plot <- sce[genes.to.plot,] %>% logcounts %>%
+  as.matrix %>% t %>% scale(center = F, scale = T) %>% t %>%
+  as.data.table(keep.rownames = T) %>%
+  setnames("rn","gene") %>%
+  melt(id.vars="gene", variable.name="cell") %>% 
+  merge(diff.dt[,c("gene","sign")], by="gene") %>%
+  .[,.(value=mean(value)),by=c("cell","sign")] %>%
+  dcast(cell~sign) %>%
+  merge(
+    sample_metadata[,c("cell","celltype.mapped","celltype.predicted","stage")] %>% setnames("celltype.mapped","celltype")
+  )
+```
+
+```{r}
+ggscatter(to.plot, x=sprintf("Up in %s",opts$celltypes[1]), y=sprintf("Up in %s",opts$celltypes[2]), fill="celltype", size=2, shape=21, stroke=0.15)   +
+  labs(x=sprintf("Genes up in %s",opts$celltypes[1]), y=sprintf("Up in %s",opts$celltypes[2])) +
+  # geom_abline(slope=1, intercept=0) +
+  # coord_fixed() +
+  # scale_fill_manual(values=opts$celltype.colors) +
+  theme(
+    axis.text = element_text(color="black", size=rel(0.75)),
+    legend.title = element_blank(),
+    legend.position = "top"
+  )
+```
+
+```{r}
+ggscatter(to.plot, x=sprintf("Up in %s",opts$celltypes[1]), y=sprintf("Up in %s",opts$celltypes[2]), color="stage", size=0.75)   +
+  labs(x=sprintf("Genes up in %s",opts$celltypes[1]), y=sprintf("Up in %s",opts$celltypes[2])) +
+  guides(color = guide_legend(override.aes = list(size=4))) +
+  theme(
+    axis.text = element_text(color="black", size=rel(0.75)),
+    legend.position = "right"
+  )
+```
+
+# Explore
+
+```{r}
+mapping.dt <- fread(paste0(io$basedir,"/results/rna/iterative_mapping/E7.5_rep2_iterative_mnn.txt.gz"))
+foo <- mapping.dt %>% 
+  merge(sample_metadata %>% copy %>% setnames("celltype.mapped","celltype_old"), by = "cell")
+colData(sce) <- foo %>% as.data.frame %>% 
+  tibble::column_to_rownames("cell") %>%
+  .[colnames(sce),] %>% DataFrame()
+```
+
+```{r}
+plotPCA(sce, colour_by="celltype_mapped") +
+  scale_color_manual(values=opts$celltype.colors) + theme(legend.position = "none")
+plotPCA(sce, colour_by="celltype_old")# + scale_color_manual(values=opts$celltype.colors) + theme(legend.position = "none")
+```
+

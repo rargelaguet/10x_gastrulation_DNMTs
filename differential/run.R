@@ -39,7 +39,7 @@ opts$query.groups <- c(
 
 # Define query and reference group
 opts$reference.groups <- "E8.5_WT"
-opts$query.groups <- opts$classes[opts$classes!=opts$reference.groups] %>% head(n=1)
+opts$query.groups <- opts$classes[opts$classes!=opts$reference.groups]# %>% head(n=1)
 
 # Define cell types with sufficient number of cells for differential comparison
 opts$min.cells <- 50

@@ -32,7 +32,7 @@ opts$npcs <- c(30)
 opts$vars.to.regress <- c("nFeature_RNA","percent.mt")
 
 # Variable to do MNN batch correction on
-# opts$batch.correction <- c("sample")
+opts$batch.correction <- c("sample")
 
 # UMAP hyperparameters
 # opts$n_neighbors <- c(20,30,40)
@@ -52,7 +52,7 @@ opts$memory <- 12000
 opts$colour_by <- c("celltype.mapped")
 
 for (i in opts$samples) {
-  outdir <- sprintf("%s/%s",io$outdir,i); dir.create(outdir, showWarnings = F)
+  outdir <- sprintf("%s/%s",io$outdir,i)
   for (j in opts$features) {
     for (k in opts$npcs) {
 
@@ -68,37 +68,37 @@ for (i in opts$samples) {
       if (isTRUE(opts$test_mode)) cmd <- paste0(cmd, " --test")
 
       # Run
-      print(cmd)
+      # print(cmd)
       # system(cmd)
     }
   }
 }
 
-
 #############################
 ## Run one class at a time ##
 #############################
 
-opts$colour_by <- c("celltype.mapped","sample","nFeature_RNA","percent.mt")
+opts$classes <- names(which(table(opts$batch.to.class)>1))
 
-for (i in opts$stages) {
-  # samples <- opts$samples[grep(i,opts$samples)]
-  stop()
+opts$colour_by <- c("celltype.mapped","sample")
+
+for (i in opts$classes) {
+  samples <- opts$samples[grep(i,opts$samples)]
   outdir <- sprintf("%s/%s",io$outdir,i); dir.create(outdir, showWarnings = F)
   for (j in opts$features) {
     for (k in opts$npcs) {
-      
+
       # Define LSF command
       if (grepl("ricard",Sys.info()['nodename'])) {
         lsf <- ""
       } else if (grepl("ebi",Sys.info()['nodename'])) {
         lsf <- sprintf("bsub -M %s -n 1 -o %s/%s_%d_%d.txt", opts$memory, io$tmpdir,i,j,k)
       }
-      cmd <- sprintf("%s Rscript %s --samples %s --features %d --npcs %d --vars.to.regress %s --n_neighbors %s --min_dist %s --colour_by %s --outdir %s", 
-                     lsf, io$script, paste(samples,collapse=" "), j, k, paste(opts$vars.to.regress,collapse=" "), paste(opts$n_neighbors,collapse=" "), paste(opts$min_dist,collapse=" "), paste(opts$colour_by,collapse=" "), outdir)
-      
+      cmd <- sprintf("%s Rscript %s --samples %s --features %d --npcs %d --vars.to.regress %s --batch.correction %s --n_neighbors %s --min_dist %s --colour_by %s --outdir %s",
+                     lsf, io$script, paste(samples,collapse=" "), j, k, paste(opts$vars.to.regress,collapse=" "), opts$batch.correction, paste(opts$n_neighbors,collapse=" "), paste(opts$min_dist,collapse=" "), paste(opts$colour_by,collapse=" "), outdir)
+
       if (isTRUE(opts$test_mode)) cmd <- paste0(cmd, " --test")
-      
+
       # Run
       print(cmd)
       system(cmd)

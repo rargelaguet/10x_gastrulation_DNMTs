@@ -1,5 +1,6 @@
 
-gg_volcano_plot <- function(to.plot, top_genes = 15, xlim = NULL, ylim = NULL) {
+gg_volcano_plot <- function(to.plot, top_genes = 15, groupA = "groupA", groupB = "groupB", xlim = NULL, ylim = NULL) {
+  
   negative_hits <- to.plot[sig==TRUE & logFC<0,gene]
   positive_hits <- to.plot[sig==TRUE & logFC>0,gene]
   all <- nrow(to.plot)
@@ -21,10 +22,8 @@ gg_volcano_plot <- function(to.plot, top_genes = 15, xlim = NULL, ylim = NULL) {
     # annotate("text", x=0, y=ylim+3, size=4, label=sprintf("(%d)", all)) +
     # annotate("text", x=-xlim-0.5, y=ylim+3, size=4, label=sprintf("%d (-)",length(negative_hits))) +
     # annotate("text", x=xlim+0.5, y=ylim+3, size=4, label=sprintf("%d (+)",length(positive_hits))) +
-    # annotate("text", x=-xlim-0.5, y=0, size=3, label=sprintf("Up in %s (N=%s)",opts$groupA,to.plot[1,paste0("N_",opts$groupA),with=F][[1]])) +
-    # annotate("text", x=xlim+0.5, y=0, size=3, label=sprintf("Up in %s (N=%s)",opts$groupB,to.plot[1,paste0("N_",opts$groupB),with=F][[1]])) +
-    annotate("text", x=-xlim-0.5, y=0, size=3, label=sprintf("Up in %s (N=%s)",opts$groupA,to.plot[1,"groupA",with=F][[1]])) +
-    annotate("text", x=xlim+0.5, y=0, size=3, label=sprintf("Up in %s (N=%s)",opts$groupB,to.plot[1,"groupB",with=F][[1]])) +
+    annotate("text", x=-xlim-0.5, y=0, size=3, label=sprintf("Up in %s (N=%s)",groupA,to.plot[["groupA_N"]][[1]])) +
+    annotate("text", x=xlim+0.5, y=0, size=3, label=sprintf("Up in %s (N=%s)",groupB,to.plot[["groupB_N"]][[1]])) +
     ggrepel::geom_text_repel(data=head(to.plot[sig==T],n=top_genes), aes(x=logFC, y=-log10(padj_fdr+1e-100), label=gene), size=4) +
     theme_classic() +
     theme(

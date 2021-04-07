@@ -25,17 +25,19 @@ args <- p$parse_args(commandArgs(TRUE))
 
 if (grepl("ricard",Sys.info()['nodename'])) {
   source("/Users/ricard/10x_gastrulation_DNMTs/settings.R")
+  source("/Users/ricard/10x_gastrulation_DNMTs/utils.R")
 } else {
   source("/homes/ricard/10x_gastrulation_DNMTs/settings.R")
+  source("/homes/ricard/10x_gastrulation_DNMTs/utils.R")
 }
 
 ## START TEST ##
-# args$samples <- opts$batches
-# args$sce <- io$sce
-# args$metadata <- io$metadata
-# args$outdir <- paste0(io$basedir,"/results/sex")
-# args$test <- TRUE
-# args$threshold.ratioY <- 1e-3
+args$samples <- opts$samples
+args$sce <- io$sce
+args$metadata <- io$metadata
+args$outdir <- paste0(io$basedir,"/results/sex")
+args$test <- FALSE
+args$threshold.ratioY <- 1e-3
 ## END TEST ##
 
 ####################
@@ -50,12 +52,15 @@ if (grepl("ricard",Sys.info()['nodename'])) {
 if (isTRUE(args$test)) args$samples <- head(args$samples,n=2)
 
 # Load sample metadata
-sample_metadata <- fread(args$metadata) %>% .[pass_QC==T & batch%in%args$samples]
+sample_metadata <- fread(args$metadata) %>% .[pass_QC==T & sample%in%args$samples]
 
 # Load SingleCellExperiment
 # sce <- readRDS(io$sce)[,sample_metadata$cell]
 sce <- load_SingleCellExperiment(args$sce, cells = sample_metadata$cell)
 dim(sce)
+
+# Add sample metadata as colData
+colData(sce) <- sample_metadata %>% tibble::column_to_rownames("cell") %>% DataFrame
 
 # Load gene metadata
 gene_metadata <- fread(io$gene_metadata) %>% 
@@ -79,34 +84,36 @@ genes.chrY <- genes.chrY[!genes.chrY=="ENSMUSG00000096768"]
 # dt <- counts(sce[c(genes.chrY,genes.chrX,genes.chr10)]) %>% as.matrix %>% t %>%
 #   as.data.table(keep.rownames="cell") %>% 
 #   melt(id.vars="cell", value.name="counts", variable.name="symbol") %>%
-#   merge(sample_metadata[,c("cell","batch")], by="cell")#  %>%
+#   merge(sample_metadata[,c("cell","sample")], by="cell")#  %>%
 #   # merge(gene_metadata[,c("chr","ens_id","symbol")], by="symbol")
 dt <- args$samples %>% map(function(i) {
-  sce.filt <- sce[,sce$batch==i] %>% .[c(genes.chrY,genes.chrX,genes.chr10),]
+  sce.filt <- sce[,sce$sample==i] %>% .[c(genes.chrY,genes.chrX,genes.chr10),]
   dt <- data.table(
     symbol = rownames(sce.filt),
     counts = counts(sce.filt) %>% Matrix::rowSums()
-  ) %>% .[,batch:=i]
+  ) %>% .[,sample:=i]
 }) %>% rbindlist %>% merge(gene_metadata[,c("chr","ens_id","symbol")], by="symbol")
 
 to.plot <- dt[chr=="chrY"] %>% 
-  # .[,.(counts=sum(counts)),by=c("batch","chr","ens_id","symbol")] %>%
-  .[,.(counts=sum(counts)),by=c("batch","chr","symbol")] %>%
+  # .[,.(counts=sum(counts)),by=c("sample","chr","ens_id","symbol")] %>%
+  .[,.(counts=sum(counts)),by=c("sample","chr","symbol")] %>%
   .[,mean:=mean(counts),by="symbol"] %>% .[mean>0] %>% .[,mean:=NULL] 
 
 ##########
 ## Plot ##
 ##########
 
-p <- ggbarplot(to.plot, x="symbol", y="counts", facet="batch", fill="gray70") +
-# p <- ggbarplot(to.plot, x="ens_id", y="counts", facet="batch", fill="gray70") +
+p <- ggbarplot(to.plot, x="symbol", y="counts", facet="sample", fill="gray70") +
+# p <- ggbarplot(to.plot, x="ens_id", y="counts", facet="sample", fill="gray70") +
   labs(x="", y="Read counts") +
+  guides(x = guide_axis(angle = 90)) +
   theme(
-  axis.text.x = element_text(colour="black",size=rel(0.7), angle=45, hjust=1, vjust=1),
+  axis.text.x = element_text(colour="black",size=rel(0.5)),
+  axis.ticks.x = element_line(size=rel(0.5)),
   axis.text.y = element_text(colour="black",size=rel(0.8))
   )
 
-pdf(sprintf("%s/pdf/sex_ychr_expr_per_gene.pdf",args$outdir))
+pdf(sprintf("%s/pdf/sex_ychr_expr_per_gene.pdf",args$outdir), width=16, height=10)
 print(p)
 dev.off()
 
@@ -115,19 +122,20 @@ dev.off()
 ###################################################
 
 # Agregate counts over all genes
-to.plot <- dt %>% 
-  .[,.(counts=sum(counts)),by=c("batch","chr")] %>%
-  dcast(batch~chr, value.var="counts") %>%
+sex_assignment.dt <- dt %>% 
+  .[,.(counts=sum(counts)),by=c("sample","chr")] %>%
+  dcast(sample~chr, value.var="counts") %>%
   .[,ratioY:=chrY/chr10] %>% .[,ratioX:=chrX/chr10] %>%
   .[,sex:=c("female","male")[as.numeric(ratioY>=args$threshold.ratioY)+1]]
 
-p <- ggbarplot(to.plot, x="batch", y="ratioY", fill="sex", sort.val = "asc", palette="Dark2") +
+p <- ggbarplot(sex_assignment.dt, x="sample", y="ratioY", fill="sex", sort.val = "asc", palette="Dark2") +
   labs(x="", y="chrY/chr1 counts ratio") +
+  guides(x = guide_axis(angle = 90)) +
   theme(
     legend.position = "right",
-    # axis.text.x = element_text(colour="black",size=rel(0.8), angle=45, hjust=1, vjust=1),
-    axis.text.x = element_blank(),
-    axis.ticks.x = element_blank()
+    axis.text.x = element_text(colour="black",size=rel(0.6))
+    # axis.text.x = element_blank(),
+    # axis.ticks.x = element_blank()
   )
 
 pdf(sprintf("%s/pdf/sex_ychr_expr_aggregated.pdf",args$outdir))
@@ -140,12 +148,15 @@ dev.off()
 #############################
 
 to.plot <- dt[symbol=="Xist"] %>% 
-  merge(to.plot[,c("sex","batch")], by="batch")
+  # .[,expr:=log(counts+1)] %>%
+  merge(sex_assignment.dt[,c("sex","sample")], by="sample")
 
-p <- ggbarplot(to.plot, x="batch", y="counts", fill="sex") +
+p <- ggbarplot(to.plot, x="sample", y="counts", fill="sex") +
   labs(x="", y="Xist expression") +
+  guides(x = guide_axis(angle = 90)) +
   theme(
-    axis.text.x = element_text(colour="black",size=rel(0.8), angle=45, hjust=1, vjust=1),
+    axis.text.x = element_text(colour="black",size=rel(0.6))
+    # axis.text.x = element_text(colour="black",size=rel(0.8), angle=45, hjust=1, vjust=1),
   )
 
 pdf(sprintf("%s/pdf/Xist_expr.pdf",args$outdir))
@@ -164,11 +175,19 @@ dev.off()
 #     # axis.ticks.x = element_blank()
 #   )
 
+############################
+## Update sample metadata ##
+############################
+
+sample_metadata <- fread(io$metadata)
+sample_metadata <- sample_metadata %>% merge(sex_assignment.dt[,c("sample","sex")], by="sample", all.x = TRUE)
+fwrite(sample_metadata, io$metadata, sep="\t", quote=F, na="NA")
+
 ##########
 ## Save ##
 ##########
 
-fwrite(to.plot, paste0(args$outdir,"/sex_assignment.txt.gz"))
+fwrite(sex_assignment.dt[,c("sample","sex")], paste0(args$outdir,"/sex_assignment.txt.gz"))
 
 
 

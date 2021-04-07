@@ -2,7 +2,10 @@ suppressMessages(library(scater))
 suppressMessages(library(edgeR))
 suppressMessages(library(argparse))
 
+################################
 ## Initialize argument parser ##
+################################
+
 p <- ArgumentParser(description='')
 p$add_argument('--groupA',    type="character",    help='group A ("class" column in metadata)')
 p$add_argument('--groupB',    type="character",    help='group B ("class" column in metadata)')
@@ -30,7 +33,7 @@ if (grepl("ricard",Sys.info()['nodename'])) {
 # START TEST
 # args$groupA <- c("E8.5_Dnmt3aKO_Dnmt3bWT")
 # args$groupB <- c("E8.5_WT")
-# args$celltype <- "NMP"
+# args$celltype <- "ExE_endoderm"
 # args$test_mode <- FALSE
 # END TEST
 
@@ -63,7 +66,7 @@ opts$min_detection_rate_per_group <- 0.40
 
 sample_metadata <- fread(io$metadata) %>%
   .[pass_QC==TRUE & class%in%opts$groups & celltype.mapped%in%args$celltype] %>%
-  setnames("class","group") %>% .[,c("cell","group")] %>%
+  setnames("class","group") %>% #.[,c("cell","group")] %>%
   .[,group:=factor(group,levels=opts$groups)] %>% 
   setorder(group)
 
@@ -83,7 +86,7 @@ if (any(table(sample_metadata$group)<opts$min.cells)) {
 ###############
 
 # Load SingleCellExperiment object
-sce <- load_SingleCellExperiment(io$sce, cells=sample_metadata$cell, normalise = TRUE, remove_non_expressed_genes = FALSE)
+sce <- load_SingleCellExperiment(io$sce, cells = sample_metadata$cell, normalise = TRUE, remove_non_expressed_genes = FALSE)
 sce$group <- sample_metadata$group
 
 # Load gene metadata

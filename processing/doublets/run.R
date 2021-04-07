@@ -17,7 +17,7 @@ io$outdir <- paste0(io$basedir,"/results/doublets")
 ## Define options ##
 ####################
 
-opts$batches <- c(
+opts$samples <- c(
   # E12.5  
   # "E125_DNMT3A_HET_A_L001",
   # "E125_DNMT3A_HET_A_L003",
@@ -50,7 +50,7 @@ opts$batches <- c(
   "SIGAG5_9_dnmt3ab_DKO_L005"
 )
 
-# opts$batches <- "SIGAA6_E85_2_Dnmt3aKO_Dnmt3b_WT_L001"
+# opts$samples <- "SIGAA6_E85_2_Dnmt3aKO_Dnmt3b_WT_L001"
 
 # Test mode (subsetting cells)?
 opts$test_mode <- FALSE
@@ -63,7 +63,7 @@ opts$hybrid_score_threshold <- 1.0
 ## Run ##
 #########
 
-for (i in opts$batches) {
+for (i in opts$samples) {
   
   # Define LSF command
   if (grepl("ricard",Sys.info()['nodename'])) {
@@ -71,7 +71,7 @@ for (i in opts$batches) {
   } else if (grepl("ebi",Sys.info()['nodename'])) {
     lsf <- sprintf("bsub -M 30000 -n 1 -o %s/%s_%s.txt", io$tmpdir,i,opts$hybrid_score_threshold)
   }
-  cmd <- sprintf("%s Rscript %s --batches %s --hybrid_score_threshold %s --outdir %s", lsf, io$script, i, opts$hybrid_score_threshold, io$outdir)
+  cmd <- sprintf("%s Rscript %s --samples %s --hybrid_score_threshold %s --outdir %s", lsf, io$script, i, opts$hybrid_score_threshold, io$outdir)
   
   if (isTRUE(opts$test_mode)) cmd <- paste0(cmd, " --test")
   

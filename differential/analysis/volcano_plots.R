@@ -8,27 +8,28 @@ source("/Users/ricard/10x_gastrulation_DNMTs/differential/analysis/utils.R")
 
 # I/O
 io$diff.dir <- paste0(io$basedir,"/results/differential")
-io$outdir <- paste0(io$basedir,"/results/differential/pdf")
+io$outdir <- paste0(io$basedir,"/results/differential/pdf/volcano_plots")
 
 # Define groups
 opts$groupA <- c(
-  # "E8.5_Dnmt3aKO_Dnmt3bWT"
-  # "E8.5_Dnmt3aHET_Dnmt3bKO", 
-  # "E8.5_Dnmt3aHET_Dnmt3bWT", 
-  # "E8.5_Dnmt3aKO_Dnmt3bHET", 
-  "E8.5_Dnmt3aKO_Dnmt3bKO"
-  # "E8.5_Dnmt3aWT_Dnmt3bKO"
+  "E8.5_Dnmt3aKO_Dnmt3bWT",
+  "E8.5_Dnmt3aHET_Dnmt3bKO",
+  "E8.5_Dnmt3aHET_Dnmt3bWT",
+  "E8.5_Dnmt3aKO_Dnmt3bHET",
+  "E8.5_Dnmt3aKO_Dnmt3bKO",
+  "E8.5_Dnmt3aWT_Dnmt3bKO",
+  "E8.5_Dnmt1KO"
 )
-opts$groupB <- c("E8.5_Dnmt3aWT_Dnmt3bWT")
+opts$groupB <- c("E8.5_WT")
 
 opts$celltypes = c(
   "Epiblast",
   "Primitive_Streak",
-  # "Caudal_epiblast",
-  # "PGC",
-  # "Anterior_Primitive_Streak",
-  # "Notochord",
-  # "Def._endoderm",
+  "Caudal_epiblast",
+  "PGC",
+  "Anterior_Primitive_Streak",
+  "Notochord",
+  "Def._endoderm",
   "Gut",
   "Nascent_mesoderm",
   "Mixed_mesoderm",
@@ -78,13 +79,15 @@ dt <- opts$groupA %>% map(function(i) { opts$celltypes %>% map(function(j) {
 
 # Remove some hits
 dt <- dt[gene!="Xist"]
+dt <- dt[!grepl("mt-",gene)]
+dt <- dt[!grepl("Rps|Rpl",gene)]
+dt <- dt[!grepl("Rik",gene)]
+dt <- dt[!grepl("^Hb",gene)]
+dt <- dt[!gene%in%fread(io$gene_metadata)[chr=="chrY",symbol]]
 
 # Filter by minimum number of cells per group
 opts$min.cells <- 30
-dt <- dt[N_groupA>opts$min.cells & N_groupB>opts$min.cells]
-
-# Remove manual hits
-dt <- dt[gene!="Xist"]
+dt <- dt[groupA_N>opts$min.cells & groupB_N>opts$min.cells]
 
 # Remove hits that are differentially expressed in all cell type comparisons
 # foo <- dt[,mean(sig),by=c("gene")] %>% .[V1>0] %>% setorder(-V1)
@@ -93,11 +96,17 @@ dt <- dt[gene!="Xist"]
 ## Plot ##
 ##########
 
-for (i in unique(dt$celltype)) {
-  to.plot <- dt[celltype==i] %>% .[!is.na(sig)] 
-  p <- gg_volcano_plot(to.plot, top_genes=20)
-  
-  pdf(sprintf("%s/%s_vs_%s_%s_volcano.pdf",io$outdir,opts$groupA,opts$groupB,i), width=9, height=5)
-  print(p)
-  dev.off()
+for (i in unique(dt$groupA)) {
+  outdir <- sprintf("%s/%s",io$outdir,i); dir.create(outdir, showWarnings = F)
+  for (j in unique(dt$celltype)) {
+    
+    to.plot <- dt[celltype==j & groupA==i] %>% .[!is.na(sig)] 
+    if (nrow(to.plot)>0) {
+      p <- gg_volcano_plot(to.plot, top_genes = 25, groupA = i, groupB = opts$groupB)
+      
+      pdf(sprintf("%s/%s_vs_%s_%s_volcano.pdf",outdir,i,opts$groupB,j), width=9, height=5)
+      print(p)
+      dev.off()
+    }
+  }
 }
