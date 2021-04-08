@@ -6,24 +6,26 @@ suppressPackageStartupMessages(library(SingleCellExperiment))
 
 if (grepl("ricard",Sys.info()['nodename'])) {
   source("/Users/ricard/10x_gastrulation_DNMTs/settings.R")
+  source("/Users/ricard/10x_gastrulation_DNMTs/utils.R")
 } else if (grepl("ebi",Sys.info()['nodename'])) {
   source("/homes/ricard/10x_gastrulation_DNMTs/settings.R")
+  source("/homes/ricard/10x_gastrulation_DNMTs/utils.R")
 }
 
-io$outdir <- paste0(io$basedir,"/results/individual_genes")
+io$outdir <- paste0(io$basedir,"/results/individual_genes/test")
 
 # Define cell types to plot
 opts$celltypes <- c(
-	# "Epiblast",
-	# "Primitive_Streak",
-	# "Caudal_epiblast",
+	"Epiblast",
+	"Primitive_Streak",
+	"Caudal_epiblast",
 	# "PGC",
-	# "Anterior_Primitive_Streak",
+	"Anterior_Primitive_Streak",
 	"Notochord",
 	"Def._endoderm",
 	"Gut",
-	# "Nascent_mesoderm",
-	# "Mixed_mesoderm",
+	"Nascent_mesoderm",
+	"Mixed_mesoderm",
 	"Intermediate_mesoderm",
 	"Caudal_Mesoderm",
 	"Paraxial_mesoderm",
@@ -35,19 +37,21 @@ opts$celltypes <- c(
 	"Mesenchyme",
 	"Haematoendothelial_progenitors",
 	"Endothelium",
-	"Blood_progenitors_1",
-	"Blood_progenitors_2",
-	"Erythroid1",
-	"Erythroid2",
-	"Erythroid3",
+	"Blood_progenitors",
+	# "Blood_progenitors_1",
+	# "Blood_progenitors_2",
+	"Erythroid",
+	# "Erythroid1",
+	# "Erythroid2",
+	# "Erythroid3",
 	"NMP",
 	"Rostral_neurectoderm",
-	# "Caudal_neurectoderm",
+	"Caudal_neurectoderm",
 	"Neural_crest",
 	"Forebrain_Midbrain_Hindbrain",
 	"Spinal_cord",
 	"Surface_ectoderm",
-	# "Visceral_endoderm",
+	"Visceral_endoderm",
 	"ExE_endoderm",
 	"ExE_ectoderm"
 	# "Parietal_endoderm"
@@ -55,41 +59,36 @@ opts$celltypes <- c(
 
 # Define classes to plot
 opts$classes <- c(
-  # "E12.5_Dnmt3aWT_Dnmt3bHET",
-  # "E12.5_Dnmt3aWT_Dnmt3bKO",
-  # "E12.5_Dnmt3aHET_Dnmt3bWT",
-  # "E12.5_Dnmt3aKO_Dnmt3bWT",
-  "E8.5_Dnmt3aKO_Dnmt3bWT",
-  "E8.5_Dnmt3aWT_Dnmt3bWT",
-  # "E8.5_Dnmt3aHET_Dnmt3bKO",
+  "E8.5_WT",
   # "E8.5_Dnmt3aHET_Dnmt3bWT",
-  # "E8.5_Dnmt3aKO_Dnmt3bHET",
+  "E8.5_Dnmt3aKO_Dnmt3bWT",
+  "E8.5_Dnmt3aKO_Dnmt3bHET",
+  "E8.5_Dnmt3aWT_Dnmt3bKO",
+  "E8.5_Dnmt3aHET_Dnmt3bKO",
   "E8.5_Dnmt3aKO_Dnmt3bKO",
-  "E8.5_Dnmt3aWT_Dnmt3bKO"
+  "E8.5_Dnmt1KO"
 )
 
-# Define batches to plot
-# opts$batches <- c(
-#   "SIGAA6_E85_2_Dnmt3aKO_Dnmt3b_WT_L001", 
-#   "SIGAB6_E85_3_Dnmt3aWT_Dnmt3b_WT_L002", 
-#   # "SIGAC6_E85_5_Dnmt3aKO_Dnmt3b_Het_L003", 
-#   # "SIGAD6_E85_8_Dnmt3aHet_Dnmt3b_KO_L004",
-#   "15_E8_5_D3A_WT_D3B_WT_L007",
-#   "17_E8_5_D3A_KO_D3B_WT_L008",
-#   "2_E8_5_D3A_WT_D3B_KO_L003",
-#   # "3_E8_5_D3A_HET_D3B_WT_L004",
-#   "7_E8_5_D3A_WT_D3B_KO_L005",
-#   "8_E8_5_D3A_KO_D3B_KO_L006"
-# )
+opts$to.merge <- c(
+  "Erythroid3" = "Erythroid",
+  "Erythroid2" = "Erythroid",
+  "Erythroid1" = "Erythroid",
+  "Blood_progenitors_1" = "Blood_progenitors",
+  "Blood_progenitors_2" = "Blood_progenitors",
+  "Anterior_Primitive_Streak" = "Primitive_Streak"
+)
 
-# Update sample metadata
-sample_metadata <- sample_metadata %>% 
-  .[class%in%opts$classes & celltype.mapped%in%opts$celltypes] %>%
-  # .[batch%in%opts$batches & celltype.mapped%in%opts$celltypes] %>%
-  .[,celltype.mapped:=factor(celltype.mapped, levels=opts$celltypes)]
+##########################
+## Load sample metadata ##
+##########################
+
+sample_metadata <- fread(io$metadata) %>% 
+  .[pass_QC==TRUE & class%in%opts$classes & celltype.mapped%in%opts$celltypes] %>%
+  .[,celltype.mapped:=factor(celltype.mapped, levels=opts$celltypes)] %>%
+  .[,class:=factor(class,levels=opts$classes)]
 
 table(sample_metadata$class)
-table(sample_metadata$batch)
+table(sample_metadata$sample)
 table(sample_metadata$celltype.mapped)
 
 ###############
@@ -97,92 +96,97 @@ table(sample_metadata$celltype.mapped)
 ###############
 
 # Load SingleCellExperiment object
-sce <- readRDS(io$sce)[,sample_metadata$cell]
+sce <- load_SingleCellExperiment(io$sce, cells=sample_metadata$cell, normalise = TRUE)
 
-# Remove genes that are not expressed
-sce <- sce[rowMeans(counts(sce))>0,]
-
-# Load gene metadata
-# gene_metadata <- fread(io$gene_metadata) %>%
-#   .[symbol!="" & ens_id%in%rownames(sce)]
+# Add sample metadata as colData
+colData(sce) <- sample_metadata %>% tibble::column_to_rownames("cell") %>% DataFrame
 
 ################
 ## Parse data ##
 ################
 
-## Normalisation
-# sce <- batchelor::multiBatchNorm(sce, batch=as.factor(sce$batch))
-# sce <- scater::logNormCounts(sce)
+# Remove underscores
+sample_metadata %>%
+  .[,class:=stringr::str_replace_all(class,"_"," ")] %>%
+  .[,class:=factor(class, levels=opts$classes %>% stringr::str_replace_all(.,"_"," "))] %>%
+  .[,celltype.mapped:=stringr::str_replace_all(celltype.mapped,"_"," ")] %>%
+  .[,celltype.mapped:=factor(celltype.mapped, levels=opts$celltypes %>% stringr::str_replace_all(.,"_"," "))]
 
-# Rename genes
-# new.names <- gene_metadata$symbol
-# names(new.names) <- gene_metadata$ens_id
-# sce <- sce[rownames(sce) %in% names(new.names),]
-# rownames(sce) <- new.names[rownames(sce)]
-# stopifnot(sum(is.na(new.names))==0)
-# stopifnot(sum(duplicated(new.names))==0)
 
 ##########
 ## Plot ##
 ##########
 
-# genes.to.plot <- c("Cd59a", "Cdx2", "Gata4", "Cd9")
-# genes.to.plot <- rownames(sce)
-# genes.to.plot <- c("Dppa4","Erdr1","Slc25a31","Uba52","Pim2","Slc7a3", "Tex19.1","Cdx1","Fosb","Jun","Fos","Pou5f1","Pim2","Slc7a3") %>% unique
-# genes.to.plot <- rownames(sce)[grep("Psm",rownames(sce))]
-# genes.to.plot <- rownames(sce)[grep("Tet",rownames(sce))]
-genes.to.plot <- rownames(sce)[grep("Dnmt",rownames(sce))]
-# genes.to.plot <- fread("/Users/ricard/data/mm10_regulation/imprinting/mousebook_imprinted_genes.txt.gz") %>% .[symbol%in%rownames(sce),symbol] 
+# genes.to.plot <- fread("/Users/ricard/data/gastrulation10x/results/differential/celltypes/E8.5/Neural_crest_vs_Forebrain_Midbrain_Hindbrain.txt.gz") %>%
+  # .[sig==T & logFC<0,gene]
+
+# genes.to.plot <- fread("/Users/ricard/data/10x_gastrulation_DNMTs/results/differential/E8.5_Dnmt3aKO_Dnmt3bKO_vs_E8.5_WT_Epiblast.txt.gz") %>%
+#   setorder(-log_padj_fdr,na.last=T) %>%
+  # .[sig==T & logFC>0 & abs(logFC)>2,gene] %>% head(n=15)
+
+genes.to.plot <- fread(io$atlas.marker_genes)$gene %>% unique
+
+# genes.to.plot <- rownames(sce)[grep("^Xlr",rownames(sce))]
+# genes.to.plot <- rownames(sce)[grep("^Rhox",rownames(sce))]
+# genes.to.plot <- rownames(sce)[grep("^Tet",rownames(sce))]
+# genes.to.plot <- rownames(sce)[grep("^Dnmt",rownames(sce))]
 
 for (i in 1:length(genes.to.plot)) {
+  
   gene <- genes.to.plot[i]
-  print(sprintf("%s/%s: %s",i,length(genes.to.plot),gene))
   
-  # Create data.table to plot
-  to.plot <- data.table(
-    cell = colnames(sce),
-    expr = logcounts(sce[gene,])[1,]
-  ) %>% merge(sample_metadata, by="cell")
-
-  # Plot
-  # p <- ggplot(to.plot, aes(x=celltype.mapped, y=expr, fill=celltype.mapped)) +
-  #   geom_violin(scale = "width") +
-  #   geom_boxplot(width=0.5, outlier.shape=NA) +
-  #   scale_fill_manual(values=opts$celltype.colors) +
-  #   facet_wrap(~class) +
-  #   theme_classic() +
-  #   labs(x="",y="RNA expression") +
-  #   theme(
-  #     axis.text.x = element_text(colour="black",size=rel(1.0), angle=50, hjust=1),
-  #     axis.text.y = element_text(colour="black",size=rel(1.0)),
-  #     legend.position="none"
-  #   )
-  
-  p <- ggplot(to.plot, aes(x=class, y=expr, fill=class)) +
-    geom_violin(scale = "width", alpha=0.8) +
-    geom_boxplot(width=0.5, outlier.shape=NA, alpha=0.8) +
-    # geom_jitter(size=2, shape=21, stroke=0.2, alpha=0.5) +
-    # scale_fill_manual(values=opts$colors) +
-    facet_wrap(~celltype.mapped, scales="fixed") +
-    theme_classic() +
-    labs(title=gene, x="",y=sprintf("%s expression",gene)) +
-    theme(
-      strip.text = element_text(size=rel(1.0)),
-      # plot.title = element_text(hjust = 0.5, size=rel(1.1), color="black"),
-      plot.title = element_blank(),
-      # axis.text.x = element_text(colour="black",size=rel(1.2), angle=50, hjust=1),
-      axis.text.x = element_blank(),
-      axis.ticks.x = element_blank(),
-      axis.text.y = element_text(colour="black",size=rel(1.0)),
-      axis.title.y = element_text(colour="black",size=rel(1.2)),
-      legend.position="top",
-      legend.title = element_blank(),
-      legend.text = element_text(size=rel(1.1))
-    )
+  if (gene %in% rownames(sce)) {
+    print(sprintf("%s/%s: %s",i,length(genes.to.plot),gene))
+    outfile <- sprintf("%s/%s.pdf",io$outdir,gene)
     
-  # pdf(sprintf("%s/%s.pdf",io$outdir,i), width=8, height=3.5, useDingbats = F)
-  # ggsave("ggtest.png", width = 3.25, height = 3.25, dpi = 1200)
-  jpeg(sprintf("%s/%s.jpeg",io$outdir,gene), width = 1300, height = 800)
-  print(p)
-  dev.off()
+    if (!file.exists(outfile)) {
+      
+      to.plot <- data.table(
+        cell = colnames(sce),
+        expr = logcounts(sce)[gene,]
+      ) %>% merge(sample_metadata[,c("cell","sample","class","celltype.mapped")], by="cell") %>%
+        .[,N:=.N,by=c("sample","celltype.mapped")] %>% .[N>=5]
+      
+      to.plot <- to.plot[celltype.mapped%in%celltypes.tmp]
+      
+      p <- ggplot(to.plot, aes(x=class, y=expr, fill=class)) +
+        geom_violin(scale = "width", alpha=0.8) +
+        geom_boxplot(width=0.5, outlier.shape=NA, alpha=0.8) +
+        # geom_jitter(size=2, shape=21, stroke=0.2, alpha=0.5) +
+        # scale_fill_manual(values=opts$classes.colors, drop=F) +
+        scale_x_discrete(drop=F) +
+        stat_summary(fun.data = give.n, geom = "text", size=2.5) +
+        # facet_wrap(~celltype.mapped, scales="fixed") +
+        facet_wrap(~celltype.mapped, nrow=1, scales="fixed") +
+        theme_classic() +
+        labs(title=gene, x="",y=sprintf("%s expression",gene)) +
+        # guides(x = guide_axis(angle = 90)) +
+        theme(
+          strip.text = element_text(size=rel(0.85)),
+          # plot.title = element_text(hjust = 0.5, size=rel(1.1), color="black"),
+          plot.title = element_blank(),
+          axis.text.x = element_text(colour="black",size=rel(0.95)),
+          # axis.text.x = element_blank(),
+          axis.ticks.x = element_blank(),
+          axis.text.y = element_text(colour="black",size=rel(1.0)),
+          axis.title.y = element_text(colour="black",size=rel(1.0)),
+          legend.position = "top",
+          legend.title = element_blank(),
+          legend.text = element_text(size=rel(0.85))
+        )
+      
+      # pdf(outfile, width=11, height=10)
+      pdf(outfile, width=10, height=5)
+      # png(outfile, width = 1100, height = 1000)
+      # jpeg(outfile, width = 700, height = 600)
+      print(p)
+      dev.off()
+      
+    } else {
+      print(sprintf("%s already exists...",outfile))
+    }
+    
+  } else {
+    print(sprintf("%s not found",gene))
+  }
 }
