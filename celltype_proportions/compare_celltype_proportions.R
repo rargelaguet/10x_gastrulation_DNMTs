@@ -86,7 +86,7 @@ opts$remove.ExE.celltypes <- FALSE
 opts$remove.blood <- FALSE
 opts$remove.small.lineages <- FALSE
 
-opts$min.cells <- 50
+opts$min.cells <- 25
 
 ##########################
 ## Load sample metadata ##

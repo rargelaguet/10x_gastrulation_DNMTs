@@ -73,6 +73,9 @@ dt <- opts$groupA %>% map(function(i) { opts$celltypes %>% map(function(j) {
     .[,c("celltype","groupA","groupB"):=list(j,i,opts$groupB)]
 }) %>% rbindlist }) %>% rbindlist
 
+# Change logFC sign (positive for upregulation events in the KOs and negative for downregulation events in the KOs)
+dt[,logFC:=-logFC]
+
 ####################
 ## Filter results ##
 ####################

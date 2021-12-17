@@ -117,7 +117,7 @@ for (i in opts$query.groups) {
       } else if (grepl("ebi",Sys.info()['nodename'])) {
         lsf <- sprintf("bsub -M 15000 -n 1 -q research-rh74 -o %s/%s_vs_%s_%s.txt", io$tmpdir,i,opts$reference.groups,j)
       }
-      cmd <- sprintf("%s Rscript %s --groupA %s --groupB %s --celltype %s --outfile %s", lsf, io$script, i, opts$reference.groups, j, outfile)
+      cmd <- sprintf("%s Rscript %s --groupA %s --groupB %s --celltype %s --outfile %s", lsf, io$script, opts$reference.groups, i, j, outfile)
       if (isTRUE(opts$test_mode)) cmd <- paste0(cmd, " --test_mode")
 
       # Run

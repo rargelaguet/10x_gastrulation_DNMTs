@@ -14,7 +14,7 @@ opts$celltypes = c(
   "Epiblast",
   "Primitive_Streak",
   "Caudal_epiblast",
-  "PGC",
+  # "PGC",
   "Anterior_Primitive_Streak",
   "Notochord",
   "Def._endoderm",
@@ -46,7 +46,7 @@ opts$celltypes = c(
   "Surface_ectoderm",
   "Visceral_endoderm"
   # "ExE_endoderm",
-  # "ExE_ectoderm",
+  # "ExE_ectoderm"
   # "Parietal_endoderm"
 )
 
@@ -60,9 +60,9 @@ opts$ExE.celltypes <- c(
 # Define groups
 opts$groupA <- c(
   "E8.5_Dnmt3aKO_Dnmt3bWT",
-  "E8.5_Dnmt3aHET_Dnmt3bKO",
+  # "E8.5_Dnmt3aHET_Dnmt3bKO",
   # "E8.5_Dnmt3aHET_Dnmt3bWT",
-  "E8.5_Dnmt3aKO_Dnmt3bHET",
+  # "E8.5_Dnmt3aKO_Dnmt3bHET",
   "E8.5_Dnmt3aKO_Dnmt3bKO",
   "E8.5_Dnmt3aWT_Dnmt3bKO",
   "E8.5_Dnmt1KO"
@@ -70,7 +70,7 @@ opts$groupA <- c(
 
 opts$groupB <- c("E8.5_WT")
 
-opts$min.cells <- 50
+opts$min.cells <- 25
 
 #############################################
 ## Load results from differential analysis ##
@@ -84,12 +84,16 @@ dt <- opts$groupA %>% map(function(i) { opts$celltypes %>% map(function(j) {
 dt[,celltype:=factor(celltype,levels=opts$celltypes)]
 dt[,groupA:=factor(groupA,levels=opts$groupA)]
 
+# Change logFC sign (positive for upregulation events in the KOs and negative for downregulation events in the KOs)
+dt[,logFC:=-logFC]
+
 unique(dt$groupA)
 unique(dt$groupB)
 unique(dt$celltype)
 
 # dt[celltype=="Neural_crest" & sig==TRUE] %>% .[,N:=.N,by="gene"] %>% .[N>1] %>% View
-# dt.filt[groupA=="E8.5_Dnmt3aKO_Dnmt3bWT" & celltype=="Caudal_epiblast" & sig==TRUE] %>% View
+# dt[gene=="H19"] %>% View
+# dt[groupA=="E8.5_Dnmt3aWT_Dnmt3bKO" & celltype=="ExE_ectoderm" & sig==TRUE] %>% View
 
 ####################
 ## Filter results ##
@@ -173,10 +177,7 @@ dev.off()
 ##################################
 
 to.plot <- dt.filt[sig==T] %>%
-  merge(
-    marker_genes.dt[,c("gene","celltype","ExE")] %>% setnames("celltype","celltype_marker"),
-    by = c("gene"), allow.cartesian=TRUE
-  ) %>%
+  merge(marker_genes.dt[,c("gene","celltype")] %>% setnames("celltype","celltype_marker"), by = c("gene"), allow.cartesian=TRUE) %>%
   .[,.N, by=c("celltype","celltype_marker","groupA","groupB")]
 
 p <- ggplot(to.plot, aes(x=factor(celltype), y=N)) +
@@ -200,14 +201,14 @@ dev.off()
 ## Quantify fate disruption: embryonic vs ExE ##
 ################################################
 
-to.plot <- dt.filt[sig==T] %>%
-  merge(
-    marker_genes.dt[,c("gene","ExE")],
-    by = c("gene"), allow.cartesian=TRUE
-  ) %>%
+# Remove genes that are markers of both embryonic and extraembryonic cell types
+marker_genes.filt.dt <- marker_genes.dt %>% .[,V1:=mean(ExE),by="gene"] %>% .[V1%in%c(0,1)] %>% .[,V1:=NULL]
+
+to.plot.cellfatebias <- dt.filt[sig==T] %>%
+  merge(marker_genes.filt.dt[,c("gene","ExE")], by = c("gene"), allow.cartesian=TRUE) %>%
   .[,.N, by=c("ExE","celltype","groupA","groupB")]
 
-p <- ggplot(to.plot, aes(x=factor(celltype), y=N)) +
+p <- ggplot(to.plot.cellfatebias, aes(x=factor(celltype), y=N)) +
   geom_bar(aes(fill = ExE), color="black", stat="identity") + 
   facet_wrap(~groupA, scales="free_y") +
   # scale_fill_manual(values=opts$celltype.colors, drop=F) +
@@ -228,12 +229,11 @@ dev.off()
 ## Barplot of fraction of genes up/down ##
 ##########################################
 
-stop("DOUBLE CHECK THE DIRECTION")
-to.plot <- dt.filt[sig==T] %>%
+to.plot.sign <- dt.filt[sig==T] %>%
   .[,direction:=c("Down","Up")[as.numeric(logFC>0)+1]] %>%
   .[,.N, by=c("celltype","groupA","groupB","direction")]
 
-p <- ggplot(to.plot, aes(x=factor(celltype), y=N)) +
+p <- ggplot(to.plot.sign, aes(x=factor(celltype), y=N)) +
   geom_bar(aes(fill = direction), color="black", stat="identity") + 
   facet_wrap(~groupA, scales="free_y") +
   labs(x="", y="Number of DE genes") +
@@ -252,8 +252,6 @@ dev.off()
 ################################################
 ## Identify genes with unidirectional effects ##
 ################################################
-
-stop("DOUBLE CHECK THE DIRECTION")
 
 foo <- dt.filt[sig==T] %>%
   .[,direction:=c("Down","Up")[as.numeric(logFC>0)+1]] %>%
@@ -328,14 +326,14 @@ dev.off()
 ## Explore ##
 #############
 
-foo <- dt.filt[sig==T] %>%
-  merge(
-    marker_genes.dt[,c("gene","celltype")] %>% setnames("celltype","celltype_marker"),
-    by = c("gene"), allow.cartesian=TRUE
-  )
-
-bar <- foo[celltype_marker=="Visceral_endoderm"] %>% 
-  .[,.N,by=c("gene","groupA","groupB")]
-
-
-dt.filt[gene=="Rhox5" & sig==TRUE] %>% View
+# foo <- dt.filt[sig==T] %>%
+#   merge(
+#     marker_genes.dt[,c("gene","celltype")] %>% setnames("celltype","celltype_marker"),
+#     by = c("gene"), allow.cartesian=TRUE
+#   )
+# 
+# bar <- foo[celltype_marker=="Visceral_endoderm"] %>% 
+#   .[,.N,by=c("gene","groupA","groupB")]
+# 
+# 
+# dt.filt[gene=="Rhox5" & sig==TRUE] %>% View

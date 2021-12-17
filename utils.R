@@ -7,10 +7,30 @@ matrix.please<-function(x) {
 load_SingleCellExperiment <- function(file, normalise = FALSE, features = NULL, cells = NULL, remove_non_expressed_genes = FALSE) {
   library(SingleCellExperiment); library(scran); library(scater);
   sce <- readRDS(file)
-  if (!is.null(cells)) sce <- sce[,cells]
-  if (!is.null(features)) sce <- sce[features,]
-  if (remove_non_expressed_genes) sce <- sce[which(Matrix::rowSums(counts(sce))>15),]
-  if (normalise) sce <- logNormCounts(sce)
+  if (!is.null(cells)) {
+    if (sum(!cells%in%colnames(sce)>0)) {
+      message(sprintf("%s not found in the SingleCellExperiment object",paste(cells[!cells%in%colnames(sce)], collapse=", ")))
+      cells <- cells[cells%in%colnames(sce)]
+    }
+    sce <- sce[,cells]
+  }
+  
+  if (!is.null(features)) {
+    if (sum(!features%in%rownames(sce)>0)) {
+      message(sprintf("%s not found in the SingleCellExperiment object",paste(features[!features%in%rownames(sce)], collapse=", ")))
+      features <- features[features%in%rownames(sce)]
+    }
+    sce <- sce[features,]
+  }
+  
+  if (remove_non_expressed_genes) {
+    sce <- sce[which(Matrix::rowSums(counts(sce))>15),]
+  }
+  
+  if (normalise) {
+    sce <- logNormCounts(sce)
+  }
+  
   return(sce)
 }
 

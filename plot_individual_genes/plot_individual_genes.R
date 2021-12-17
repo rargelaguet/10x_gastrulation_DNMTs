@@ -12,7 +12,7 @@ if (grepl("ricard",Sys.info()['nodename'])) {
   source("/homes/ricard/10x_gastrulation_DNMTs/utils.R")
 }
 
-io$outdir <- paste0(io$basedir,"/results/individual_genes/test")
+io$outdir <- paste0(io$basedir,"/results/individual_genes")
 
 # Define cell types to plot
 opts$celltypes <- c(
@@ -51,9 +51,9 @@ opts$celltypes <- c(
 	"Forebrain_Midbrain_Hindbrain",
 	"Spinal_cord",
 	"Surface_ectoderm",
-	"Visceral_endoderm",
-	"ExE_endoderm",
-	"ExE_ectoderm"
+	"Visceral_endoderm"
+	# "ExE_endoderm",
+	# "ExE_ectoderm"
 	# "Parietal_endoderm"
 )
 
@@ -84,6 +84,7 @@ opts$to.merge <- c(
 
 sample_metadata <- fread(io$metadata) %>% 
   .[pass_QC==TRUE & class%in%opts$classes & celltype.mapped%in%opts$celltypes] %>%
+  .[,celltype.mapped:=stringr::str_replace_all(celltype.mapped,opts$to.merge)] %>%
   .[,celltype.mapped:=factor(celltype.mapped, levels=opts$celltypes)] %>%
   .[,class:=factor(class,levels=opts$classes)]
 
@@ -127,9 +128,10 @@ sample_metadata %>%
 genes.to.plot <- fread(io$atlas.marker_genes)$gene %>% unique
 
 # genes.to.plot <- rownames(sce)[grep("^Xlr",rownames(sce))]
-# genes.to.plot <- rownames(sce)[grep("^Rhox",rownames(sce))]
+genes.to.plot <- rownames(sce)[grep("^Hox",rownames(sce))]
 # genes.to.plot <- rownames(sce)[grep("^Tet",rownames(sce))]
 # genes.to.plot <- rownames(sce)[grep("^Dnmt",rownames(sce))]
+genes.to.plot <- c("Dppa3")
 
 for (i in 1:length(genes.to.plot)) {
   
@@ -137,7 +139,7 @@ for (i in 1:length(genes.to.plot)) {
   
   if (gene %in% rownames(sce)) {
     print(sprintf("%s/%s: %s",i,length(genes.to.plot),gene))
-    outfile <- sprintf("%s/%s.pdf",io$outdir,gene)
+    outfile <- sprintf("%s/imprinting/%s.pdf",io$outdir,gene)
     
     if (!file.exists(outfile)) {
       
@@ -147,7 +149,7 @@ for (i in 1:length(genes.to.plot)) {
       ) %>% merge(sample_metadata[,c("cell","sample","class","celltype.mapped")], by="cell") %>%
         .[,N:=.N,by=c("sample","celltype.mapped")] %>% .[N>=5]
       
-      to.plot <- to.plot[celltype.mapped%in%celltypes.tmp]
+      # to.plot <- to.plot[celltype.mapped%in%celltypes.tmp]
       
       p <- ggplot(to.plot, aes(x=class, y=expr, fill=class)) +
         geom_violin(scale = "width", alpha=0.8) +
@@ -156,11 +158,10 @@ for (i in 1:length(genes.to.plot)) {
         # scale_fill_manual(values=opts$classes.colors, drop=F) +
         scale_x_discrete(drop=F) +
         stat_summary(fun.data = give.n, geom = "text", size=2.5) +
-        # facet_wrap(~celltype.mapped, scales="fixed") +
-        facet_wrap(~celltype.mapped, nrow=1, scales="fixed") +
+        facet_wrap(~celltype.mapped, scales="fixed") +
         theme_classic() +
         labs(title=gene, x="",y=sprintf("%s expression",gene)) +
-        # guides(x = guide_axis(angle = 90)) +
+        guides(x = guide_axis(angle = 90)) +
         theme(
           strip.text = element_text(size=rel(0.85)),
           # plot.title = element_text(hjust = 0.5, size=rel(1.1), color="black"),
@@ -175,8 +176,7 @@ for (i in 1:length(genes.to.plot)) {
           legend.text = element_text(size=rel(0.85))
         )
       
-      # pdf(outfile, width=11, height=10)
-      pdf(outfile, width=10, height=5)
+      pdf(outfile, width=11, height=10)
       # png(outfile, width = 1100, height = 1000)
       # jpeg(outfile, width = 700, height = 600)
       print(p)

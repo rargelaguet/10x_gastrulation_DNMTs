@@ -31,9 +31,9 @@ if (grepl("ricard",Sys.info()['nodename'])) {
 }
 
 # START TEST
-# args$groupA <- c("E8.5_Dnmt3aKO_Dnmt3bWT")
+# args$groupA <- c("E8.5_Dnmt1KO")
 # args$groupB <- c("E8.5_WT")
-# args$celltype <- "ExE_endoderm"
+# args$celltype <- "Cardiomyocytes"
 # args$test_mode <- FALSE
 # END TEST
 
@@ -114,12 +114,12 @@ sce <- sce[rownames(sce)%in%gene_metadata$gene,]
 ################################################
 
 out <- doDiffExpr(sce, opts$groups, opts$min_detection_rate_per_group) %>%
-  # Add sample statistics
-  .[,c("groupA_N","groupB_N"):=list(table(sample_metadata$group)[1],table(sample_metadata$group)[2])]%>% 
-  # setnames(c("groupA_N","groupB_N"),c(sprintf("N_%s",opts$groups[1]),sprintf("N_%s",opts$groups[2]))) %>%
   # Add gene statistics
   merge(cdr.dt, all.y=T, by="gene") %>%
   merge(gene_metadata, all.y=T, by="gene") %>%
+  # Add sample statistics
+  .[,c("groupA_N","groupB_N"):=list(table(sample_metadata$group)[1],table(sample_metadata$group)[2])]%>% 
+  # setnames(c("groupA_N","groupB_N"),c(sprintf("N_%s",opts$groups[1]),sprintf("N_%s",opts$groups[2]))) %>%
   # Calculate statistical significance
   .[, sig := (padj_fdr<=opts$threshold_fdr & abs(logFC)>=opts$min.logFC)] %>%
   .[is.na(sig),sig:=FALSE] %>%
