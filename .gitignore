@@ -35,3 +35,4 @@
 
 # Ignore snakemake stuff
 .snakemake/
+.Rproj.user

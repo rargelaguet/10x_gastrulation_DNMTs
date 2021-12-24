@@ -1,0 +1,110 @@
+configfile: "config.yaml"
+
+# Create directories
+# shell("mkdir -p " + config["directories"]["base"]+config["directories"]["errfiles"])
+# shell("mkdir -p " + config["directories"]["base"]+config["directories"]["outfiles"])
+# for r in ["create_seurat", "Mapping", "Plotting"]:
+#     shell("mkdir -p " + config["directories"]["base"]+config["directories"]["errfiles"] + r + "/")
+#     shell("mkdir -p " + config["directories"]["base"]+config["directories"]["outfiles"] + r + "/")
+
+rule all:
+    input:
+    	# config["directories"]["processed_data"]+"/seurat.rds"
+        # sce=config["directories"]["processed_data"]+"/SingleCellExperiment.rds"
+        expand("%s/mapping/mapping_mnn_{sample}.rds" % config["directories"]["results"], sample=config["samples"])[:2]
+        # config["directories"]["results"]+expand("mapping/mapping_mnn_{sample}.rds", sample=config["samples"])[:2]
+    # params:
+    #     sample=expand("{sample}", sample=config["samples"])[:2]
+
+rule create_seurat:
+    input:
+        script=config["scripts"]["create_seurat"],
+        input_dir=config["directories"]["original_data"]
+    output:
+        seurat=config["directories"]["processed_data"]+"/seurat.rds",
+        cell_info=config["directories"]["processed_data"]+"/cell_info.txt.gz",
+        gene_info=config["directories"]["processed_data"]+"/gene_info.txt.gz",
+        metadata=config["directories"]["processed_data"]+"/metadata.txt.gz"
+    params:
+        outdir=config["directories"]["processed_data"],
+        sample=expand("{sample}", sample=config["samples"])[:2],
+        memory=config["lsf"]["create_seurat"]["memory"]
+    shell:
+        "Rscript {input.script} --inputdir {input.input_dir} --outputdir {params.outdir} --samples {params.sample} --test"
+
+rule qc:
+    input:
+    	metadata=rules.create_seurat.output.metadata,
+        script=config["scripts"]["qc"]
+    output:
+        qc_metrics_boxplot=config["directories"]["results"]+"/qc/qc_metrics_boxplot.pdf",
+        qc_metrics_histogram=config["directories"]["results"]+"/qc/qc_metrics_histogram.pdf",
+        qc_metrics_barplot=config["directories"]["results"]+"/qc/qc_metrics_barplot.pdf",
+        metadata=config["directories"]["results"]+"/qc/sample_metadata_after_qc.txt.gz"
+    params:
+        sample=expand("{sample}", sample=config["samples"])[:2],
+        memory=config["lsf"]["qc"]["memory"],
+        nFeature_RNA=1500,
+        nCount_RNA=3000,
+        percent_mt=15,
+        outdir=config["directories"]["results"]+"/qc"
+    shell:
+        "Rscript {input.script} --outputdir {params.outdir} --samples {params.sample} --nFeature_RNA {params.nFeature_RNA} --nCount_RNA {params.nCount_RNA} --percent.mt {params.percent_mt}"
+
+
+rule seurat_to_sce:
+    input:
+        seurat=config["directories"]["processed_data"]+"/seurat.rds",
+    	metadata=rules.qc.output.metadata,
+        script=config["scripts"]["seurat_to_sce"],
+    output:
+        sce=config["directories"]["processed_data"]+"/SingleCellExperiment.rds",
+    params:
+        sample=expand("{sample}", sample=config["samples"])[:2]
+        memory=config["lsf"]["seurat_to_sce"]["memory"],
+    shell:
+        "Rscript {input.script} --samples {params.sample} --seurat {input.seurat} --metadata {input.metadata} --outfile {output.sce} --test"
+
+
+
+rule mapping:
+    input:
+        atlas_sce=config["directories"]["atlas"]+"/processed/SingleCellExperiment.rds",
+    	atlas_metadata=config["directories"]["atlas"]+"/sample_metadata.txt.gz",
+        query_sce=config["directories"]["processed_data"]+"/SingleCellExperiment.rds",
+    	query_metadata=rules.qc.output.metadata,
+        script=config["scripts"]["mapping"],
+        outdir=config["directories"]["results"]+"/mapping"
+    output:
+        config["directories"]["results"]+"/mapping/mapping_mnn_{sample}.rds",
+    params:
+        sample=expand("{sample}", sample=config["samples"])[:2],
+        atlas_stages=" ".join(["E6.5","E6.75"]),
+        # atlas_stages=["E6.5","E6.75","E7.0","E7.25","E7.5","E7.75","E8.0","E8.25","E8.5","mixed_gastrulation"]
+        npcs=25,
+        n_neighbours=25
+        memory=config["lsf"]["mapping"]["memory"],
+    shell:
+        "Rscript {input.script} --query_batches {params.sample} --atlas_stages {params.atlas_stages} --query_sce {input.query_sce} --atlas_sce {input.atlas_sce} --atlas_metadata {input.atlas_metadata} --query_metadata {input.query_metadata} --outdir {input.outdir} --npcs {params.npcs} --n_neighbours {params.n_neighbours}"
+
+
+# rule sex_assignment:
+#     input:
+#         sce=rules.seurat_to_sce.output.sce,
+#         script=config["scripts"]["sex"],
+#         outdir=config["directories"]["results"]+"/sex_assignment"
+#     output:
+#         sex_ychr_expr_per_gene=config["directories"]["results"]+"/sex/sex_ychr_expr_per_gene.pdf",
+#         sex_ychr_expr_aggregated=config["directories"]["results"]+"/sex/sex_ychr_expr_aggregated.pdf",
+#         xist_expr=config["directories"]["results"]+"/sex/xist_expr.pdf",
+#         sex_assignment=config["directories"]["results"]+"/sex/sex_assignment.txt.gz"
+#     params:
+#         sample=expand("{sample}", sample=config["samples"])[:2],
+#         # memory=config["lsf"]["sex"]["memory"],
+#         threshold_ratioY=0.001
+#     shell:
+#         "Rscript {input.script} --outdir {input.outdir} --sce {input.sce} --samples {params.sample} --threshold.ratioY {params.threshold_ratioY}"
+
+
+# (TO-DO) rule doublet_detection:
+

@@ -1,0 +1,175 @@
+samples:
+    # - E125_DNMT3A_HET_A_L001
+    # - E125_DNMT3A_HET_A_L003
+    # - E125_DNMT3A_KO_B_L002
+    # - E125_DNMT3A_KO_E_L004
+    # - A_E12_5_D3a_Het_L001
+    # - B_E12_5_D3a_KO_L002
+    - SIGAA6_E85_2_Dnmt3aKO_Dnmt3b_WT_L001
+    - SIGAB6_E85_3_Dnmt3aWT_Dnmt3b_WT_L002
+    - SIGAC6_E85_5_Dnmt3aKO_Dnmt3b_Het_L003
+    - SIGAD6_E85_8_Dnmt3aHet_Dnmt3b_KO_L004
+    - 15_E8_5_D3A_WT_D3B_WT_L007
+    - 17_E8_5_D3A_KO_D3B_WT_L008
+    - 2_E8_5_D3A_WT_D3B_KO_L003
+    - 3_E8_5_D3A_HET_D3B_WT_L004
+    - 7_E8_5_D3A_WT_D3B_KO_L005
+    - 8_E8_5_D3A_KO_D3B_KO_L006
+    - E8_5_Dnmt1_KO_male_SIGAC8_L001
+    - E8_5_Dnmt1_KO_male_SIGAD8_L002
+    - E8_5_Dnmt1_KO_male_SIGAE8_L003
+    - E8_5_Dnmt1_WT_female_SIGAB8_L004
+    - E8_5_Dnmt1_WT_female_SIGAF8_L005
+    - E8_5_Dnmt3ab_WT_female_SIGAA8_L006
+    - SIGAH10_Dnmt3ab_WT_L002
+    - SIGAH11_Dnmt3ab_WT_L003
+    - SIGAH9_Dnmt3a_KO_Dnmt3b_Het_L001
+    - SIGAG5_9_dnmt3ab_DKO_L005
+
+
+classes:
+    # - E12.5_Dnmt3aWT_Dnmt3bHET
+    # - E12.5_Dnmt3aWT_Dnmt3bKO
+    # - E12.5_Dnmt3aHET_Dnmt3bWT
+    # - E12.5_Dnmt3aKO_Dnmt3bWT
+    - E8.5_Dnmt3aKO_Dnmt3bWT
+    - E8.5_WT
+    - E8.5_Dnmt3aHET_Dnmt3bKO
+    - E8.5_Dnmt3aHET_Dnmt3bWT
+    - E8.5_Dnmt3aKO_Dnmt3bHET
+    - E8.5_Dnmt3aKO_Dnmt3bKO
+    - E8.5_Dnmt3aWT_Dnmt3bKO
+    - E8.5_Dnmt1KO
+
+#################
+## Directories ##
+#################
+
+directories:
+    base: /bi/group/reik/ricard/data/10x_gastrulation_DNMTs
+    original_data: /bi/group/reik/ricard/data/10x_gastrulation_DNMTs/original
+    processed_data: /bi/group/reik/ricard/data/10x_gastrulation_DNMTs/processed_new
+    results: /bi/group/reik/ricard/data/10x_gastrulation_DNMTs/results_new
+    atlas: /bi/group/reik/ricard/data/pijuansala2019_gastrulation10x
+
+###############
+## Resources ##
+###############
+
+resources:
+    marker_genes: /bi/group/reik/ricard/data/pijuansala2019_gastrulation10x/results/marker_genes/all_stages/marker_genes.txt.gz
+    celltypes: ["Epiblast", "Primitive_Streak", "Caudal_epiblast", "PGC", "Anterior_Primitive_Streak", "Notochord", "Def._endoderm", "Gut", "Nascent_mesoderm", "Mixed_mesoderm", "Intermediate_mesoderm", "Caudal_Mesoderm", "Paraxial_mesoderm", "Somitic_mesoderm", "Pharyngeal_mesoderm", "Cardiomyocytes", "Allantois", "ExE_mesoderm", "Mesenchyme", "Haematoendothelial_progenitors", "Endothelium", "Blood_progenitors_1", "Blood_progenitors_2", "Erythroid1", "Erythroid2", "Erythroid3", "NMP", "Rostral_neurectoderm", "Caudal_neurectoderm", "Neural_crest", "Forebrain_Midbrain_Hindbrain", "Spinal_cord", "Surface_ectoderm", "Visceral_endoderm", "ExE_endoderm", "ExE_ectoderm", "Parietal_endoderm"]
+    stages: ["E8.5"]
+    gene_metadata: /bi/group/reik/ricard/data/ensembl/mouse/v87/BioMart/mRNA/Mmusculus_genes_BioMart.87.txt
+
+#############
+## Scripts ##
+#############
+
+scripts:
+    create_seurat: ../processing/1_create_seurat_rna.R
+    qc: ../processing/2_QC.R
+    seurat_to_sce: ../processing/3_seurat_to_SCE.R
+    doublet_detection: ../processing/4_doublet_detection.R
+    parse_doublet_results: ../processing/5_parse_sample_metadata_after_doublets.R
+    mapping_mnn: ../mapping/run/mnn/mapping_mnn.R
+    parse_mapping: ../mapping/run/parse_sample_metadata_after_mapping.R
+    dimensionality_reduction_sce: ../dimensionality_reduction/dimensionality_reduction_sce.R
+    dimensionality_reduction_seurat: ../dimensionality_reduction/dimensionality_reduction_seurat.R
+    pseudobulk_rna: ../pseudobulk/pseudobulk_rna.R
+    # celltype_validation_single_cells: ../celltype_validation/celltype_validation_single_cells.R
+    # celltype_validation_pseudobulk: ../celltype_validation/celltype_validation_pseudobulk.R
+    plot_mapping_results: ../mapping/analysis/plot_mapping_umap.R
+    plot_celltype_proportions: ../celltype_proportions/plot_celltype_proportions.R
+
+
+################
+## Parameters ##
+################
+
+params:
+    qc:
+        min_nFeature_RNA: 1000
+        max_nFeature_RNA: 10000
+        percent_mt: 30
+        percent_rib: 35
+
+    doublet_detection:
+        doublet_score_threshold: 1.50
+
+    mapping_mnn:
+        atlas_stages: ["E6.5","E6.75","E7.0","E7.25","E7.5","E7.75","E8.0","E8.25","E8.5"]
+        npcs: 50
+        n_neighbours: 25
+
+    pseudobulk_rna:
+        group_by: ["celltype.mapped"]
+        normalisation_method: "cpm"
+        
+    dimensionality_reduction_sce:
+        npcs: 30
+        features: 1000
+        n_neighbors: 25
+        min_dist: 0.3
+        vars_to_regress: ["nFeature_RNA","mit_percent_RNA"]
+        colour_by: ["celltype.mapped"]
+
+    dimensionality_reduction_seurat:
+        npcs: 30
+        features: 1000
+        n_neighbors: 25
+        min_dist: 0.3
+        seed: 42
+        vars_to_regress: ["nFeature_RNA","mit_percent_RNA"]
+        colour_by: ["celltype.mapped"]
+
+    plot_celltype_proportions:
+        celltype_label: "celltype.mapped"
+
+    # plot_mapping_results
+
+###########
+## Slurm ##
+###########
+
+slurm:  # memory in MB
+    create_seurat: 
+        memory: 25000
+        threads: 1
+    qc: 
+        memory: 5000
+        threads: 1
+    seurat_to_sce:
+        memory: 25000
+        threads: 1
+    doublet_detection:
+        memory: 15000
+        threads: 1
+    parse_doublet_results:
+        memory: 2000
+        threads: 1
+    mapping_mnn:
+        memory: 80000
+        threads: 1
+    mapping_mnn_all_samples:
+        memory: 100000
+        threads: 1
+    parse_mapping_results:
+        memory: 3000
+        threads: 1
+    pseudobulk_rna:
+        memory: 15000
+        threads: 1
+    dimensionality_reduction_sce:
+        memory: 25000
+        threads: 1
+    dimensionality_reduction_seurat:
+        memory: 40000
+        threads: 1
+    plot_mapping_results:
+        memory: 4000
+        threads: 1
+    plot_celltype_proportions:
+        memory: 4000
+        threads: 1
+

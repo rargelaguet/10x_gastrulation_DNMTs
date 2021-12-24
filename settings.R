@@ -3,6 +3,7 @@ suppressPackageStartupMessages(library(purrr))
 suppressPackageStartupMessages(library(ggplot2))
 suppressPackageStartupMessages(library(ggpubr))
 suppressPackageStartupMessages(library(SingleCellExperiment))
+suppressPackageStartupMessages(library(argparse))
 
 #########
 ## I/O ##
@@ -17,6 +18,16 @@ if (grepl("ricard",Sys.info()['nodename'])) {
   io$basedir <- "/hps/nobackup2/research/stegle/users/ricard/10x_gastrulation_DNMTs"
   io$atlas.basedir <- "/hps/nobackup2/research/stegle/users/ricard/gastrulation10x"
   io$gene_metadata <- "/hps/nobackup2/research/stegle/users/ricard/ensembl/mouse/v87/BioMart/all_genes/Mmusculus_genes_BioMart.87.txt"
+} else if (Sys.info()[['nodename']]=="BI2404M") {
+  io$basedir <- "/Users/argelagr/data/10x_gastrulation_DNMTs"
+  io$atlas.basedir <- "/Users/argelagr/data/gastrulation10x"
+  io$gene_metadata <- "/Users/argelagr/data/ensembl/mouse/v87/BioMart/mRNA/Mmusculus_genes_BioMart.87.txt"
+} else if (grepl("pebble|headstone", Sys.info()['nodename'])) {
+  if (grepl("argelag", Sys.info()['effective_user'])) {
+    io$basedir <- "/bi/group/reik/ricard/data/10x_gastrulation_DNMTs"
+    io$atlas.basedir <- "/bi/group/reik/ricard/data/pijuansala2019_gastrulation10x"
+    io$gene_metadata <- "/bi/group/reik/ricard/data/ensembl/mouse/v87/BioMart/all_genes/Mmusculus_genes_BioMart.87.txt"
+  }
 } else {
   stop("Computer not recognised")
 }
@@ -24,13 +35,13 @@ if (grepl("ricard",Sys.info()['nodename'])) {
 io$metadata <- paste0(io$basedir,"/sample_metadata.txt.gz")
 io$seurat <- paste0(io$basedir,"/processed/seurat.rds")
 io$sce <- paste0(io$basedir,"/processed/SingleCellExperiment.rds")
-io$sex <- paste0(io$basedir,"/results/sex/sex_assignment.txt.gz")
+# io$sex <- paste0(io$basedir,"/results/sex/sex_assignment.txt.gz")
 
 # Atlas information
 io$atlas.metadata <- paste0(io$atlas.basedir,"/sample_metadata.txt.gz")
 io$atlas.marker_genes <- paste0(io$atlas.basedir,"/results/marker_genes/all_stages/marker_genes.txt.gz")
 io$atlas.differential <- paste0(io$atlas.basedir,"/results/differential")
-io$atlas.average_expression_per_celltype <- paste0(io$atlas.basedir,"/results/marker_genes/avg_expr_per_celltype_and_gene.txt.gz")
+# io$atlas.average_expression_per_celltype <- paste0(io$atlas.basedir,"/results/marker_genes/avg_expr_per_celltype_and_gene.txt.gz")
 io$atlas.sce <- paste0(io$atlas.basedir,"/processed/SingleCellExperiment.rds")
 
 
@@ -126,31 +137,23 @@ opts$celltype.colors = c(
   "Blood_progenitors" = "#c9a997"
 )
 
-opts$batches <- c(
-  
-  # second batch
+opts$samples <- c(
   # "E125_DNMT3A_HET_A_L001",
   # "E125_DNMT3A_HET_A_L003",
   # "E125_DNMT3A_KO_B_L002",
   # "E125_DNMT3A_KO_E_L004",
-  
-  # third batch
+  # "A_E12_5_D3a_Het_L001",
+  # "B_E12_5_D3a_KO_L002",
   "SIGAA6_E85_2_Dnmt3aKO_Dnmt3b_WT_L001",
   "SIGAB6_E85_3_Dnmt3aWT_Dnmt3b_WT_L002",
   "SIGAC6_E85_5_Dnmt3aKO_Dnmt3b_Het_L003",
   "SIGAD6_E85_8_Dnmt3aHet_Dnmt3b_KO_L004",
-  
-  # fourth batch
   "15_E8_5_D3A_WT_D3B_WT_L007",
   "17_E8_5_D3A_KO_D3B_WT_L008",
   "2_E8_5_D3A_WT_D3B_KO_L003",
   "3_E8_5_D3A_HET_D3B_WT_L004",
   "7_E8_5_D3A_WT_D3B_KO_L005",
   "8_E8_5_D3A_KO_D3B_KO_L006",
-  # "A_E12_5_D3a_Het_L001",
-  # "B_E12_5_D3a_KO_L002",
-  
-  # fifth batch
   "E8_5_Dnmt1_KO_male_SIGAC8_L001",
   "E8_5_Dnmt1_KO_male_SIGAD8_L002",
   "E8_5_Dnmt1_KO_male_SIGAE8_L003",
@@ -163,31 +166,23 @@ opts$batches <- c(
   "SIGAG5_9_dnmt3ab_DKO_L005"
 )
 
-opts$batch.to.class <- c(
-
-  # second batch
+opts$sample2class <- c(
   # "E125_DNMT3A_HET_A_L001" = "E12.5_Dnmt3aWT_Dnmt3bHET",
   # "E125_DNMT3A_HET_A_L003" = "E12.5_Dnmt3aWT_Dnmt3bHET",
   # "E125_DNMT3A_KO_B_L002" = "E12.5_Dnmt3aWT_Dnmt3bKO",
   # "E125_DNMT3A_KO_E_L004" = "E12.5_Dnmt3aWT_Dnmt3bKO",
-
-  # third batch
+  # "A_E12_5_D3a_Het_L001" = "E12.5_Dnmt3aHET_Dnmt3bWT",
+  # "B_E12_5_D3a_KO_L002"  = "E12.5_Dnmt3aKO_Dnmt3bWT ",
   "SIGAA6_E85_2_Dnmt3aKO_Dnmt3b_WT_L001" = "E8.5_Dnmt3aKO_Dnmt3bWT",
   "SIGAB6_E85_3_Dnmt3aWT_Dnmt3b_WT_L002" = "E8.5_WT",
   "SIGAC6_E85_5_Dnmt3aKO_Dnmt3b_Het_L003" = "E8.5_Dnmt3aKO_Dnmt3bHET",
   "SIGAD6_E85_8_Dnmt3aHet_Dnmt3b_KO_L004" = "E8.5_Dnmt3aHET_Dnmt3bKO",
-
-  # fourth batch
   "15_E8_5_D3A_WT_D3B_WT_L007" = "E8.5_WT",
   "17_E8_5_D3A_KO_D3B_WT_L008" = "E8.5_Dnmt3aKO_Dnmt3bWT",
   "2_E8_5_D3A_WT_D3B_KO_L003" = "E8.5_Dnmt3aWT_Dnmt3bKO",
   "3_E8_5_D3A_HET_D3B_WT_L004" = "E8.5_Dnmt3aHET_Dnmt3bWT",
   "7_E8_5_D3A_WT_D3B_KO_L005" = "E8.5_Dnmt3aWT_Dnmt3bKO",
   "8_E8_5_D3A_KO_D3B_KO_L006" = "E8.5_Dnmt3aKO_Dnmt3bKO",
-  # "A_E12_5_D3a_Het_L001" = "E12.5_Dnmt3aHET_Dnmt3bWT",
-  # "B_E12_5_D3a_KO_L002"  = "E12.5_Dnmt3aKO_Dnmt3bWT ",
-
-  # fifth batch
   "E8_5_Dnmt1_KO_male_SIGAC8_L001" = "E8.5_Dnmt1KO",
   "E8_5_Dnmt1_KO_male_SIGAD8_L002" = "E8.5_Dnmt1KO",
   "E8_5_Dnmt1_KO_male_SIGAE8_L003" = "E8.5_Dnmt1KO",
@@ -197,8 +192,6 @@ opts$batch.to.class <- c(
   "SIGAH10_Dnmt3ab_WT_L002" = "E8.5_WT",
   "SIGAH11_Dnmt3ab_WT_L003" = "E8.5_WT",
   "SIGAH9_Dnmt3a_KO_Dnmt3b_Het_L001" = "E8.5_Dnmt3aKO_Dnmt3bHET",
-
-  # sixth batch
   "SIGAG5_9_dnmt3ab_DKO_L005" = "E8.5_Dnmt3aKO_Dnmt3bKO"
 )
 
@@ -222,9 +215,39 @@ opts$classes <- c(
   "E8.5_Dnmt1KO"
 )
 
-opts$samples <- c(
-  # "E12.5_Dnmt3aHET_Dnmt3bWT_1",
-  # "E12.5_Dnmt3aKO_Dnmt3bWT_1",
+opts$sample2alias <- c(
+  # "E125_DNMT3A_HET_A_L001" = "E12.5_Dnmt3aWT_Dnmt3bHET_1",
+  # "E125_DNMT3A_HET_A_L003" = "E12.5_Dnmt3aWT_Dnmt3bHET_2",
+  # "E125_DNMT3A_KO_B_L002" = "E12.5_Dnmt3aWT_Dnmt3bKO_1",
+  # "E125_DNMT3A_KO_E_L004" = "E12.5_Dnmt3aWT_Dnmt3bKO_2",
+  # "A_E12_5_D3a_Het_L001" = "E12.5_Dnmt3aHET_Dnmt3bWT",
+  # "B_E12_5_D3a_KO_L002"  = "E12.5_Dnmt3aKO_Dnmt3bWT ",
+  "SIGAA6_E85_2_Dnmt3aKO_Dnmt3b_WT_L001" = "E8.5_Dnmt3aKO_Dnmt3bWT_1",
+  "17_E8_5_D3A_KO_D3B_WT_L008" = "E8.5_Dnmt3aKO_Dnmt3bWT_2",
+  "SIGAB6_E85_3_Dnmt3aWT_Dnmt3b_WT_L002" = "E8.5_WT_1",
+  "15_E8_5_D3A_WT_D3B_WT_L007" = "E8.5_WT_2",
+  "E8_5_Dnmt1_WT_female_SIGAB8_L004" = "E8.5_WT_3",
+  "E8_5_Dnmt1_WT_female_SIGAF8_L005" = "E8.5_WT_4",
+  "E8_5_Dnmt3ab_WT_female_SIGAA8_L006" = "E8.5_WT_5",
+  "SIGAH10_Dnmt3ab_WT_L002" = "E8.5_WT_6",
+  "SIGAH11_Dnmt3ab_WT_L003" = "E8.5_WT_7",
+  "SIGAC6_E85_5_Dnmt3aKO_Dnmt3b_Het_L003" = "E8.5_Dnmt3aKO_Dnmt3bHET_1",
+  "SIGAH9_Dnmt3a_KO_Dnmt3b_Het_L001" = "E8.5_Dnmt3aKO_Dnmt3bHET_2",
+  "SIGAD6_E85_8_Dnmt3aHet_Dnmt3b_KO_L004" = "E8.5_Dnmt3aHET_Dnmt3bKO",
+  "2_E8_5_D3A_WT_D3B_KO_L003" = "E8.5_Dnmt3aWT_Dnmt3bKO_1",
+  "7_E8_5_D3A_WT_D3B_KO_L005" = "E8.5_Dnmt3aWT_Dnmt3bKO_2",
+  "3_E8_5_D3A_HET_D3B_WT_L004" = "E8.5_Dnmt3aHET_Dnmt3bWT",
+  "8_E8_5_D3A_KO_D3B_KO_L006" = "E8.5_Dnmt3aKO_Dnmt3bKO_1",
+  "SIGAG5_9_dnmt3ab_DKO_L005" = "E8.5_Dnmt3aKO_Dnmt3bKO_2",
+  "E8_5_Dnmt1_KO_male_SIGAC8_L001" = "E8.5_Dnmt1KO_1",
+  "E8_5_Dnmt1_KO_male_SIGAD8_L002" = "E8.5_Dnmt1KO_2",
+  "E8_5_Dnmt1_KO_male_SIGAE8_L003" = "E8.5_Dnmt1KO_3"
+)
+
+
+opts$aliases <- c(
+  # "E12.5_Dnmt3aHET_Dnmt3bWT",
+  # "E12.5_Dnmt3aKO_Dnmt3bWT",
   # "E12.5_Dnmt3aWT_Dnmt3bHET_1",
   # "E12.5_Dnmt3aWT_Dnmt3bHET_2",
   # "E12.5_Dnmt3aWT_Dnmt3bKO_1",
@@ -232,8 +255,8 @@ opts$samples <- c(
   "E8.5_Dnmt1KO_1",
   "E8.5_Dnmt1KO_2",
   "E8.5_Dnmt1KO_3",
-  "E8.5_Dnmt3aHET_Dnmt3bKO_1",
-  "E8.5_Dnmt3aHET_Dnmt3bWT_1",
+  "E8.5_Dnmt3aHET_Dnmt3bKO",
+  "E8.5_Dnmt3aHET_Dnmt3bWT",
   "E8.5_Dnmt3aKO_Dnmt3bHET_1",
   "E8.5_Dnmt3aKO_Dnmt3bHET_2",
   "E8.5_Dnmt3aKO_Dnmt3bKO_1",
@@ -259,3 +282,4 @@ opts$samples <- c(
   # .[,celltype.mapped:=stringr::str_replace_all(celltype.mapped," ","_")] %>%
   # .[,celltype.mapped:=stringr::str_replace_all(celltype.mapped,"/","_")]
 
+  
