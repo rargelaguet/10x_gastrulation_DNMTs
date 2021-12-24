@@ -36,3 +36,6 @@
 # Ignore snakemake stuff
 .snakemake/
 .Rproj.user
+
+*.snakemake*
+*slurm*out
