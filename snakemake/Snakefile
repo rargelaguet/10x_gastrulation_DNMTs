@@ -35,13 +35,13 @@ rule all:
         config["directories"]["results"]+"/mapping/sample_metadata_after_mapping.txt.gz",
         config["directories"]["results"]+"/mapping/sample_metadata_after_mapping_all_samples.txt.gz",
         expand("%s/mapping/pdf/umap_mapped_allcells.pdf" % config["directories"]["results"]),
-        config["directories"]["results"]+"/celltype_proportions/completed.txt",
+        config["directories"]["results"]+"/celltype_proportions/completed.txt"
 
-        expand("%s/dimensionality_reduction/sce/{sample}/pca_features{dimred_sce_features}_pcs{dimred_sce_npcs}.txt.gz" % (config["directories"]["results"]), 
-            sample = config["samples"], 
-            dimred_sce_features = config["params"]["dimensionality_reduction_sce"]["features"], 
-            dimred_sce_npcs = config["params"]["dimensionality_reduction_sce"]["npcs"]
-            ),
+        # expand("%s/dimensionality_reduction/sce/{sample}/pca_features{dimred_sce_features}_pcs{dimred_sce_npcs}.txt.gz" % (config["directories"]["results"]), 
+        #     sample = config["samples"], 
+        #     dimred_sce_features = config["params"]["dimensionality_reduction_sce"]["features"], 
+        #     dimred_sce_npcs = config["params"]["dimensionality_reduction_sce"]["npcs"]
+        #     ),
 
         # expand("%s/pseudobulk/SingleCellExperiment_pseudobulk_{group_by}.rds" % config["directories"]["results"], 
         #     group_by=config["pseudobulk_rna"]["group_by"]),
@@ -55,7 +55,7 @@ rule all:
 rule create_seurat:
     input:
         script = config["scripts"]["create_seurat"],
-        inputdir = config["directories"]["original_data"]+"/td_tomato/all_batches_symbolic"
+        inputdir = config["directories"]["original_data"]
     output:
         seurat = config["directories"]["processed_data"]+"/seurat.rds",
         metadata = config["directories"]["processed_data"]+"/metadata.txt.gz"

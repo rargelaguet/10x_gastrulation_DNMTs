@@ -35,7 +35,7 @@ doBatchCorrect <- function(counts, timepoints, samples, timepoint_order, sample_
   correct_list <- lapply(pc_list, function(x){
     if(length(x) > 1){
         #return(do.call(scran::fastMNN, c(x, "pc.input" = TRUE, BPPARAM = BPPARAM))$corrected)
-        return(do.call(reducedMNN, c(x, BPPARAM = BPPARAM))$corrected) # edited 09.02. because of "Error: 'fastMNN' is not an exported object from 'namespace:scran'", 17.02. changed to reducedMNN because otherwise it thinks PCA space is logcounts which would be utter bullcrap
+        return(do.call(reducedMNN, c(x, BPPARAM = BPPARAM))$corrected) # edited 09.02.2020 because of "Error: 'fastMNN' is not an exported object from 'namespace:scran'", 17.02.2020 changed to reducedMNN because otherwise it thinks PCA space is logcounts which would be utter bullcrap
     } else {
       return(x[[1]])
     }
@@ -44,7 +44,7 @@ doBatchCorrect <- function(counts, timepoints, samples, timepoint_order, sample_
   #perform correction over list
   if(length(correct_list)>1){
       #correct <- do.call(scran::fastMNN, c(correct_list, "pc.input" = TRUE, BPPARAM = BPPARAM))$corrected
-      correct <- do.call(reducedMNN, c(correct_list, BPPARAM = BPPARAM))$corrected # edited 09.02. because of "Error: 'fastMNN' is not an exported object from 'namespace:scran'", 17.02. changed to reducedMNN because otherwise it thinks PCA space is logcounts which would be utter bullcrap
+      correct <- do.call(reducedMNN, c(correct_list, BPPARAM = BPPARAM))$corrected # edited 09.02.2020 because of "Error: 'fastMNN' is not an exported object from 'namespace:scran'", 17.02.2020 changed to reducedMNN because otherwise it thinks PCA space is logcounts which would be utter bullcrap
   } else {
     correct <- correct_list[[1]]
   }
@@ -142,13 +142,13 @@ mapWrap <- function(atlas_sce, atlas_meta, map_sce, map_meta, order = NULL, k = 
     list(counts=Matrix::Matrix(cbind(counts(atlas_sce),counts(map_sce)),sparse=TRUE)))
   
   #big_sce <- scater::normalize(sce_all)
-  #big_sce <- scater::logNormCounts(sce_all) # edited 09.02. because normalize deprecated in favour of logNormCounts
-  big_sce <- multiBatchNorm(sce_all, batch=c(atlas_meta$sample, map_meta$sample)) # edited 17.02. because now multibatchnorm exists
+  #big_sce <- scater::logNormCounts(sce_all) # edited 09.02.2020 because normalize deprecated in favour of logNormCounts
+  big_sce <- multiBatchNorm(sce_all, batch=c(atlas_meta$sample, map_meta$batch)) # edited 17.02.2020 because now multibatchnorm exists
   message("Done\n")
   
   if (is.null(genes)) {
     message("Genes not provided. Computing highly variable genes...")
-    hvgs <- getHVGs(big_sce, block=c(atlas_meta$sample, map_meta$sample))
+    hvgs <- getHVGs(big_sce, block=c(atlas_meta$sample, map_meta$batch))
     message("Done\n")
   } else {
     hvgs <- genes
@@ -157,7 +157,7 @@ mapWrap <- function(atlas_sce, atlas_meta, map_sce, map_meta, order = NULL, k = 
   
   message("Performing PCA...")
   big_pca <- multiBatchPCA(big_sce,
-                           batch=c(atlas_meta$sample, map_meta$sample),
+                           batch=c(atlas_meta$sample, map_meta$batch),
                            subset.row = hvgs,
                            d = npcs,
                            preserve.single = TRUE,
@@ -187,7 +187,7 @@ mapWrap <- function(atlas_sce, atlas_meta, map_sce, map_meta, order = NULL, k = 
   
   message("MNN mapping...")                        
   correct <- reducedMNN(rbind(atlas_corrected, map_pca),
-                      batch=c(rep("ATLAS", dim(atlas_meta)[1]), map_meta$sample),
+                      batch=c(rep("ATLAS", dim(atlas_meta)[1]), map_meta$batch),
                       merge.order=order)$corrected
   atlas   <- 1:nrow(atlas_pca)
   correct_atlas <- correct[atlas,]
