@@ -62,9 +62,10 @@ colData(sce) <- sample_metadata %>% tibble::column_to_rownames("cell") %>% DataF
 sce <- cxds_bcds_hybrid(sce, estNdbl=FALSE)
 
 dt <- colData(sce) %>%
-  .[,c("sample","cxds_score", "bcds_score", "hybrid_score")] %>%
+  .[,c("cxds_score", "bcds_score", "hybrid_score")] %>%
   as.data.frame %>% tibble::rownames_to_column("cell") %>% as.data.table %>%
-  .[,c("cxds_score","bcds_score","hybrid_score"):=list(round(cxds_score,2),round(bcds_score,2),round(hybrid_score,2))]
+  .[,c("cxds_score","bcds_score","hybrid_score"):=list(round(cxds_score,2),round(bcds_score,2),round(hybrid_score,2))] %>%
+  setnames("hybrid_score","doublet_score")
 
 # Call doublets
 dt[,doublet_call:=hybrid_score>args$hybrid_score_threshold]

@@ -12,7 +12,7 @@ suppressPackageStartupMessages(library(Seurat))
 p <- ArgumentParser(description='')
 p$add_argument('--seurat',             type="character",                               help='Seurat object file')
 p$add_argument('--metadata',        type="character",                               help='Cell metadata file')
-p$add_argument('--class',       type="character",  default="all",  nargs='+',  help='Classes to plot')
+p$add_argument('--classes',       type="character",  default="all",  nargs='+',  help='Classes to plot')
 p$add_argument('--features',        type="integer",    default=1000,                help='Number of features')
 p$add_argument('--npcs',            type="integer",    default=30,                  help='Number of PCs')
 p$add_argument('--vars_to_regress', type="character",                nargs='+',     help='Metadata columns to regress out')
@@ -32,21 +32,24 @@ args <- p$parse_args(commandArgs(TRUE))
 #####################
 
 ## START TEST ##
-args$seurat <- io$seurat
-args$metadata <- file.path(io$basedir,"results_new/mapping/sample_metadata_after_mapping.txt.gz")
-args$classes <- "E8.5_WT"
-args$features <- 2500
-args$npcs <- 30
-args$colour_by <- c("celltype.mapped","sample")
-args$vars_to_regress <- c("nFeature_RNA","mit_percent_RNA")
-args$n_neighbors <- 25
-args$min_dist <- 0.5
-args$seed <- 42
-args$outdir <- file.path(io$basedir,"results_new/dimensionality_reduction/seurat")
-args$remove_ExE_cells <- TRUE
+# args$seurat <- io$seurat
+# args$metadata <- file.path(io$basedir,"results_new/mapping/sample_metadata_after_mapping.txt.gz")
+# args$classes <- "E8.5_WT"
+# args$features <- 2500
+# args$npcs <- 30
+# args$colour_by <- c("celltype.mapped","sample","nFeature_RNA")
+# args$vars_to_regress <- c("nFeature_RNA","mit_percent_RNA")
+# args$n_neighbors <- 25
+# args$min_dist <- 0.5
+# args$seed <- 42
+# args$outdir <- file.path(io$basedir,"results_new/dimensionality_reduction/seurat")
+# args$remove_ExE_cells <- TRUE
 ## END TEST ##
 
 # if (isTRUE(args$test)) print("Test mode activated...")
+
+# I/O
+dir.create(args$outdir, showWarnings = F)
 
 # Options
 if (args$classes[1]=="all") {
@@ -128,7 +131,6 @@ seurat@meta.data <- foo
 
 seurat <- FindVariableFeatures(seurat, selection.method = 'vst', nfeatures = args$features)
 # seurat <- FindVariableFeatures(seurat, selection.method = 'vst', nfeatures = 1000, assay = "SCT")
-# head(seurat@assays$RNA@var.features)
 
 ###########################################
 ## Scale data and regress out covariates ##
@@ -149,8 +151,7 @@ seurat <- RunPCA(seurat, features = VariableFeatures(seurat), npcs = args$npcs, 
 
 # Save PCA coordinates
 pca.dt <- seurat@reductions[["pca"]]@cell.embeddings %>% round(3) %>% as.data.table(keep.rownames = T) %>% setnames("rn","cell")
-fwrite(pca.dt, sprintf("%s/pca_features%d_pcs%d.txt.gz",args$outdir, args$features, args$npcs))
-
+fwrite(pca.dt, file.path(args$outdir,sprintf("pca_features%d_pcs%d.txt.gz", args$features, args$npcs)))
 
 ##########
 ## UMAP ##
@@ -172,25 +173,53 @@ umap.dt <- seurat@reductions[["umap"]]@cell.embeddings %>% round(3) %>% as.data.
   .[,c("cell","UMAP1","UMAP2")]
 
 # Save UMAP coordinates
-fwrite(umap.dt, sprintf("%s/umap_features%d_pcs%d_neigh%d_dist%s.txt.gz",args$outdir, args$features, args$npcs, args$n_neighbors, args$min_dist))
+fwrite(umap.dt, file.path(args$outdir,sprintf("umap_features%d_pcs%d_neigh%d_dist%s.txt.gz",args$features, args$npcs, args$n_neighbors, args$min_dist)))
 
 ##########
 ## Plot ##
 ##########
 
-pt.size <- ifelse(ncol(seurat)>=1e4,0.5,0.75)
+pt.size <- ifelse(ncol(seurat)>=1e4,1,1.25)
 
 for (i in args$colour_by) {
-
-  Idents(seurat) <- i
-
-  p <- DimPlot(seurat, label = FALSE, reduction = 'umap', pt.size = pt.size) + 
-    NoAxes()
+  
+  to.plot <- umap.dt %>%
+    setnames(c("cell","V1","V2")) %>%
+    merge(sample_metadata, by="cell")
+  
+  if (is.numeric(to.plot[[i]])) {
+    if ((max(to.plot[[i]],na.rm=T) - min(to.plot[[i]],na.rm=T)) > 1000) {
+      to.plot[[i]] <- log10(to.plot[[i]]+1)
+      to.plot %>% setnames(i,paste0(i,"_log10")); i <- paste0(i,"_log10")
+    }
+  }
+  
+  p <- ggplot(to.plot, aes_string(x="V1", y="V2", fill=i)) +
+    geom_point(size=pt.size, shape=21, stroke=0.05) +
+    theme_classic() +
+    ggplot_theme_NoAxes()
+  
 
   if (grepl("celltype",i)) {
-    p <- p + scale_colour_manual(values=opts$celltype.colors) +
-      NoLegend()
+    p <- p + scale_fill_manual(values=opts$celltype.colors) + NoLegend()
   }
+  
+  if (grepl("stage",i)) {
+    p <- p + scale_fill_manual(values=opts$stage.colors) + NoLegend()
+  }  
+  
+  if (grepl("sample",i)) {
+    p <- p + theme(
+      legend.position = "top",
+      legend.title = element_blank()
+    )
+  }  
+  
+  # Define colormap
+  if (is.numeric(to.plot[[i]])) {
+    p <- p + scale_fill_gradientn(colours = terrain.colors(10))
+  }
+  
 
   # Save UMAP plot
   outfile <- file.path(args$outdir,sprintf("umap_features%d_pcs%d_neigh%d_dist%s_%s.pdf", args$features, args$npcs, args$n_neighbors, args$min_dist, i))
@@ -199,3 +228,6 @@ for (i in args$colour_by) {
   dev.off()
 }
 
+
+# Completion token
+file.create(file.path(args$outdir,"completed.txt"))

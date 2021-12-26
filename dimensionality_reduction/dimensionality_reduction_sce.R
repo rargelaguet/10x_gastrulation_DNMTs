@@ -13,7 +13,7 @@ suppressPackageStartupMessages(library(scran))
 p <- ArgumentParser(description='')
 p$add_argument('--sce',             type="character",                               help='SingleCellExperiment file')
 p$add_argument('--metadata',        type="character",                               help='Cell metadata file')
-p$add_argument('--stages',       type="character",  default="all",  nargs='+',  help='Stages to plot')
+p$add_argument('--classes',       type="character",  default="all",  nargs='+',  help='Classes to plot')
 p$add_argument('--features',        type="integer",    default=1000,                help='Number of features')
 p$add_argument('--npcs',            type="integer",    default=30,                  help='Number of PCs')
 p$add_argument('--n_neighbors',     type="integer",    default=30,     help='(UMAP) Number of neighbours')
@@ -35,28 +35,30 @@ args <- p$parse_args(commandArgs(TRUE))
 #####################
 
 ## START TEST ##
-args$sce <- io$sce
-args$metadata <- io$metadata
-args$stages <- "all"
-# args$metadata <- paste0(io$basedir,"/results/rna/doublets/sample_metadata_after_doublets.txt.gz")
-args$features <- 2500
-args$npcs <- 50
-args$colour_by <- c("celltype.mapped_mnn","stage","nFrags_atac","nFeature_RNA","ribosomal_percent_RNA","mitochondrial_percent_RNA")
-args$vars_to_regress <- c("nFeature_RNA","mitochondrial_percent_RNA")
-args$batch_correction <- c("stage")
-args$remove_ExE_cells <- FALSE
-args$n_neighbors <- 25
-args$min_dist <- 0.5
-args$outdir <- paste0(io$basedir,"/results_new/rna/dimensionality_reduction/test")
+# args$sce <- io$sce
+# args$metadata <- file.path(io$basedir,"results_new/mapping/sample_metadata_after_mapping.txt.gz")
+# args$classes <- "E8.5_WT"
+# args$features <- 2500
+# args$npcs <- 25
+# args$colour_by <- c("celltype.mapped","nFeature_RNA","sample")
+# args$vars_to_regress <- c("nFeature_RNA","mit_percent_RNA")
+# args$batch_correction <- NULL
+# args$remove_ExE_cells <- FALSE
+# args$n_neighbors <- 25
+# args$min_dist <- 0.5
+# args$outdir <- file.path(io$basedir,"results_new/dimensionality_reduction/sce")
 ## END TEST ##
 
 # if (isTRUE(args$test)) print("Test mode activated...")
 
+# I/O
+dir.create(args$outdir, showWarnings = F)
+
 # Options
-if (args$stages[1]=="all") {
-  args$stages <- opts$stages
+if (args$classes[1]=="all") {
+  args$classes <- opts$classes
 } else {
-  stopifnot(args$stages%in%opts$stages)
+  stopifnot(args$classes%in%opts$classes)
 }
 
 ##########################
@@ -64,19 +66,16 @@ if (args$stages[1]=="all") {
 ##########################
 
 sample_metadata <- fread(args$metadata) %>%
-  .[nFeature_RNA>=2000] %>% .[stage=="E8.7",stage:="E8.75"] %>%    # temporary
-  # .[pass_rnaQC==TRUE & doublet_call==FALSE]
-  .[pass_rnaQC==TRUE & doublet_call==FALSE & stage%in%args$stages]
-  # .[pass_rnaQC==TRUE]
+  .[pass_rnaQC==TRUE & class%in%args$classes]
 
 if (args$remove_ExE_cells) {
   print("Removing ExE cells...")
   sample_metadata <- sample_metadata %>%
-    .[!celltype.mapped_mnn%in%c("Visceral_endoderm","ExE_endoderm","ExE_ectoderm","Parietal_endoderm")]
+    .[!celltype.mapped%in%c("Visceral_endoderm","ExE_endoderm","ExE_ectoderm","Parietal_endoderm")]
 }
 
-table(sample_metadata$stage)
-table(sample_metadata$celltype.mapped_mnn)
+table(sample_metadata$class)
+table(sample_metadata$celltype.mapped)
 
 ###################
 ## Sanity checks ##
@@ -182,7 +181,7 @@ fwrite(umap.dt, sprintf("%s/umap_features%d_pcs%d_neigh%d_dist%s.txt.gz",args$ou
 ## Plot ##
 ##########
 
-pt.size <- ifelse(ncol(sce)>=1e4,0.8,1.2)
+pt.size <- ifelse(ncol(sce)>=1e4,1,1.25)
 
 for (i in args$colour_by) {
 
@@ -191,7 +190,7 @@ for (i in args$colour_by) {
     merge(sample_metadata, by="cell")
 
   if (is.numeric(to.plot[[i]])) {
-    if (max(to.plot[[i]],na.rm=T) - min(to.plot[[i]],na.rm=T) > 1000) {
+    if ((max(to.plot[[i]],na.rm=T) - min(to.plot[[i]],na.rm=T)) > 1000) {
       to.plot[[i]] <- log10(to.plot[[i]]+1)
       to.plot %>% setnames(i,paste0(i,"_log10")); i <- paste0(i,"_log10")
     }
@@ -220,6 +219,12 @@ for (i in args$colour_by) {
         legend.title=element_blank()
       )
   }
+  if (grepl("sample",i)) {
+    p <- p + theme(
+      legend.position = "top",
+      legend.title = element_blank()
+    )
+  }  
 
   # Save UMAP plot
   outfile <- file.path(args$outdir,sprintf("umap_features%d_pcs%d_neigh%d_dist%s_%s.pdf",args$features, args$npcs, args$n_neighbors, args$min_dist, i))
@@ -228,3 +233,6 @@ for (i in args$colour_by) {
   dev.off()
 }
 
+
+# Completion token
+file.create(file.path(args$outdir,"completed.txt"))

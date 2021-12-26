@@ -13,7 +13,7 @@ source(here::here("utils.R"))
 p <- ArgumentParser(description='')
 p$add_argument('--seurat',         type="character",                            help='SingleCellExperiment file')
 p$add_argument('--metadata',    type="character",                            help='metadata file')
-p$add_argument('--samples',                 type="character",   nargs='+',     help='Sample(s)')
+p$add_argument('--sample',                 type="character",     help='Sample(s)')
 p$add_argument('--number_doublets',  type="integer",   help='Number of doublets')
 p$add_argument('--outfile',                  type="character",                  help='Output file')
 args <- p$parse_args(commandArgs(TRUE))
@@ -26,7 +26,7 @@ args <- p$parse_args(commandArgs(TRUE))
 # args <- list()
 # args$seurat <- file.path(io$basedir,"processed_new/seurat.rds")
 # args$metadata <- file.path(io$basedir,"results_new/qc/sample_metadata_after_qc.txt.gz")
-# args$samples <- opts$samples[1]
+# args$sample <- opts$samples[1]
 # args$number_doublets <- 100
 ## END TEST ##
 
@@ -37,7 +37,7 @@ if (isTRUE(args$test)) print("Test mode activated...")
 ##########################
 
 sample_metadata <- fread(args$metadata) %>%
-  .[pass_rnaQC==TRUE & sample%in%args$samples]
+  .[pass_rnaQC==TRUE & sample==args$sample]
 table(sample_metadata$sample)
 
 ###############
@@ -100,7 +100,8 @@ seurat <- doubletFinder_v3(seurat, 1:25, pN = 0.25, pK = pK.optim, nExp = args$n
 # Call doublets
 dt <- data.table(
   cell = colnames(seurat),
-  doublet_score = seurat@meta.data[[grep("pANN",colnames(seurat@meta.data),value=T)]],
+  # sample = args$sample,
+  doublet_score = seurat@meta.data[[grep("pANN",colnames(seurat@meta.data),value=T)]] %>% round(3),
   doublet_call = seurat@meta.data[[grep("classifications",colnames(seurat@meta.data),value=T)]]=="Doublet"
 )
 
