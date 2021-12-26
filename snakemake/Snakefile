@@ -31,7 +31,7 @@ rule all:
         config["directories"]["processed_data"]+"/SingleCellExperiment.rds",
         expand("%s/doublet_detection_seurat/doublets_{sample}.txt.gz" % config["directories"]["results"], sample=config["samples"]),
         # config["directories"]["results"]+"/doublet_detection/sample_metadata_after_doublets.txt.gz",
-        config["directories"]["results"]+"/doublet_detection_seurat/sample_metadata_after_doublets.txt.gz",
+        # config["directories"]["results"]+"/doublet_detection_seurat/sample_metadata_after_doublets.txt.gz",
         # expand("%s/mapping/mapping_mnn_all_samples.txt.gz" % config["directories"]["results"]),
         expand("%s/mapping/mapping_mnn_{sample}.txt.gz" % config["directories"]["results"], sample=config["samples"]),
         config["directories"]["results"]+"/mapping/sample_metadata_after_mapping.txt.gz",

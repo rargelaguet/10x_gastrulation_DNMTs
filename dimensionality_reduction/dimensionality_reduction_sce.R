@@ -1,7 +1,8 @@
+here::i_am("dimensionality_reduction/dimensionality_reduction_sce.R")
+
 source(here::here("settings.R"))
 source(here::here("utils.R"))
 
-suppressPackageStartupMessages(library(SingleCellExperiment))
 suppressPackageStartupMessages(library(scater))
 suppressPackageStartupMessages(library(scran))
 
@@ -34,7 +35,7 @@ args <- p$parse_args(commandArgs(TRUE))
 #####################
 
 ## START TEST ##
-args$sce <- io$rna.sce
+args$sce <- io$sce
 args$metadata <- io$metadata
 args$stages <- "all"
 # args$metadata <- paste0(io$basedir,"/results/rna/doublets/sample_metadata_after_doublets.txt.gz")

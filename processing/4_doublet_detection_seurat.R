@@ -15,7 +15,6 @@ p$add_argument('--seurat',         type="character",                            
 p$add_argument('--metadata',    type="character",                            help='metadata file')
 p$add_argument('--samples',                 type="character",   nargs='+',     help='Sample(s)')
 p$add_argument('--number_doublets',  type="integer",   help='Number of doublets')
-p$add_argument('--test',                    action = "store_true",             help='Testing mode')
 p$add_argument('--outfile',                  type="character",                  help='Output file')
 args <- p$parse_args(commandArgs(TRUE))
 
@@ -23,14 +22,12 @@ args <- p$parse_args(commandArgs(TRUE))
 ## Define settings ##
 #####################
 
-
 ## START TEST ##
-args <- list()
-args$seurat <- file.path(io$basedir,"processed_new/Seurat.rds")
-args$metadata <- file.path(io$basedir,"results_new/qc/sample_metadata_after_qc.txt.gz")
-args$samples <- opts$samples[1]
-args$number_doublets <- 100
-args$test <- FALSE
+# args <- list()
+# args$seurat <- file.path(io$basedir,"processed_new/seurat.rds")
+# args$metadata <- file.path(io$basedir,"results_new/qc/sample_metadata_after_qc.txt.gz")
+# args$samples <- opts$samples[1]
+# args$number_doublets <- 100
 ## END TEST ##
 
 if (isTRUE(args$test)) print("Test mode activated...")
@@ -68,7 +65,7 @@ seurat@meta.data <- foo
 
 seurat <- FindVariableFeatures(seurat, selection.method = "vst", nfeatures = 2000)
 seurat <- ScaleData(seurat)
-seurat <- RunPCA(seurat)
+seurat <- RunPCA(seurat, npcs=25)
 
 #############################
 ## Calculate doublet score ##
@@ -97,7 +94,8 @@ pK.optim <- tmp[which.max(tmp$BCmetric),"pK"] %>% as.character %>% as.numeric
 # nExp_poi.adj <- round(nExp_poi*(1-homotypic.prop))
 
 # Run DoubletFinder with optimal hyperparameters
-foo <- doubletFinder_v3(seurat, 1:25, pN = 0.25, pK = pK.optim, nExp = as.integer(0.01*ncol(seurat)), reuse.pANN = FALSE)
+# seurat <- doubletFinder_v3(seurat, 1:25, pN = 0.25, pK = pK.optim, nExp = as.integer(0.01*ncol(seurat)), reuse.pANN = FALSE)
+seurat <- doubletFinder_v3(seurat, 1:25, pN = 0.25, pK = pK.optim, nExp = args$number_doublets, reuse.pANN = FALSE)
 
 # Call doublets
 dt <- data.table(

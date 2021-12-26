@@ -39,3 +39,4 @@
 
 *.snakemake*
 *slurm*out
+packrat/lib*/

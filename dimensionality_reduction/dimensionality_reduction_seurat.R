@@ -1,5 +1,9 @@
+here::i_am("dimensionality_reduction/dimensionality_reduction_seurat.R")
+
+source(here::here("settings.R"))
+source(here::here("utils.R"))
+
 suppressPackageStartupMessages(library(Seurat))
-suppressPackageStartupMessages(library(argparse))
 
 ######################
 ## Define arguments ##
@@ -27,22 +31,19 @@ args <- p$parse_args(commandArgs(TRUE))
 ## Define settings ##
 #####################
 
-source(here::here("settings.R"))
-source(here::here("utils.R"))
-
 ## START TEST ##
-# args$seurat <- io$seurat
-# args$metadata <- "/bi/group/reik/ricard/data/gastrulation_histones/results/rna/mapping/sample_metadata_after_mapping.txt.gz"
-# args$classes <- "E8.5_WT"
-# args$features <- 1000
-# args$npcs <- 30
-# args$colour_by <- c("celltype.mapped","sample")
-# args$vars_to_regress <- c("nFeature_RNA","mitochondrial_percent_RNA")
-# args$n_neighbors <- 25
-# args$min_dist <- 0.5
-# args$seed <- 42
-# args$outdir <- "/bi/group/reik/ricard/data/gastrulation_histones/results/rna/dimensionality_reduction/seurat"
-# args$remove_ExE_cells <- TRUE
+args$seurat <- io$seurat
+args$metadata <- file.path(io$basedir,"results_new/mapping/sample_metadata_after_mapping.txt.gz")
+args$classes <- "E8.5_WT"
+args$features <- 2500
+args$npcs <- 30
+args$colour_by <- c("celltype.mapped","sample")
+args$vars_to_regress <- c("nFeature_RNA","mit_percent_RNA")
+args$n_neighbors <- 25
+args$min_dist <- 0.5
+args$seed <- 42
+args$outdir <- file.path(io$basedir,"results_new/dimensionality_reduction/seurat")
+args$remove_ExE_cells <- TRUE
 ## END TEST ##
 
 # if (isTRUE(args$test)) print("Test mode activated...")
