@@ -43,7 +43,8 @@ opts$alpha.nomapped <- 0.35
 #########################
 
 sample_metadata <- fread(args$query_metadata) %>%
-  .[pass_rnaQC==TRUE & doublet_call==FALSE & !is.na(closest.cell)]
+  # .[pass_rnaQC==TRUE & doublet_call==FALSE & !is.na(closest.cell)]
+  .[pass_rnaQC==TRUE & !is.na(closest.cell)]
 
 stopifnot("closest.cell"%in%colnames(sample_metadata))
 

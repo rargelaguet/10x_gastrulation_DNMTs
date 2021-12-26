@@ -4,6 +4,20 @@ matrix.please<-function(x) {
   m
 }
 
+load_Seurat <- function(file, assay = "RNA", normalise = FALSE, features = NULL, cells = NULL, remove_non_expressed_genes = FALSE, ...) {
+  library(Seurat)
+  seurat <- readRDS(file)
+  # if (assay%in%Seurat::Assays(seurat)) seurat <- seurat[[assay]]
+  if (!is.null(cells)) seurat <- seurat[,cells]
+  if (!is.null(features)) seurat <- seurat[features,]
+  if (normalise) {
+    seurat <- NormalizeData(seurat, normalization.method = "LogNormalize")
+    seurat <- ScaleData(seurat, ...)
+  }
+  if (remove_non_expressed_genes) seurat <- seurat[which(Matrix::rowMeans(seurat@assays[[assay]]@counts)>1e-4),]
+  return(seurat)
+}
+
 load_SingleCellExperiment <- function(file, normalise = FALSE, features = NULL, cells = NULL, remove_non_expressed_genes = FALSE) {
   library(SingleCellExperiment); library(scran); library(scater);
   sce <- readRDS(file)

@@ -59,7 +59,7 @@ colData(sce) <- sample_metadata %>% tibble::column_to_rownames("cell") %>% DataF
 ## Calculate doublet score ##
 #############################
 
-sce <- cxds_bcds_hybrid(sce, estNdbl=TRUE)
+sce <- cxds_bcds_hybrid(sce, estNdbl=FALSE)
 
 dt <- colData(sce) %>%
   .[,c("sample","cxds_score", "bcds_score", "hybrid_score")] %>%

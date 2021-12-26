@@ -29,11 +29,11 @@ rule all:
         config["directories"]["processed_data"]+"/seurat.rds",
         config["directories"]["results"]+"/qc/sample_metadata_after_qc.txt.gz",
         config["directories"]["processed_data"]+"/SingleCellExperiment.rds",
-        config["directories"]["results"]+"/doublet_detection/sample_metadata_after_doublets.txt.gz",
-        expand("%s/mapping/mapping_mnn_all_samples.txt.gz" % config["directories"]["results"]),
+        # config["directories"]["results"]+"/doublet_detection/sample_metadata_after_doublets.txt.gz",
+        # expand("%s/mapping/mapping_mnn_all_samples.txt.gz" % config["directories"]["results"]),
         expand("%s/mapping/mapping_mnn_{sample}.txt.gz" % config["directories"]["results"], sample=config["samples"]),
         config["directories"]["results"]+"/mapping/sample_metadata_after_mapping.txt.gz",
-        config["directories"]["results"]+"/mapping/sample_metadata_after_mapping_all_samples.txt.gz",
+        # config["directories"]["results"]+"/mapping/sample_metadata_after_mapping_all_samples.txt.gz"
         expand("%s/mapping/pdf/umap_mapped_allcells.pdf" % config["directories"]["results"]),
         config["directories"]["results"]+"/celltype_proportions/completed.txt"
 
@@ -184,7 +184,8 @@ rule mapping_mnn:
         atlas_sce = config["directories"]["atlas"]+"/processed/SingleCellExperiment.rds",
     	atlas_metadata = config["directories"]["atlas"]+"/sample_metadata.txt.gz",
         query_sce = rules.seurat_to_sce.output,
-        query_metadata = rules.parse_doublet_results.output,
+        # query_metadata = rules.parse_doublet_results.output,
+        query_metadata = rules.qc.output,
         script = config["scripts"]["mapping_mnn"]
     output:
         config["directories"]["results"]+"/mapping/mapping_mnn_{sample}.txt.gz"
@@ -211,7 +212,7 @@ rule mapping_mnn_all_samples:
         atlas_metadata = config["directories"]["atlas"]+"/sample_metadata.txt.gz",
         query_sce = rules.seurat_to_sce.output,
         # query_metadata=rules.parse_doublet_results.output,
-        query_metadata = rules.parse_doublet_results.output,
+        query_metadata = rules.qc.output,
         script = config["scripts"]["mapping_mnn"]
         # outdir=config["directories"]["results"]+"/mapping"
     output:
@@ -236,7 +237,8 @@ rule mapping_mnn_all_samples:
 
 rule parse_mapping_results:
     input:
-        query_metadata = rules.parse_doublet_results.output,
+        # query_metadata = rules.parse_doublet_results.output,
+        query_metadata = rules.qc.output,
         mapping_mnn = expand(config["directories"]["results"]+"/mapping/mapping_mnn_{sample}.txt.gz", sample=config["samples"]),
         # mapping_mnn = rules.mapping_mnn.output,
         script = config["scripts"]["parse_mapping"]
@@ -256,7 +258,8 @@ rule parse_mapping_results:
 
 rule parse_mapping_results_all_samples:
     input:
-        query_metadata = rules.parse_doublet_results.output,
+        # query_metadata = rules.parse_doublet_results.output,
+        query_metadata = rules.qc.output,
         # mapping_mnn = config["directories"]["results"]+"/mapping/mapping_mnn_all_samples.txt.gz",
         mapping_mnn = rules.mapping_mnn_all_samples.output,
         script = config["scripts"]["parse_mapping"]

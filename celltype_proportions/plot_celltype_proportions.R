@@ -1,156 +1,103 @@
+here:i_am("celltype_proportions/plot_celltype_proportions.R")
+
+source(here::here("settings.R"))
+source(here::here("utils.R"))
+
+######################
+## Define arguments ##
+######################
+
+p <- ArgumentParser(description='')
+p$add_argument('--metadata',        type="character",                               help='Cell metadata file')
+p$add_argument('--samples',         type="character",       nargs="+",   help='Samples')
+p$add_argument('--celltype_label', type="character", help='Cell type label')
+p$add_argument('--outdir',          type="character",                               help='Output file')
+
+args <- p$parse_args(commandArgs(TRUE))
+
 #####################
 ## Define settings ##
 #####################
 
-source("/Users/ricard/10x_gastrulation_DNMTs/settings.R")
-# source("/Users/ricard/10x_gastrulation_DNMTs/mapping/plot/plot_utils.R")
-
-################
-## Define I/O ##
-################
-
-io$outdir <- paste0(io$basedir,"/results/celltype_proportions/barplots")
-dir.create(paste0(io$outdir,"/per_embryo"), showWarnings = F)
-dir.create(paste0(io$outdir,"/per_class"), showWarnings = F)
-
-####################
-## Define options ##
-####################
-
-opts$batches <- c(
-  "SIGAA6_E85_2_Dnmt3aKO_Dnmt3b_WT_L001",
-  "SIGAB6_E85_3_Dnmt3aWT_Dnmt3b_WT_L002",
-  "SIGAC6_E85_5_Dnmt3aKO_Dnmt3b_Het_L003",
-  "SIGAD6_E85_8_Dnmt3aHet_Dnmt3b_KO_L004",
-  "15_E8_5_D3A_WT_D3B_WT_L007",
-  "17_E8_5_D3A_KO_D3B_WT_L008",
-  "2_E8_5_D3A_WT_D3B_KO_L003",
-  "3_E8_5_D3A_HET_D3B_WT_L004",
-  "7_E8_5_D3A_WT_D3B_KO_L005",
-  "8_E8_5_D3A_KO_D3B_KO_L006",
-  "E8_5_Dnmt1_KO_male_SIGAC8_L001",
-  "E8_5_Dnmt1_KO_male_SIGAD8_L002",
-  "E8_5_Dnmt1_KO_male_SIGAE8_L003",
-  "E8_5_Dnmt1_WT_female_SIGAB8_L004",
-  "E8_5_Dnmt1_WT_female_SIGAF8_L005",
-  "E8_5_Dnmt3ab_WT_female_SIGAA8_L006",
-  "SIGAH10_Dnmt3ab_WT_L002",
-  "SIGAH11_Dnmt3ab_WT_L003",
-  "SIGAH9_Dnmt3a_KO_Dnmt3b_Het_L001",
-  "SIGAG5_9_dnmt3ab_DKO_L005"
-)
-
-###############
-## Load data ##
-###############
-
-# mapping <- fread(io$mapping)
-# sample_metadata <- sample_metadata %>% merge(mapping)
+## START TEST ##
+# args$metadata <- file.path(io$basedir,"results_new/rna/mapping/sample_metadata_after_mapping.txt.gz")
+# args$samples <- opts$samples
+# args$celltype_label <- "celltype.mapped_mnn"
+# args$outdir <- file.path(io$basedir,"results_new/rna/celltype_proportions")
+## END TEST ##
 
 ##########################
 ## Load sample metadata ##
 ##########################
 
-sample_metadata <- fread(io$metadata) %>% 
-  .[pass_QC==TRUE & !is.na(celltype.mapped)] %>%
-  .[batch%in%opts$batches]
-  
-# Rename samples
-foo <- sample_metadata[,c("batch","class")] %>% unique %>% .[,sample:=paste(class,1:.N,sep="_"),by="class"]
-sample_metadata <- sample_metadata %>% merge(foo,by=c("batch","class"))
+sample_metadata <- fread(args$metadata) %>%
+  .[pass_rnaQC==TRUE & sample%in%args$samples & !is.na(eval(as.name(args$celltype_label)))] %>%
+  setnames(args$celltype_label,"celltype")
 
-# Define cell type order
-opts$celltype.colors <- opts$celltype.colors[names(opts$celltype.colors) %in% sample_metadata$celltype.mapped]
-stopifnot(sort(unique(as.character(sample_metadata$celltype.mapped))) == sort(names(opts$celltype.colors)))
-sample_metadata <- sample_metadata %>% 
-  .[,celltype.mapped:=factor(celltype.mapped,levels=sort(names(opts$celltype.colors), decreasing = F))]
+################################################
+## Calculate cell type proportions per sample ##
+################################################
 
-#####################################
-## Calculate cell type proportions ##
-#####################################
+to.plot <- sample_metadata %>%
+  .[,N:=.N,by="sample"] %>%
+  # .[,celltype:=stringr::str_replace_all(celltype,opts$aggregate.celltypes)] %>%
+  .[,.(N=.N, celltype_proportion=.N/unique(N)),by=c("sample","stage","celltype")] %>%
+  setorder(sample)  %>% .[,sample:=factor(sample,levels=args$samples)]
 
-to.plot.embryo <- sample_metadata %>% 
-  .[,.N, by=c("celltype.mapped","sample","class")]# %>%
-  # .[,celltype.mapped:=stringr::str_replace_all(celltype.mapped," ", "_")] %>
+######################
+## Stacked barplots ##
+######################
 
-to.plot.class <- sample_metadata %>%
-  .[,.N, by=c("celltype.mapped","class")]
+p <- ggplot(to.plot, aes(x=sample, y=celltype_proportion)) +
+  geom_bar(aes(fill=celltype), stat="identity", color="black") +
+  # facet_wrap(~stage, scales = "free_x", nrow=1) +
+  scale_fill_manual(values=opts$celltype.colors) +
+  theme_classic() +
+  theme(
+    legend.position = "none",
+    axis.title = element_blank(),
+    axis.text.y = element_blank(),
+    # axis.text.x = element_text(color="black", size=rel(0.75)),
+    axis.text.x = element_blank(),
+    axis.ticks = element_blank(),
+    axis.line = element_blank()
+  )
 
+pdf(sprintf("%s/celltype_proportions_stacked_barplots.pdf",args$outdir), width=7, height=5)
+print(p)
+dev.off()
 
-#####################
-## Plot per class ##
-#####################
+#########################
+## Horizontal barplots ##
+#########################
 
-for (i in unique(to.plot.class$class)) {
-  
-  p <- ggplot(to.plot.class[class==i], aes(x=celltype.mapped, y=N)) +
-    geom_bar(aes(fill=celltype.mapped), stat="identity", color="black") +
-    scale_fill_manual(values=opts$celltype.colors, drop=FALSE) +
-    scale_x_discrete(drop=FALSE) +
+# Rename "_" to " " in cell types
+# to.plot[,celltype:=stringr::str_replace_all(celltype,"_"," ")]
+# names(opts$celltype.colors) <- names(opts$celltype.colors) %>% stringr::str_replace_all("_"," ")
+
+# Define colours and cell type order
+opts$celltype.colors <- opts$celltype.colors[names(opts$celltype.colors) %in% unique(to.plot$celltype)]
+to.plot[,celltype:=factor(celltype, levels=names(opts$celltype.colors))]
+
+for (i in unique(to.plot$stage)) {
+  p <- ggplot(to.plot[stage==i], aes(x=celltype, y=N)) +
+    geom_bar(aes(fill=celltype), stat="identity", color="black") +
+    scale_fill_manual(values=opts$celltype.colors) +
+    facet_wrap(~sample, nrow=1, scales="fixed") +
     coord_flip() +
     labs(y="Number of cells") +
     theme_bw() +
     theme(
       legend.position = "none",
       strip.background = element_blank(),
-      strip.text = element_text(color="black", size=rel(1.2)),
-      axis.title.x = element_text(color="black", size=rel(1.1)),
+      strip.text = element_text(color="black", size=rel(0.5)),
+      axis.title.x = element_text(color="black", size=rel(0.9)),
       axis.title.y = element_blank(),
-      axis.text.y = element_text(size=rel(1.1), color="black"),
-      axis.text.x = element_text(size=rel(1.1), color="black")
+      axis.text.y = element_text(size=rel(1), color="black"),
+      axis.text.x = element_text(size=rel(1), color="black")
     )
   
-  pdf(sprintf("%s/per_class/barplots_%s.pdf",io$outdir,i), width=7, height=7)
-  print(p)
-  dev.off()
-  
-  p <- ggplot(to.plot.embryo[class==i], aes(x=celltype.mapped, y=N)) +
-    geom_bar(aes(fill=celltype.mapped), stat="identity", color="black") +
-    scale_fill_manual(values=opts$celltype.colors, drop=FALSE) +
-    scale_x_discrete(drop=FALSE) +
-    facet_wrap(~sample, nrow=1) +
-    coord_flip() +
-    labs(y="Number of cells") +
-    theme_bw() +
-    theme(
-      legend.position = "none",
-      strip.background = element_blank(),
-      strip.text = element_text(color="black", size=rel(0.9)),
-      axis.title.x = element_text(color="black", size=rel(1.1)),
-      axis.title.y = element_blank(),
-      axis.text.y = element_text(size=rel(1.1), color="black"),
-      axis.text.x = element_text(size=rel(1.1), color="black")
-    )
-  
-  pdf(sprintf("%s/per_class/barplots_facet_embryo_%s.pdf",io$outdir,i))
-  print(p)
-  dev.off()
-}
-
-#####################
-## Plot per embryo ##
-#####################
-
-for (i in unique(to.plot.embryo$sample)) {
-  
-  p <- ggplot(to.plot.embryo[sample==i], aes(x=celltype.mapped, y=N)) +
-    geom_bar(aes(fill=celltype.mapped), stat="identity", color="black") +
-    scale_fill_manual(values=opts$celltype.colors, drop=FALSE) +
-    scale_x_discrete(drop=FALSE) +
-    coord_flip() +
-    labs(y="Number of cells") +
-    theme_bw() +
-    theme(
-      legend.position = "none",
-      strip.background = element_blank(),
-      strip.text = element_text(color="black", size=rel(1.2)),
-      axis.title.x = element_text(color="black", size=rel(1.1)),
-      axis.title.y = element_blank(),
-      axis.text.y = element_text(size=rel(1.1), color="black"),
-      axis.text.x = element_text(size=rel(1.1), color="black")
-    )
-  
-  pdf(sprintf("%s/per_embryo/barplots_%s.pdf",io$outdir,i), width=7, height=7)
+  pdf(sprintf("%s/celltype_proportions_%s_horizontal_barplots.pdf",args$outdir,i), width=10, height=5)
   print(p)
   dev.off()
 }

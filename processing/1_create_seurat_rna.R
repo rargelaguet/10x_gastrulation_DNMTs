@@ -57,11 +57,10 @@ for (i in args$samples) {
   count_mtx[[i]] <- Read10X(file.path(args$inputdir,i))
   
   # remove human genes for samples that are mapped to the mixed transcriptome
-    if (any(grep("mm10",rownames(count_mtx[[i]])))) {
-      
-      count_mtx[[i]] <- count_mtx[[i]][grep("mm10",rownames(count_mtx[[i]])),]
-      rownames(count_mtx[[i]]) <- rownames(count_mtx[[i]]) %>% gsub("mm10___","",.)
-    }
+  if (any(grep("mm10",rownames(count_mtx[[i]])))) {
+    count_mtx[[i]] <- count_mtx[[i]][grep("mm10",rownames(count_mtx[[i]])),]
+    rownames(count_mtx[[i]]) <- rownames(count_mtx[[i]]) %>% gsub("mm10___","",.)
+  }
   
 }
 
