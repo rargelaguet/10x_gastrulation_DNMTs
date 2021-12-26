@@ -75,6 +75,7 @@ scripts:
     qc: ../processing/2_QC.R
     seurat_to_sce: ../processing/3_seurat_to_SCE.R
     doublet_detection: ../processing/4_doublet_detection.R
+    doublet_detection_seurat: ../processing/4_doublet_detection_seurat.R
     parse_doublet_results: ../processing/5_parse_sample_metadata_after_doublets.R
     mapping_mnn: ../mapping/run/mnn/mapping_mnn.R
     parse_mapping: ../mapping/run/parse_sample_metadata_after_mapping.R
@@ -100,6 +101,9 @@ params:
 
     doublet_detection:
         doublet_score_threshold: 1.50
+
+    doublet_detection_seurat:
+        number_doublets: 100
 
     mapping_mnn:
         atlas_stages: ["E6.5","E6.75","E7.0","E7.25","E7.5","E7.75","E8.0","E8.25","E8.5"]
@@ -147,6 +151,9 @@ slurm:  # memory in MB
         memory: 25000
         threads: 1
     doublet_detection:
+        memory: 15000
+        threads: 1
+    doublet_detection_seurat:
         memory: 15000
         threads: 1
     parse_doublet_results:

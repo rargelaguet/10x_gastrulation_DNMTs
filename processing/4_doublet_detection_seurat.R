@@ -14,7 +14,7 @@ p <- ArgumentParser(description='')
 p$add_argument('--seurat',         type="character",                            help='SingleCellExperiment file')
 p$add_argument('--metadata',    type="character",                            help='metadata file')
 p$add_argument('--samples',                 type="character",   nargs='+',     help='Sample(s)')
-p$add_argument('--doublet_score_threshold',  type="double",   help='Doublet score threshold')
+p$add_argument('--number_doublets',  type="integer",   help='Number of doublets')
 p$add_argument('--test',                    action = "store_true",             help='Testing mode')
 p$add_argument('--outfile',                  type="character",                  help='Output file')
 args <- p$parse_args(commandArgs(TRUE))
@@ -29,7 +29,7 @@ args <- list()
 args$seurat <- file.path(io$basedir,"processed_new/Seurat.rds")
 args$metadata <- file.path(io$basedir,"results_new/qc/sample_metadata_after_qc.txt.gz")
 args$samples <- opts$samples[1]
-args$hybrid_score_threshold <- 1.50
+args$number_doublets <- 100
 args$test <- FALSE
 ## END TEST ##
 
@@ -62,28 +62,56 @@ foo <- sample_metadata %>% as.data.frame %>% tibble::column_to_rownames("cell") 
 stopifnot(colnames(seurat) == rownames(foo))
 seurat@meta.data <- foo
 
-#############################
-## Calculate doublet score ##
-#############################
+##############################
+## Dimensionality reduction ##
+##############################
 
 seurat <- FindVariableFeatures(seurat, selection.method = "vst", nfeatures = 2000)
 seurat <- ScaleData(seurat)
 seurat <- RunPCA(seurat)
 
-## pK Identification (no ground-truth) ---------------------------------------------------------------------------------------
-sweep.res.list <- paramSweep_v3(seurat, PCs = 1:10, sct = FALSE)
-sweep.stats_kidney <- summarizeSweep(sweep.res.list_kidney, GT = FALSE)
-bcmvn_kidney <- find.pK(sweep.stats_kidney)
+#############################
+## Calculate doublet score ##
+#############################
 
+# Performs pN-pK parameter sweeps on a 10,000-cell subset
+# Parameter ranges tested: pN = 0.05-0.3, pK = 0.0005-0.3.
+# Outputs a list of pANN vectors for every pN and pK combination. Output also contains pANN information for artificial doublets.
+sweep.res.list <- paramSweep_v3(seurat, PCs = 1:25, sct = FALSE)
+
+# Summarizes results from doubletFinder_ParamSweep, computing the bimodality coefficient across pN and pK parameter space
+sweep.stats <- summarizeSweep(sweep.res.list, GT = FALSE)
+
+# Computes and visualizes the mean-variance normalized bimodality coefficient (BCmvn) score for each pK value
+# Optimal pK can be manually discerned as maxima in BCmvn distributions
+# Returns a Dataframe of mean BC, BC variance, and BCmvn scores for each pK value.
+tmp <- find.pK(sweep.stats)
+
+# Fetch optimal pK
+pK.optim <- tmp[which.max(tmp$BCmetric),"pK"] %>% as.character %>% as.numeric
+
+# Homotypic Doublet Proportion Estimate 
+# Leverages user-provided cell annotations to model the proportion of homotypic doublets
+# homotypic.prop <- modelHomotypic(annotations)           ## ex: annotations <- seu_kidney@meta.data$ClusteringResults
+# nExp_poi <- round(0.075*nrow(seu_kidney@meta.data))  ## Assuming 7.5% doublet formation rate - tailor for your dataset
+# nExp_poi.adj <- round(nExp_poi*(1-homotypic.prop))
+
+# Run DoubletFinder with optimal hyperparameters
+foo <- doubletFinder_v3(seurat, 1:25, pN = 0.25, pK = pK.optim, nExp = as.integer(0.01*ncol(seurat)), reuse.pANN = FALSE)
 
 # Call doublets
-dt[,doublet_call:=hybrid_score>args$hybrid_score_threshold]
-table(dt$doublet_call)
+dt <- data.table(
+  cell = colnames(seurat),
+  doublet_score = seurat@meta.data[[grep("pANN",colnames(seurat@meta.data),value=T)]],
+  doublet_call = seurat@meta.data[[grep("classifications",colnames(seurat@meta.data),value=T)]]=="Doublet"
+)
+
+print("Number of doublets:")
+print(table(dt$doublet_call))
 
 ##########
 ## Save ##
 ##########
 
 fwrite(dt, args$outfile, sep="\t", na="NA", quote=F)
-
 

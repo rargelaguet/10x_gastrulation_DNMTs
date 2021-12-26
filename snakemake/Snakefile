@@ -29,7 +29,9 @@ rule all:
         config["directories"]["processed_data"]+"/seurat.rds",
         config["directories"]["results"]+"/qc/sample_metadata_after_qc.txt.gz",
         config["directories"]["processed_data"]+"/SingleCellExperiment.rds",
+        expand("%s/doublet_detection_seurat/doublets_{sample}.txt.gz" % config["directories"]["results"], sample=config["samples"]),
         # config["directories"]["results"]+"/doublet_detection/sample_metadata_after_doublets.txt.gz",
+        config["directories"]["results"]+"/doublet_detection_seurat/sample_metadata_after_doublets.txt.gz",
         # expand("%s/mapping/mapping_mnn_all_samples.txt.gz" % config["directories"]["results"]),
         expand("%s/mapping/mapping_mnn_{sample}.txt.gz" % config["directories"]["results"], sample=config["samples"]),
         config["directories"]["results"]+"/mapping/sample_metadata_after_mapping.txt.gz",
@@ -131,7 +133,6 @@ rule seurat_to_sce:
 #######################
 
 # THIS RULE SOMETIMES FAILS AND I HAVE NO IDEA WHY
-
 rule doublet_detection:
     input:
         sce = rules.seurat_to_sce.output,
@@ -153,6 +154,27 @@ rule doublet_detection:
     shell:
         "Rscript {input.script} --metadata {input.metadata} --sce {input.sce} --samples {wildcards.sample} \
         --hybrid_score_threshold {params.doublet_score_threshold}  --outfile {output} > {log}"
+
+rule doublet_detection_seurat:
+    input:
+        seurat = rules.create_seurat.output.seurat,
+        metadata = rules.qc.output,
+        script = config["scripts"]["doublet_detection_seurat"]
+    output:
+        outfile=config["directories"]["results"]+"/doublet_detection_seurat/doublets_{sample}.txt.gz"
+    params:
+        number_doublets = config["params"]["doublet_detection_seurat"]["number_doublets"]
+    conda:
+        "environment.yaml"
+    log: 
+        "logs/doublet_detection_{sample}.log"
+    threads: 
+        config["slurm"]["doublet_detection_seurat"]["threads"]
+    resources:
+        mem_mb = config["slurm"]["doublet_detection_seurat"]["memory"]
+    shell:
+        "Rscript {input.script} --metadata {input.metadata} --seurat {input.seurat} --samples {wildcards.sample} \
+        --number_doublets {params.number_doublets}  --outfile {output} > {log}"
 
 rule parse_doublet_results:
     input:
