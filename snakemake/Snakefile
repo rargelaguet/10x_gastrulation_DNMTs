@@ -30,14 +30,12 @@ rule all:
         config["directories"]["results"]+"/qc/sample_metadata_after_qc.txt.gz",
         config["directories"]["processed_data"]+"/SingleCellExperiment.rds",
         expand("%s/doublet_detection_seurat/doublets_{sample}.txt.gz" % config["directories"]["results"], sample=config["samples"]),
-        # config["directories"]["results"]+"/doublet_detection/sample_metadata_after_doublets.txt.gz",
         config["directories"]["results"]+"/doublet_detection_seurat/sample_metadata_after_doublets.txt.gz",
         expand("%s/mapping/mapping_mnn_{sample}.txt.gz" % config["directories"]["results"], sample=config["samples"]),
         config["directories"]["results"]+"/mapping/sample_metadata_after_mapping.txt.gz",
-        # expand("%s/mapping/mapping_mnn_all_samples.txt.gz" % config["directories"]["results"]),
-        # config["directories"]["results"]+"/mapping/sample_metadata_after_mapping_all_samples.txt.gz"
         expand("%s/mapping/pdf/umap_mapped_allcells.pdf" % config["directories"]["results"]),
         config["directories"]["results"]+"/celltype_proportions/completed.txt",
+        config["directories"]["results"]+"/celltype_proportions/comparisons/completed.txt",
         expand("%s/dimensionality_reduction/sce/{classe}/completed.txt" % config["directories"]["results"], classe=config["classes"]),
         expand("%s/dimensionality_reduction/seurat/{classe}/completed.txt" % config["directories"]["results"], classe=config["classes"])
 
@@ -186,7 +184,7 @@ rule doublet_detection_seurat:
     resources:
         mem_mb = config["slurm"]["doublet_detection_seurat"]["memory"]
     shell:
-        "Rscript {input.script} --metadata {input.metadata} --seurat {input.seurat} --samples {wildcards.sample} \
+        "Rscript {input.script} --metadata {input.metadata} --seurat {input.seurat} --sample {wildcards.sample} \
         --number_doublets {params.number_doublets}  --outfile {output} > {log}"
 
 rule parse_doublet_results_seurat:
@@ -358,6 +356,27 @@ rule plot_celltype_proportions:
         config["slurm"]["plot_celltype_proportions"]["threads"]
     resources:
         mem_mb = config["slurm"]["plot_celltype_proportions"]["memory"]        
+    shell:
+        "Rscript {input.script} --metadata {input.metadata} --celltype_label {params.celltype_label} \
+        --outdir {params.outdir} > {log}"
+
+rule compare_celltype_proportions: 
+    input:
+        script = config["scripts"]["compare_celltype_proportions"],
+        metadata=rules.parse_mapping_results.output
+    output:
+        config["directories"]["results"]+"/celltype_proportions/comparisons/completed.txt"
+    params:
+        celltype_label = config["params"]["compare_celltype_proportions"]["celltype_label"],
+        outdir = config["directories"]["results"]+"/celltype_proportions/barplots"
+    conda:
+        "environment.yaml"
+    log: 
+        "logs/compare_celltype_proportions.log"
+    threads: 
+        config["slurm"]["compare_celltype_proportions"]["threads"]
+    resources:
+        mem_mb = config["slurm"]["compare_celltype_proportions"]["memory"]        
     shell:
         "Rscript {input.script} --metadata {input.metadata} --celltype_label {params.celltype_label} \
         --outdir {params.outdir} > {log}"

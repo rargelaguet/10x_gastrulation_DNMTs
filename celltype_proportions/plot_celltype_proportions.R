@@ -22,7 +22,7 @@ args <- p$parse_args(commandArgs(TRUE))
 ## START TEST ##
 # args$metadata <- file.path(io$basedir,"results_new/mapping/sample_metadata_after_mapping.txt.gz")
 # args$celltype_label <- "celltype.mapped"
-# args$outdir <- file.path(io$basedir,"results_new/celltype_proportions")
+# args$outdir <- file.path(io$basedir,"results_new/celltype_proportions/barplots")
 ## END TEST ##
 
 dir.create(args$outdir, showWarnings = F)

@@ -210,7 +210,7 @@ for (i in args$colour_by) {
   
   if (grepl("sample",i)) {
     p <- p + theme(
-      legend.position = "top",
+      legend.position = "none",
       legend.title = element_blank()
     )
   }  

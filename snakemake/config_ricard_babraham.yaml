@@ -90,6 +90,7 @@ scripts:
     # celltype_validation_pseudobulk: ../celltype_validation/celltype_validation_pseudobulk.R
     plot_mapping_results: ../mapping/analysis/plot_mapping_umap.R
     plot_celltype_proportions: ../celltype_proportions/plot_celltype_proportions.R
+    compare_celltype_proportions: ../celltype_proportions/compare_celltype_proportions.R
 
 
 ################
@@ -124,7 +125,7 @@ params:
         n_neighbors: 25
         min_dist: 0.3
         vars_to_regress: ["nFeature_RNA","mit_percent_RNA"]
-        colour_by: ["celltype.mapped","nFeature_RNA","mit_percent_RNA","sample"]
+        colour_by: ["celltype.mapped","nFeature_RNA","mit_percent_RNA","sample","doublet_score","doublet_call"]
 
     dimensionality_reduction_seurat:
         npcs: 30
@@ -133,9 +134,12 @@ params:
         min_dist: 0.3
         seed: 42
         vars_to_regress: ["nFeature_RNA","mit_percent_RNA"]
-        colour_by: ["celltype.mapped","nFeature_RNA","mit_percent_RNA","sample"]
+        colour_by: ["celltype.mapped","nFeature_RNA","mit_percent_RNA","sample","doublet_score","doublet_call"]
 
     plot_celltype_proportions:
+        celltype_label: "celltype.mapped"
+
+    compare_celltype_proportions:
         celltype_label: "celltype.mapped"
 
     # plot_mapping_results
@@ -146,19 +150,19 @@ params:
 
 slurm:  # memory in MB
     create_seurat: 
-        memory: 25000
+        memory: 75000
         threads: 1
     qc: 
         memory: 5000
         threads: 1
     seurat_to_sce:
-        memory: 25000
+        memory: 50000
         threads: 1
     doublet_detection:
         memory: 15000
         threads: 1
     doublet_detection_seurat:
-        memory: 15000
+        memory: 35000
         threads: 1
     parse_doublet_results:
         memory: 2000
@@ -185,6 +189,9 @@ slurm:  # memory in MB
         memory: 4000
         threads: 1
     plot_celltype_proportions:
+        memory: 4000
+        threads: 1
+    compare_celltype_proportions:
         memory: 4000
         threads: 1
 

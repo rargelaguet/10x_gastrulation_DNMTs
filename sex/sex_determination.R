@@ -1,10 +1,7 @@
-################################################################################
-## Sex determination using RNA expression counts of genes on the Y chromosome ##
-################################################################################
+here::i_am("sex/sex_determination.R")
 
-suppressPackageStartupMessages(library(scater))
-suppressPackageStartupMessages(library(ggpubr))
-suppressPackageStartupMessages(library(argparse))
+source(here::here("settings.R"))
+source(here::here("utils.R"))
 
 ######################
 ## Define arguments ##
@@ -16,27 +13,17 @@ p$add_argument('--sce',       type="character",               help='SingleCellEx
 p$add_argument('--metadata',  type="character",               help='metadata file')
 p$add_argument('--threshold.ratioY',  type="double", default=1e-3,              help='XXX')
 p$add_argument('--outdir',          type="character",               help='Output directory')
-p$add_argument('--test',            action = "store_true",          help='Testing mode')
 args <- p$parse_args(commandArgs(TRUE))
 
 #####################
 ## Define settings ##
 #####################
 
-if (grepl("ricard",Sys.info()['nodename'])) {
-  source("/Users/ricard/10x_gastrulation_DNMTs/settings.R")
-  source("/Users/ricard/10x_gastrulation_DNMTs/utils.R")
-} else {
-  source("/homes/ricard/10x_gastrulation_DNMTs/settings.R")
-  source("/homes/ricard/10x_gastrulation_DNMTs/utils.R")
-}
-
 ## START TEST ##
-args$samples <- opts$samples
+args$samples <- opts$samples[1:2]
 args$sce <- io$sce
 args$metadata <- io$metadata
-args$outdir <- paste0(io$basedir,"/results/sex")
-args$test <- FALSE
+args$outdir <- paste0(io$basedir,"/results_new/sex")
 args$threshold.ratioY <- 1e-3
 ## END TEST ##
 
@@ -49,21 +36,17 @@ args$threshold.ratioY <- 1e-3
 ## Load data ##
 ###############
 
-if (isTRUE(args$test)) args$samples <- head(args$samples,n=2)
-
 # Load sample metadata
-sample_metadata <- fread(args$metadata) %>% .[pass_QC==T & sample%in%args$samples]
+sample_metadata <- fread(args$metadata) %>% .[pass_rnaQC==T & sample%in%args$samples]
+print(table(sample_metadata$class))
 
 # Load SingleCellExperiment
-# sce <- readRDS(io$sce)[,sample_metadata$cell]
-sce <- load_SingleCellExperiment(args$sce, cells = sample_metadata$cell)
-dim(sce)
-
-# Add sample metadata as colData
+sce <- load_SingleCellExperiment(args$sce, cells = sample_metadata$cell, normalise = T)
 colData(sce) <- sample_metadata %>% tibble::column_to_rownames("cell") %>% DataFrame
 
 # Load gene metadata
 gene_metadata <- fread(io$gene_metadata) %>% 
+  .[!grepl("^[Gm|Rik]",symbol)] %>%
   .[symbol%in%rownames(sce)]
 
 ################
@@ -77,35 +60,28 @@ genes.chr10 <- gene_metadata[chr=="chr10",symbol]
 
 # Manual filtering
 # For some reason Erdr1 is predicted as Ychr, but the last version of ENSEMBL is in the Xchr
-genes.chrY <- genes.chrY[!genes.chrY=="ENSMUSG00000096768"]
+# genes.chrY <- genes.chrY[!genes.chrY=="ENSMUSG00000096768"]
 
-
-# Create data.table from SingleCellExperiment object
-# dt <- counts(sce[c(genes.chrY,genes.chrX,genes.chr10)]) %>% as.matrix %>% t %>%
-#   as.data.table(keep.rownames="cell") %>% 
-#   melt(id.vars="cell", value.name="counts", variable.name="symbol") %>%
-#   merge(sample_metadata[,c("cell","sample")], by="cell")#  %>%
-#   # merge(gene_metadata[,c("chr","ens_id","symbol")], by="symbol")
 dt <- args$samples %>% map(function(i) {
   sce.filt <- sce[,sce$sample==i] %>% .[c(genes.chrY,genes.chrX,genes.chr10),]
-  dt <- data.table(
+  data.table(
+    sample = i,
     symbol = rownames(sce.filt),
-    counts = counts(sce.filt) %>% Matrix::rowSums()
-  ) %>% .[,sample:=i]
+    expr = logcounts(sce.filt) %>% Matrix::rowMeans()
+  )
 }) %>% rbindlist %>% merge(gene_metadata[,c("chr","ens_id","symbol")], by="symbol")
 
-to.plot <- dt[chr=="chrY"] %>% 
-  # .[,.(counts=sum(counts)),by=c("sample","chr","ens_id","symbol")] %>%
-  .[,.(counts=sum(counts)),by=c("sample","chr","symbol")] %>%
-  .[,mean:=mean(counts),by="symbol"] %>% .[mean>0] %>% .[,mean:=NULL] 
 
 ##########
 ## Plot ##
 ##########
 
-p <- ggbarplot(to.plot, x="symbol", y="counts", facet="sample", fill="gray70") +
+to.plot <- dt[chr=="chrY"] %>% 
+ .[,foo:=mean(expr),by="symbol"] %>% .[foo>0] %>% .[,foo:=NULL] 
+
+p <- ggbarplot(to.plot, x="symbol", y="expr", facet="sample", fill="gray70") +
 # p <- ggbarplot(to.plot, x="ens_id", y="counts", facet="sample", fill="gray70") +
-  labs(x="", y="Read counts") +
+  labs(x="", y="Expression levels") +
   guides(x = guide_axis(angle = 90)) +
   theme(
   axis.text.x = element_text(colour="black",size=rel(0.5)),
@@ -123,17 +99,18 @@ dev.off()
 
 # Agregate counts over all genes
 sex_assignment.dt <- dt %>% 
-  .[,.(counts=sum(counts)),by=c("sample","chr")] %>%
-  dcast(sample~chr, value.var="counts") %>%
+  .[,.(expr=mean(expr)),by=c("sample","chr")] %>%
+  dcast(sample~chr, value.var="expr") %>%
   .[,ratioY:=chrY/chr10] %>% .[,ratioX:=chrX/chr10] %>%
   .[,sex:=c("female","male")[as.numeric(ratioY>=args$threshold.ratioY)+1]]
 
 p <- ggbarplot(sex_assignment.dt, x="sample", y="ratioY", fill="sex", sort.val = "asc", palette="Dark2") +
-  labs(x="", y="chrY/chr1 counts ratio") +
+  labs(x="", y="chrY/chr1 expr ratio") +
   guides(x = guide_axis(angle = 90)) +
   theme(
     legend.position = "right",
-    axis.text.x = element_text(colour="black",size=rel(0.6))
+    axis.text.x = element_text(colour="black",size=rel(0.6)),
+    axis.text.y = element_text(colour="black",size=rel(0.8))
     # axis.text.x = element_blank(),
     # axis.ticks.x = element_blank()
   )
@@ -148,46 +125,49 @@ dev.off()
 #############################
 
 to.plot <- dt[symbol=="Xist"] %>% 
-  # .[,expr:=log(counts+1)] %>%
   merge(sex_assignment.dt[,c("sex","sample")], by="sample")
 
-p <- ggbarplot(to.plot, x="sample", y="counts", fill="sex") +
+p <- ggbarplot(to.plot, x="sample", y="expr", fill="sex") +
   labs(x="", y="Xist expression") +
   guides(x = guide_axis(angle = 90)) +
   theme(
-    axis.text.x = element_text(colour="black",size=rel(0.6))
-    # axis.text.x = element_text(colour="black",size=rel(0.8), angle=45, hjust=1, vjust=1),
+    axis.text.x = element_text(colour="black",size=rel(0.6)),
+    axis.text.y = element_text(colour="black",size=rel(0.8))
   )
 
 pdf(sprintf("%s/pdf/Xist_expr.pdf",args$outdir))
 print(p)
 dev.off()
 
-##################################################################
-## Scatterplot of chrY/chr1 vs chrX/chr1 count ratio per embryo ##
-##################################################################
+###########################################
+## Scatterplot of chrY/chr1 vs Xist expr ##
+###########################################
 
-# ggscatter(to.plot, x="ratioX", y="ratioY") +
-#   labs(x="chrX/chr1 ratio", y="chrY/chr1 ratio") +
-#   theme(
-#     # axis.text.x = element_text(colour="black",size=rel(0.8), angle=45, hjust=1, vjust=1),
-#     # axis.title.x = element_blank(),
-#     # axis.ticks.x = element_blank()
-#   )
+to.plot <- dt[symbol=="Xist"] %>% 
+  setnames("expr","Xist_expr") %>%
+  merge(sex_assignment.dt, by="sample")
+
+ggscatter(to.plot, x="ratioY", y="Xist_expr", shape=21, fill="sex", size=2.5) +
+  labs(x="chrX/chr1 ratio", y="Xist expression") +
+  theme(
+    axis.text = element_text(colour="black",size=rel(0.8)),
+    axis.title.x = element_blank(),
+    axis.ticks.x = element_blank()
+  )
 
 ############################
 ## Update sample metadata ##
 ############################
 
-sample_metadata <- fread(io$metadata)
-sample_metadata <- sample_metadata %>% merge(sex_assignment.dt[,c("sample","sex")], by="sample", all.x = TRUE)
-fwrite(sample_metadata, io$metadata, sep="\t", quote=F, na="NA")
+sample_metadata_after_sex_assignment <- fread(io$metadata) %>% 
+  merge(sex_assignment.dt[,c("sample","sex")], by="sample", all.x = TRUE)
 
 ##########
 ## Save ##
 ##########
 
-fwrite(sex_assignment.dt[,c("sample","sex")], paste0(args$outdir,"/sex_assignment.txt.gz"))
+fwrite(sample_metadata_after_sex_assignment, file.path(args$outdir,"sample_metadata_after_sex_assignment.txt.gz"), sep="\t", quote=F, na="NA")
+fwrite(sex_assignment.dt, file.path(args$outdir,"sex_assignment.txt.gz"))
 
 
 

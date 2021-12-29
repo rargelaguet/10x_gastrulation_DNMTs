@@ -21,11 +21,11 @@ args <- p$parse_args(commandArgs(TRUE))
 #####################
 
 ## START TEST ##
-args <- list()
-args$inputdir <- paste0(io$basedir,"/original")
-args$outdir <- paste0(io$basedir,"/processed_new")
-args$samples <- opts$samples[1:2]
-args$test <- FALSE
+# args <- list()
+# args$inputdir <- paste0(io$basedir,"/original")
+# args$outdir <- paste0(io$basedir,"/processed_new")
+# args$samples <- c("15_E8_5_D3A_WT_D3B_WT_L007","SIGAC6_E85_5_Dnmt3aKO_Dnmt3b_Het_L003") # opts$samples[1:2]
+# args$test <- FALSE
 ## END TEST ##
 
 # These settings are important for consistency with ArchR, which provides little flexibility to edit cell names
@@ -57,7 +57,7 @@ for (i in args$samples) {
   count_mtx[[i]] <- Read10X(file.path(args$inputdir,i))
   
   # remove human genes for samples that are mapped to the mixed transcriptome
-  if (any(grep("mm10",rownames(count_mtx[[i]])))) {
+  if (any(grep("^mm10_",rownames(count_mtx[[i]])))) {
     count_mtx[[i]] <- count_mtx[[i]][grep("mm10",rownames(count_mtx[[i]])),]
     rownames(count_mtx[[i]]) <- rownames(count_mtx[[i]]) %>% gsub("mm10___","",.)
   }
@@ -128,7 +128,8 @@ metadata <- seurat@meta.data %>% as.data.table %>% .[,orig.ident:=NULL] %>%
 
 # Add stage information
 metadata[,stage:=as.character(NA)] %>%
-  .[grepl("E8",sample),stage:="E8.5"] %>%
+  # .[grepl("E8",sample),stage:="E8.5"] %>%
+  .[,stage:="E8.5"] %>%
   .[grepl("E12",sample),stage:="E12.5"]
 print(table(metadata$stage))
 stopifnot(!is.na(metadata$stage))
