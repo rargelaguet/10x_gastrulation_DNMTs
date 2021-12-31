@@ -37,7 +37,9 @@ rule all:
         config["directories"]["results"]+"/celltype_proportions/completed.txt",
         config["directories"]["results"]+"/celltype_proportions/comparisons/completed.txt",
         expand("%s/dimensionality_reduction/sce/{classe}/completed.txt" % config["directories"]["results"], classe=config["classes"]),
-        expand("%s/dimensionality_reduction/seurat/{classe}/completed.txt" % config["directories"]["results"], classe=config["classes"])
+        expand("%s/dimensionality_reduction/seurat/{classe}/completed.txt" % config["directories"]["results"], classe=config["classes"]),
+        config["directories"]["results"]+"/sex_assignment/sample_metadata_after_sex_assignment.txt.gz",
+        config["directories"]["results"]+"/sex_assignment/sex_assignment.txt.gz"
 
 ##################################################
 ## Load count matrices and create Seurat object ##
@@ -368,7 +370,7 @@ rule compare_celltype_proportions:
         config["directories"]["results"]+"/celltype_proportions/comparisons/completed.txt"
     params:
         celltype_label = config["params"]["compare_celltype_proportions"]["celltype_label"],
-        outdir = config["directories"]["results"]+"/celltype_proportions/barplots"
+        outdir = config["directories"]["results"]+"/celltype_proportions/comparisons"
     conda:
         "environment.yaml"
     log: 
@@ -470,3 +472,33 @@ rule pseudobulk_rna:
     shell:
         "Rscript {input.script} --sce {input.sce} --metadata {input.metadata} --group_by {wildcards.group_by} \
         --normalisation_method {params.normalisation_method} --outdir {params.outdir} > {log}"
+
+
+####################
+## Sex assignment ##
+####################
+
+rule sex_assignment: 
+    input:
+        script = config["scripts"]["sex_assignment"],
+        metadata = rules.parse_mapping_results.output,
+        sce = rules.seurat_to_sce.output
+    output:
+        config["directories"]["results"]+"/sex_assignment/sample_metadata_after_sex_assignment.txt.gz",
+        config["directories"]["results"]+"/sex_assignment/sex_assignment.txt.gz"
+    params:
+        samples = expand("{sample}", sample=config["samples"]),
+        chrY_ratio_threshold = config["params"]["sex_assignment"]["chrY_ratio_threshold"],
+        outdir = config["directories"]["results"]+"/sex_assignment"
+    conda:
+        "environment.yaml"
+    log: 
+        "logs/sex_assignment.log"
+    threads: 
+        config["slurm"]["sex_assignment"]["threads"]
+    resources:
+        mem_mb = config["slurm"]["sex_assignment"]["memory"]        
+    shell:
+        "Rscript {input.script} --metadata {input.metadata} --sce {input.sce} --samples {params.samples} \
+        --chrY_ratio_threshold {params.chrY_ratio_threshold} --outdir {params.outdir} > {log}"
+

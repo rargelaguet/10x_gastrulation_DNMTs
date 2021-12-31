@@ -1,49 +1,44 @@
+here::i_am("differential/differential.R")
+
 suppressMessages(library(scater))
 suppressMessages(library(edgeR))
-suppressMessages(library(argparse))
+
+# Load default settings
+source(here::here("settings.R"))
+source(here::here("utils.R"))
 
 ################################
 ## Initialize argument parser ##
 ################################
 
 p <- ArgumentParser(description='')
-p$add_argument('--groupA',    type="character",    help='group A ("class" column in metadata)')
-p$add_argument('--groupB',    type="character",    help='group B ("class" column in metadata)')
-p$add_argument('--celltype',  type="character",    nargs="+", help='Cell type')
-p$add_argument('--test_mode', action="store_true", help='Test mode? subset number of cells')
+p$add_argument('--groupA',    type="character",    help='group A')
+p$add_argument('--groupB',    type="character",    help='group B')
+p$add_argument('--celltypes',    type="character",    default="all", nargs="+", help='Celltypes to use')
+p$add_argument('--group_label',    type="character",    help='Group label')
 p$add_argument('--outfile',   type="character",    help='Output file')
 args <- p$parse_args(commandArgs(TRUE))
 
-#########
-## I/O ##
-#########
+## START TEST
+# args$groupA <- "E8.5_WT"
+# args$groupB <- "E8.5_Dnmt3aKO_Dnmt3bKO"
+# args$group_label <- "class"
+# args$celltypes <- c("Blood_progenitors")
+## END TEST
 
-if (grepl("ricard",Sys.info()['nodename'])) {
-  source("/Users/ricard/10x_gastrulation_DNMTs/settings.R")
-  source("/Users/ricard/10x_gastrulation_DNMTs/utils.R")
-  source("/Users/ricard/10x_gastrulation_DNMTs/differential/utils.R")
-} else if (grepl("ebi",Sys.info()['nodename'])) {
-  source("/homes/ricard/10x_gastrulation_DNMTs/settings.R")
-  source("/homes/ricard/10x_gastrulation_DNMTs/utils.R")
-  source("/homes/ricard/10x_gastrulation_DNMTs/differential/utils.R")
+#####################
+## Define settings ##
+#####################
+
+# Load utils
+source(here::here("differential/utils.R"))
+
+# Sanity checks
+if (args$celltypes[1]=="all") {
+  args$celltypes <- opts$celltypes
 } else {
-  stop("Computer not recognised")
+  stopifnot(args$celltypes%in%opts$celltypes)
 }
-
-# START TEST
-# args$groupA <- c("E8.5_Dnmt1KO")
-# args$groupB <- c("E8.5_WT")
-# args$celltype <- "Cardiomyocytes"
-# args$test_mode <- FALSE
-# END TEST
-
-#############
-## Options ##
-#############
-
-# Define cell types
-opts$celltype <- args$celltype
-# stopifnot(opts$celltype %in% opts$celltype.1)
 
 # Define groups
 opts$groups <- c(args$groupA,args$groupB)
@@ -54,45 +49,57 @@ opts$threshold_fdr <- 0.01
 # Define minimum logFC for significance
 opts$min.logFC <- 1
 
-# Minimum number of cells per group for differential testing
-opts$min.cells <- 25
-
 # For a given gene, the minimum fraction of cells that must express it in at least one group
 opts$min_detection_rate_per_group <- 0.40
 
-############################
-## Update sample metadata ##
-############################
+# Rename celltypes
+opts$rename_celltypes <- c(
+  "Erythroid3" = "Erythroid",
+  "Erythroid2" = "Erythroid",
+  "Erythroid1" = "Erythroid",
+  "Blood_progenitors_1" = "Blood_progenitors",
+  "Blood_progenitors_2" = "Blood_progenitors"
+  # "Intermediate_mesoderm" = "Mixed_mesoderm",
+  # "Paraxial_mesoderm" = "Mixed_mesoderm",
+  # "Nascent_mesoderm" = "Mixed_mesoderm",
+  # "Pharyngeal_mesoderm" = "Mixed_mesoderm"
+  # "Visceral_endoderm" = "ExE_endoderm"
+)
+
+########################
+## Load cell metadata ##
+########################
 
 sample_metadata <- fread(io$metadata) %>%
-  .[pass_QC==TRUE & class%in%opts$groups & celltype.mapped%in%args$celltype] %>%
-  setnames("class","group") %>% #.[,c("cell","group")] %>%
-  .[,group:=factor(group,levels=opts$groups)] %>% 
-  setorder(group)
+  .[,celltype.mapped:=stringr::str_replace_all(celltype.mapped,opts$rename_celltypes)] %>%
+  .[pass_rnaQC==TRUE & celltype.mapped%in%args$celltypes]
 
+stopifnot(args$group_label%in%colnames(sample_metadata))
 
-if (isTRUE(args$test_mode)) {
-  print("Testing mode activated")
-  sample_metadata <- sample_metadata %>% split(.,.$group) %>% map(~ head(.,n=250)) %>% rbindlist
-}
+sample_metadata <- sample_metadata %>%
+  setnames(args$group_label,"group") %>%
+  # .[,group:=eval(as.name(args$group_label))] %>%
+  .[group%in%c(args$groupA,args$groupB)] %>%
+  .[,group:=factor(group,levels=opts$groups)] %>% setorder(group) # Sort cells so that groupA comes before groupB
+
 table(sample_metadata$group)
 
-if (any(table(sample_metadata$group)<opts$min.cells)) {
-  stop("Not enough cells for differential testing")
-}
-
-###############
-## Load data ##
-###############
+#########################
+## Load RNA expression ##
+#########################
 
 # Load SingleCellExperiment object
-sce <- load_SingleCellExperiment(io$sce, cells = sample_metadata$cell, normalise = TRUE, remove_non_expressed_genes = FALSE)
+sce <- load_SingleCellExperiment(
+  file = io$sce, 
+  normalise = TRUE, 
+  cells = sample_metadata$cell
+)
 sce$group <- sample_metadata$group
 
 # Load gene metadata
 gene_metadata <- fread(io$gene_metadata) %>%
   .[symbol%in%rownames(sce)] %>%
-  .[,c("symbol","ens_id")] %>% 
+  .[,c("symbol","ens_id")] %>%
   setnames("symbol","gene")
 
 ################
@@ -101,10 +108,11 @@ gene_metadata <- fread(io$gene_metadata) %>%
 
 # calculate detection rate per gene
 cdr.dt <- data.table(
-  gene = rownames(sce),
-  detection_rate_groupA = rowMeans(logcounts(sce[,sce$group==opts$groups[1]])>0),
-  detection_rate_groupB = rowMeans(logcounts(sce[,sce$group==opts$groups[2]])>0)
-)# %>% setnames(c("ens_id",sprintf("detection_rate_%s",opts$groups[1]),sprintf("detection_rate_%s",opts$groups[2])))
+  rownames(sce),
+  rowMeans(logcounts(sce[,sce$group==opts$groups[1]])>0) %>% round(2),
+  rowMeans(logcounts(sce[,sce$group==opts$groups[2]])>0) %>% round(2)
+) %>% setnames(c("gene",sprintf("detection_rate_%s",opts$groups[1]),sprintf("detection_rate_%s",opts$groups[2])))
+# .[,cdr_diff:=abs(out[,(sprintf("detection_rate_%s",opts$groups[1])),with=F][[1]] - out[,(sprintf("detection_rate_%s",opts$groups[2])),with=F][[1]])] %>%
 
 # Filter genes
 sce <- sce[rownames(sce)%in%gene_metadata$gene,]
@@ -114,19 +122,19 @@ sce <- sce[rownames(sce)%in%gene_metadata$gene,]
 ################################################
 
 out <- doDiffExpr(sce, opts$groups, opts$min_detection_rate_per_group) %>%
-  # Add gene statistics
-  merge(cdr.dt, all.y=T, by="gene") %>%
-  merge(gene_metadata, all.y=T, by="gene") %>%
   # Add sample statistics
   .[,c("groupA_N","groupB_N"):=list(table(sample_metadata$group)[1],table(sample_metadata$group)[2])]%>% 
   # setnames(c("groupA_N","groupB_N"),c(sprintf("N_%s",opts$groups[1]),sprintf("N_%s",opts$groups[2]))) %>%
+  # Add gene statistics
+  merge(cdr.dt, all.y=T, by="gene") %>%
+  merge(gene_metadata, all.y=T, by="gene") %>%
   # Calculate statistical significance
-  .[, sig := (padj_fdr<=opts$threshold_fdr & abs(logFC)>=opts$min.logFC)] %>%
-  .[is.na(sig),sig:=FALSE] %>%
-  setorder(-sig, padj_fdr, na.last=T)
+  # .[, sig := (padj_fdr<=opts$threshold_fdr & abs(logFC)>=opts$min.logFC)] %>%
+  # .[is.na(sig),sig:=FALSE] %>%
+  setorder(padj_fdr, na.last=T)
 
 # Parse columns
-out[,c("p.value","padj_fdr","logFC","log_padj_fdr"):=list(signif(p.value,digits=3), signif(padj_fdr,digits=3), round(logFC,3),round(log_padj_fdr,3))]  
+out[,c("p.value","padj_fdr","logFC","log_padj_fdr"):=list(signif(p.value,digits=3), signif(padj_fdr,digits=3), round(logFC,3),round(log_padj_fdr,3))]
 
 ##################
 ## Save results ##

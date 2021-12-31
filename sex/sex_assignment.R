@@ -1,4 +1,4 @@
-here::i_am("sex/sex_determination.R")
+here::i_am("sex/sex_assignment.R")
 
 source(here::here("settings.R"))
 source(here::here("utils.R"))
@@ -11,7 +11,7 @@ p <- ArgumentParser(description='')
 p$add_argument('--samples',   type="character",   nargs='+',  help='samples')
 p$add_argument('--sce',       type="character",               help='SingleCellExperiment file')
 p$add_argument('--metadata',  type="character",               help='metadata file')
-p$add_argument('--threshold.ratioY',  type="double", default=1e-3,              help='XXX')
+p$add_argument('--chrY_ratio_threshold',  type="double", default=1e-3,              help='ChrY/chr10 counts ratio threshold')
 p$add_argument('--outdir',          type="character",               help='Output directory')
 args <- p$parse_args(commandArgs(TRUE))
 
@@ -20,17 +20,15 @@ args <- p$parse_args(commandArgs(TRUE))
 #####################
 
 ## START TEST ##
-args$samples <- opts$samples[1:2]
-args$sce <- io$sce
-args$metadata <- io$metadata
-args$outdir <- paste0(io$basedir,"/results_new/sex")
-args$threshold.ratioY <- 1e-3
+# args$samples <- opts$samples[1:2]
+# args$sce <- io$sce
+# args$metadata <- io$metadata
+# args$outdir <- paste0(io$basedir,"/results_new/sex")
+# args$chrY_ratio_threshold <- 1e-3
 ## END TEST ##
 
-####################
-## Define options ##
-####################
-
+# I/O
+dir.create(args$outdir, showWarnings=F)
 
 ###############
 ## Load data ##
@@ -62,6 +60,7 @@ genes.chr10 <- gene_metadata[chr=="chr10",symbol]
 # For some reason Erdr1 is predicted as Ychr, but the last version of ENSEMBL is in the Xchr
 # genes.chrY <- genes.chrY[!genes.chrY=="ENSMUSG00000096768"]
 
+# Create data.table with the expression values of selected genes
 dt <- args$samples %>% map(function(i) {
   sce.filt <- sce[,sce$sample==i] %>% .[c(genes.chrY,genes.chrX,genes.chr10),]
   data.table(
@@ -84,12 +83,14 @@ p <- ggbarplot(to.plot, x="symbol", y="expr", facet="sample", fill="gray70") +
   labs(x="", y="Expression levels") +
   guides(x = guide_axis(angle = 90)) +
   theme(
-  axis.text.x = element_text(colour="black",size=rel(0.5)),
-  axis.ticks.x = element_line(size=rel(0.5)),
-  axis.text.y = element_text(colour="black",size=rel(0.8))
+    axis.text.x = element_text(colour="black",size=rel(0.75)),
+    axis.ticks.x = element_line(size=rel(0.5)),
+    axis.text.y = element_text(colour="black",size=rel(0.8)),
+    strip.background = element_blank(),
+    strip.text = element_text(size=rel(0.8), color="black")
   )
 
-pdf(sprintf("%s/pdf/sex_ychr_expr_per_gene.pdf",args$outdir), width=16, height=10)
+pdf(file.path(args$outdir,"sex_ychr_expr_per_gene.pdf"), width=14, height=10)
 print(p)
 dev.off()
 
@@ -101,8 +102,8 @@ dev.off()
 sex_assignment.dt <- dt %>% 
   .[,.(expr=mean(expr)),by=c("sample","chr")] %>%
   dcast(sample~chr, value.var="expr") %>%
-  .[,ratioY:=chrY/chr10] %>% .[,ratioX:=chrX/chr10] %>%
-  .[,sex:=c("female","male")[as.numeric(ratioY>=args$threshold.ratioY)+1]]
+  .[,ratioY:=round(chrY/chr10,3)] %>% .[,ratioX:=round(chrX/chr10,3)] %>%
+  .[,sex:=c("female","male")[as.numeric(ratioY>=args$chrY_ratio_threshold)+1]]
 
 p <- ggbarplot(sex_assignment.dt, x="sample", y="ratioY", fill="sex", sort.val = "asc", palette="Dark2") +
   labs(x="", y="chrY/chr1 expr ratio") +
@@ -115,7 +116,7 @@ p <- ggbarplot(sex_assignment.dt, x="sample", y="ratioY", fill="sex", sort.val =
     # axis.ticks.x = element_blank()
   )
 
-pdf(sprintf("%s/pdf/sex_ychr_expr_aggregated.pdf",args$outdir))
+pdf(file.path(args$outdir,"sex_ychr_expr_aggregated.pdf"))
 print(p)
 dev.off()
 
@@ -135,7 +136,7 @@ p <- ggbarplot(to.plot, x="sample", y="expr", fill="sex") +
     axis.text.y = element_text(colour="black",size=rel(0.8))
   )
 
-pdf(sprintf("%s/pdf/Xist_expr.pdf",args$outdir))
+pdf(file.path(args$outdir,"Xist_expr.pdf"))
 print(p)
 dev.off()
 
@@ -159,7 +160,7 @@ ggscatter(to.plot, x="ratioY", y="Xist_expr", shape=21, fill="sex", size=2.5) +
 ## Update sample metadata ##
 ############################
 
-sample_metadata_after_sex_assignment <- fread(io$metadata) %>% 
+sample_metadata_after_sex_assignment <- fread(args$metadata) %>% 
   merge(sex_assignment.dt[,c("sample","sex")], by="sample", all.x = TRUE)
 
 ##########
@@ -168,8 +169,3 @@ sample_metadata_after_sex_assignment <- fread(io$metadata) %>%
 
 fwrite(sample_metadata_after_sex_assignment, file.path(args$outdir,"sample_metadata_after_sex_assignment.txt.gz"), sep="\t", quote=F, na="NA")
 fwrite(sex_assignment.dt, file.path(args$outdir,"sex_assignment.txt.gz"))
-
-
-
-
-

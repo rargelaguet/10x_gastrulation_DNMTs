@@ -25,12 +25,12 @@ args <- p$parse_args(commandArgs(TRUE))
 ## END TEST ##
 
 # I/O
-dir.create(paste0(args$outdir,"/boxplots"), showWarnings = F)
-dir.create(paste0(args$outdir,"/boxplots/per_class"), showWarnings = F)
-dir.create(paste0(args$outdir,"/boxplots/per_sample"), showWarnings = F)
-dir.create(paste0(args$outdir,"/polar_plots"), showWarnings = F)
-dir.create(paste0(args$outdir,"/polar_plots/per_class"), showWarnings = F)
-dir.create(paste0(args$outdir,"/polar_plots/per_sample"), showWarnings = F)
+dir.create(file.path(args$outdir,"boxplots"), showWarnings = F)
+dir.create(file.path(args$outdir,"boxplots/per_class"), showWarnings = F)
+dir.create(file.path(args$outdir,"boxplots/per_sample"), showWarnings = F)
+dir.create(file.path(args$outdir,"polar_plots"), showWarnings = F)
+dir.create(file.path(args$outdir,"polar_plots/per_class"), showWarnings = F)
+dir.create(file.path(args$outdir,"polar_plots/per_sample"), showWarnings = F)
 
 ####################
 ## Define options ##
@@ -89,7 +89,7 @@ opts$celltypes = c(
   # "Parietal_endoderm"
 )
 
-opts$to.merge <- c(
+opts$rename_celltypes <- c(
   "Erythroid3" = "Erythroid",
   "Erythroid2" = "Erythroid",
   "Erythroid1" = "Erythroid",
@@ -112,7 +112,7 @@ opts$remove.small.lineages <- FALSE
 
 sample_metadata <- fread(args$metadata) %>%
   .[pass_rnaQC==TRUE & celltype.mapped%in%opts$celltypes & class%in%opts$classes] %>%
-  .[,celltype.mapped:=stringr::str_replace_all(celltype.mapped,opts$to.merge)] %>%
+  .[,celltype.mapped:=stringr::str_replace_all(celltype.mapped,opts$rename_celltypes)] %>%
   .[,celltype.mapped:=factor(celltype.mapped,levels=unique(celltype.mapped))] %>%
   .[,c("cell","sample","alias","class","celltype.mapped")]
 

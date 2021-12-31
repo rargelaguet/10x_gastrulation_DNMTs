@@ -91,6 +91,7 @@ scripts:
     plot_mapping_results: ../mapping/analysis/plot_mapping_umap.R
     plot_celltype_proportions: ../celltype_proportions/plot_celltype_proportions.R
     compare_celltype_proportions: ../celltype_proportions/compare_celltype_proportions.R
+    sex_assignment: ../sex/sex_assignment.R
 
 
 ################
@@ -142,6 +143,8 @@ params:
     compare_celltype_proportions:
         celltype_label: "celltype.mapped"
 
+    sex_assignment:
+        chrY_ratio_threshold: 0.001
     # plot_mapping_results
 
 ###########
@@ -194,4 +197,6 @@ slurm:  # memory in MB
     compare_celltype_proportions:
         memory: 4000
         threads: 1
-
+    sex_assignment:
+        memory: 30000
+        threads: 1
