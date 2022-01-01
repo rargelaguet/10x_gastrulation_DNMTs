@@ -274,6 +274,13 @@ opts$aliases <- c(
   "E8.5_WT_7"
 )
 
+opts$ExE.celltypes <- c(
+  "Visceral_endoderm",
+  "ExE_endoderm",
+  "ExE_ectoderm",
+  "Parietal_endoderm"
+)
+
 ##########################
 ## Load sample metadata ##
 ##########################

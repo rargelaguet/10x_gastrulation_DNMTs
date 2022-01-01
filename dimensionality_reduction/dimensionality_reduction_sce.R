@@ -37,10 +37,10 @@ args <- p$parse_args(commandArgs(TRUE))
 ## START TEST ##
 # args$sce <- io$sce
 # args$metadata <- file.path(io$basedir,"results_new/mapping/sample_metadata_after_mapping.txt.gz")
-# args$classes <- "E8.5_WT"
+# args$classes <- "E8.5_Dnmt3aKO_Dnmt3bWT"
 # args$features <- 2500
 # args$npcs <- 25
-# args$colour_by <- c("celltype.mapped","nFeature_RNA","sample")
+# args$colour_by <- c("celltype.mapped","nFeature_RNA","sample","doublet_score","doublet_call")
 # args$vars_to_regress <- c("nFeature_RNA","mit_percent_RNA")
 # args$batch_correction <- NULL
 # args$remove_ExE_cells <- FALSE
@@ -68,6 +68,11 @@ if (args$classes[1]=="all") {
 sample_metadata <- fread(args$metadata) %>%
   .[pass_rnaQC==TRUE & class%in%args$classes]
 
+# tmp <- fread("/Users/argelagr/data/10x_gastrulation_DNMTs/results_new/doublet_detection_seurat/sample_metadata_after_doublets.txt.gz") %>%
+#   .[,c("cell","doublet_score","doublet_call")]
+# sample_metadata <- sample_metadata[sample=="17_E8_5_D3A_KO_D3B_WT_L008"]
+# sample_metadata <- sample_metadata %>% merge(tmp,by="cell")
+
 if (args$remove_ExE_cells) {
   print("Removing ExE cells...")
   sample_metadata <- sample_metadata %>%
@@ -75,6 +80,7 @@ if (args$remove_ExE_cells) {
 }
 
 table(sample_metadata$class)
+table(sample_metadata$alias)
 table(sample_metadata$celltype.mapped)
 
 ###################

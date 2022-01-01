@@ -35,11 +35,13 @@ opts$celltypes = c(
 	"Mesenchyme",
 	"Haematoendothelial_progenitors",
 	"Endothelium",
-	"Blood_progenitors_1",
-	"Blood_progenitors_2",
-	"Erythroid1",
-	"Erythroid2",
-	"Erythroid3",
+	"Blood_progenitors",
+	# "Blood_progenitors_1",
+	# "Blood_progenitors_2",
+	"Erythroid",
+	# "Erythroid1",
+	# "Erythroid2",
+	# "Erythroid3",
 	"NMP",
 	"Rostral_neurectoderm",
 	"Caudal_neurectoderm",
@@ -79,7 +81,12 @@ opts$rename_celltypes <- c(
 ##########################
 
 sample_metadata <- fread(io$metadata) %>% 
+  .[,celltype.mapped:=stringr::str_replace_all(celltype.mapped,opts$rename_celltypes)] %>%
   .[pass_rnaQC==TRUE & celltype.mapped%in%opts$celltypes & class%in%opts$classes]
+
+# Only consider cell types with sufficient observations in WT cells
+celltypes.to.use <- sample_metadata[class=="E8.5_WT",.(N=.N),by="celltype.mapped"] %>% .[N>=50,celltype.mapped]
+sample_metadata <- sample_metadata[celltype.mapped%in%celltypes.to.use]
 
 table(sample_metadata$class)
 table(sample_metadata$celltype.mapped)
@@ -113,11 +120,11 @@ colData(sce) <- sample_metadata %>% tibble::column_to_rownames("cell") %>% DataF
 ## Plot ##
 ##########
 
-genes.to.plot <- c("Eomes","Dppa4")
+genes.to.plot <- c("Tex19.1","Morc1","Dppa3","Rex1","Dppa5a","Dppa4","Dppa2","Zfp981")
 # genes.to.plot <- c("Lefty1","Cd34","Tmsb4x","Fgf3","Spata7","Cer1","Spink1","Dppa4","Dppa5a","Prc1","Lefty2","Ube2c","Hba-x","Hbb-y","Hba-a1","Hbb-bh1")
 # genes.to.plot <- c("Vegfa","Vegfb","Vegfc","Vegfd","Kdr","Flt1","Tal1","Runx1","Etv2)
 # genes.to.plot <- c("Tet1","Tet2","Tet3","Dnmt1","Dnmt3a","Dnmt3b","Dnmt3l")
-# genes.to.plot <- rownames(sce)[grep("tomato",rownames(sce))]
+genes.to.plot <- rownames(sce)[grep("Tet",rownames(sce))]
 # genes.to.plot <- fread(io$atlas.marker_genes)$gene %>% unique %>% .[!grepl("Rik$",.)]
 # genes.to.plot <- fread("/Users/ricard/data/gastrulation10x/results/differential/celltypes/E8.5/Neural_crest_vs_Forebrain_Midbrain_Hindbrain.txt.gz") %>% .[sig==T & logFC<(-2),gene]
 
@@ -128,47 +135,39 @@ for (i in 1:length(genes.to.plot)) {
   if (gene %in% rownames(sce)) {
     print(sprintf("%s/%s: %s",i,length(genes.to.plot),gene))
     outfile <- sprintf("%s/%s.pdf",io$outdir,gene)
+  
+    to.plot <- data.table(
+      cell = colnames(sce),
+      expr = logcounts(sce)[gene,]
+    ) %>% merge(sample_metadata[,c("cell","sample","class","celltype.mapped")], by="cell") %>%
+      .[,N:=.N,by=c("sample","celltype.mapped")] %>% .[N>=10]
     
-    if (!file.exists(outfile)) {
-      
-      to.plot <- data.table(
-        cell = colnames(sce),
-        expr = logcounts(sce)[gene,]
-      ) %>% merge(sample_metadata[,c("cell","sample","class","celltype.mapped")], by="cell") %>%
-        .[,N:=.N,by=c("sample","celltype.mapped")] %>% .[N>=10]
-      
-      p <- ggplot(to.plot, aes(x=class, y=expr, fill=class)) +
-        geom_violin(scale = "width", alpha=0.8) +
-        geom_boxplot(width=0.5, outlier.shape=NA, alpha=0.8) +
-        stat_summary(fun.data = give.n, geom = "text", size=3) +
-        # geom_jitter(size=2, shape=21, stroke=0.2, alpha=0.5) +
-        # scale_fill_manual(values=opts$colors) +
-        scale_fill_brewer(palette="Dark2") +
-        facet_wrap(~celltype.mapped, scales="fixed") +
-        theme_classic() +
-        labs(x="",y=sprintf("%s expression",gene)) +
-        guides(x = guide_axis(angle = 90)) +
-        theme(
-          strip.text = element_text(size=rel(0.85)),
-          axis.text.x = element_text(colour="black",size=rel(0.9)),
-          axis.text.y = element_text(colour="black",size=rel(0.9)),
-          axis.ticks.x = element_blank(),
-          axis.title.y = element_text(colour="black",size=rel(1.0)),
-          legend.position = "top",
-          legend.title = element_blank(),
-          legend.text = element_text(size=rel(0.85))
-        )
-      
-        pdf(outfile, width=10, height=9)
-        # png(outfile, width = 1100, height = 1000)
-        # jpeg(outfile, width = 700, height = 600)
-        print(p)
-        dev.off()
+    p <- ggplot(to.plot, aes(x=class, y=expr, fill=class)) +
+      geom_violin(scale = "width", alpha=0.8) +
+      geom_boxplot(width=0.5, outlier.shape=NA, alpha=0.8) +
+      stat_summary(fun.data = give.n, geom = "text", size=3) +
+      # geom_jitter(size=2, shape=21, stroke=0.2, alpha=0.5) +
+      # scale_fill_manual(values=opts$colors) +
+      scale_fill_brewer(palette="Dark2") +
+      facet_wrap(~celltype.mapped, scales="fixed") +
+      theme_classic() +
+      labs(x="",y=sprintf("%s expression",gene)) +
+      guides(x = guide_axis(angle = 90)) +
+      theme(
+        strip.text = element_text(size=rel(0.85)),
+        axis.text.x = element_text(colour="black",size=rel(0.9)),
+        axis.text.y = element_text(colour="black",size=rel(0.9)),
+        axis.ticks.x = element_blank(),
+        axis.title.y = element_text(colour="black",size=rel(1.0)),
+        legend.position = "top",
+        legend.title = element_blank(),
+        legend.text = element_text(size=rel(0.85))
+      )
+    
+      pdf(outfile, width=10, height=9)
+      print(p)
+      dev.off()
         
-    } else {
-      print(sprintf("%s already exists...",outfile))
-    }
-
   } else {
     print(sprintf("%s not found",gene))
   }

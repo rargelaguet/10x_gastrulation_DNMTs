@@ -18,13 +18,13 @@ gg_volcano_plot <- function(to.plot, top_genes = 15, groupA = "groupA", groupB =
     scale_color_manual(values=c("black","red")) +
     scale_size_manual(values=c(0.75,1.25)) +
     scale_x_continuous(limits=c(-xlim-1.5,xlim+1.5)) +
-    scale_y_continuous(limits=c(0,ylim+3)) +
-    # annotate("text", x=0, y=ylim+3, size=4, label=sprintf("(%d)", all)) +
-    # annotate("text", x=-xlim-0.5, y=ylim+3, size=4, label=sprintf("%d (-)",length(negative_hits))) +
-    # annotate("text", x=xlim+0.5, y=ylim+3, size=4, label=sprintf("%d (+)",length(positive_hits))) +
-    annotate("text", x=-xlim-0.5, y=0, size=3, label=sprintf("Up in %s (N=%s)",groupA,to.plot[["groupA_N"]][[1]])) +
-    annotate("text", x=xlim+0.5, y=0, size=3, label=sprintf("Up in %s (N=%s)",groupB,to.plot[["groupB_N"]][[1]])) +
-    ggrepel::geom_text_repel(data=head(to.plot[sig==T],n=top_genes), aes(x=logFC, y=-log10(padj_fdr+1e-100), label=gene), size=4) +
+    scale_y_continuous(limits=c(0,ylim+15)) +
+    annotate("text", x=0, y=ylim+14, size=4, label=sprintf("(%d)", all)) +
+    annotate("text", x=-xlim-0.5, y=ylim+14, size=4, label=sprintf("%d (-)",length(negative_hits))) +
+    annotate("text", x=xlim+0.5, y=ylim+14, size=4, label=sprintf("%d (+)",length(positive_hits))) +
+    annotate("text", x=-xlim, y=0, size=3, label=sprintf("Up in %s (N=%s)",groupA,to.plot[["groupA_N"]][[1]])) +
+    annotate("text", x=xlim, y=0, size=3, label=sprintf("Up in %s (N=%s)",groupB,to.plot[["groupB_N"]][[1]])) +
+    ggrepel::geom_text_repel(data=head(to.plot[sig==T],n=top_genes), aes(x=logFC, y=-log10(padj_fdr+1e-100), label=gene), size=3, max.overlaps = Inf) +
     theme_classic() +
     theme(
       axis.text = element_text(size=rel(0.75), color='black'),

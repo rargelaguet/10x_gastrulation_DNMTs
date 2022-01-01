@@ -1,18 +1,12 @@
-suppressPackageStartupMessages(library(SingleCellExperiment))
+source(here::here("settings.R"))
+source(here::here("utils.R"))
 
 #####################
 ## Define settings ##
 #####################
 
-if (grepl("ricard",Sys.info()['nodename'])) {
-  source("/Users/ricard/10x_gastrulation_DNMTs/settings.R")
-  source("/Users/ricard/10x_gastrulation_DNMTs/utils.R")
-} else if (grepl("ebi",Sys.info()['nodename'])) {
-  source("/homes/ricard/10x_gastrulation_DNMTs/settings.R")
-  source("/homes/ricard/10x_gastrulation_DNMTs/utils.R")
-}
-
-io$outdir <- paste0(io$basedir,"/results/imprinting")
+io$imprinted.genes <- "/Users/argelagr/data/mm10_regulation/imprinting/parsed/mousebook_imprinted_genes.txt.gz"
+io$outdir <- paste0(io$basedir,"/results_new/imprinting")
 
 # Define cell types to plot
 opts$celltypes <- c(
@@ -37,13 +31,13 @@ opts$celltypes <- c(
 	"Mesenchyme",
 	"Haematoendothelial_progenitors",
 	"Endothelium",
-	"Blood_progenitors",
-	# "Blood_progenitors_1",
-	# "Blood_progenitors_2",
-	"Erythroid",
-	# "Erythroid1",
-	# "Erythroid2",
-	# "Erythroid3",
+	# "Blood_progenitors",
+	"Blood_progenitors_1",
+	"Blood_progenitors_2",
+	# "Erythroid",
+	"Erythroid1",
+	"Erythroid2",
+	"Erythroid3",
 	"NMP",
 	"Rostral_neurectoderm",
 	"Caudal_neurectoderm",
@@ -60,7 +54,7 @@ opts$celltypes <- c(
 # Define classes to plot
 opts$classes <- c(
   "E8.5_WT",
-  # "E8.5_Dnmt3aHET_Dnmt3bWT",
+  "E8.5_Dnmt3aHET_Dnmt3bWT",
   "E8.5_Dnmt3aKO_Dnmt3bWT",
   "E8.5_Dnmt3aKO_Dnmt3bHET",
   "E8.5_Dnmt3aWT_Dnmt3bKO",
@@ -69,21 +63,21 @@ opts$classes <- c(
   "E8.5_Dnmt1KO"
 )
 
-opts$to.merge <- c(
-  "Erythroid3" = "Erythroid",
-  "Erythroid2" = "Erythroid",
-  "Erythroid1" = "Erythroid",
-  "Blood_progenitors_1" = "Blood_progenitors",
-  "Blood_progenitors_2" = "Blood_progenitors",
-  "Anterior_Primitive_Streak" = "Primitive_Streak"
-)
+# opts$rename_celltypes <- c(
+#   "Erythroid3" = "Erythroid",
+#   "Erythroid2" = "Erythroid",
+#   "Erythroid1" = "Erythroid",
+#   "Blood_progenitors_1" = "Blood_progenitors",
+#   "Blood_progenitors_2" = "Blood_progenitors",
+#   "Anterior_Primitive_Streak" = "Primitive_Streak"
+# )
 
 ##########################
 ## Load sample metadata ##
 ##########################
 
 sample_metadata <- fread(io$metadata) %>% 
-  .[pass_QC==TRUE & class%in%opts$classes & celltype.mapped%in%opts$celltypes] %>%
+  .[pass_rnaQC==TRUE & class%in%opts$classes & celltype.mapped%in%opts$celltypes] %>%
   .[,celltype.mapped:=factor(celltype.mapped, levels=opts$celltypes)] %>%
   .[,class:=factor(class,levels=opts$classes)]
 
@@ -95,7 +89,7 @@ table(sample_metadata$celltype.mapped)
 ## Load imprinted genes ##
 ##########################
 
-imprinting.dt <- fread("/Users/ricard/data/mm10_regulation/imprinting/parsed/mousebook_imprinted_genes.txt.gz") %>%
+imprinting.dt <- fread(io$imprinted.genes) %>%
   setnames(c("gene","allele"))
 
 ##############################

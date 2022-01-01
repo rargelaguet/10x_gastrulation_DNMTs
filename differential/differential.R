@@ -34,11 +34,11 @@ args <- p$parse_args(commandArgs(TRUE))
 source(here::here("differential/utils.R"))
 
 # Sanity checks
-if (args$celltypes[1]=="all") {
-  args$celltypes <- opts$celltypes
-} else {
-  stopifnot(args$celltypes%in%opts$celltypes)
-}
+# if (args$celltypes[1]=="all") {
+#   args$celltypes <- opts$celltypes
+# } else {
+#   stopifnot(args$celltypes%in%opts$celltypes)
+# }
 
 # Define groups
 opts$groups <- c(args$groupA,args$groupB)

@@ -7,7 +7,7 @@ source(here::here("settings.R"))
 #####################
 
 io$script <- here::here("differential/differential.R")
-io$outdir <- file.path(io$basedir,"results_new/differential"); dir.create(io$outdir, showWarnings=F)
+io$outdir <- file.path(io$basedir,"results_new/differential/dnmt1_vs_dnmt3ab_ko"); dir.create(io$outdir, showWarnings=F)
 
 # Rename celltypes
 opts$rename_celltypes <- c(
@@ -24,16 +24,10 @@ opts$rename_celltypes <- c(
 )
 
 opts$ko.classes <- c(
-  "E8.5_Dnmt3aKO_Dnmt3bWT",
-  "E8.5_Dnmt3aHET_Dnmt3bKO",
-  "E8.5_Dnmt3aHET_Dnmt3bWT",
-  "E8.5_Dnmt3aKO_Dnmt3bHET",
-  "E8.5_Dnmt3aKO_Dnmt3bKO",
-  "E8.5_Dnmt3aWT_Dnmt3bKO"
-  # "E8.5_Dnmt1KO"
+  "E8.5_Dnmt3aKO_Dnmt3bKO"
 )
 
-opts$wt.class <- "E8.5_WT"
+opts$wt.class <- "E8.5_Dnmt1KO"
 
 ##########################
 ## Load sample metadata ##
@@ -53,7 +47,7 @@ print(table(sample_metadata$celltype.mapped,sample_metadata$class))
 ## Run all pair-wise comparisons ##
 ###################################
 
-opts$min.cells <- 50
+opts$min.cells <- 30
 
 # j <- "Blood_progenitors"; i <- "E8.5_Dnmt3aKO_Dnmt3bKO"
 for (i in opts$ko.classes) {
@@ -75,7 +69,7 @@ for (i in opts$ko.classes) {
       
       # Run
       print(cmd)
-      system(cmd)
+      # system(cmd)
     }
   }
 }

@@ -220,8 +220,8 @@ rule mapping_mnn:
         atlas_sce = config["directories"]["atlas"]+"/processed/SingleCellExperiment.rds",
     	atlas_metadata = config["directories"]["atlas"]+"/sample_metadata.txt.gz",
         query_sce = rules.seurat_to_sce.output,
-        # query_metadata = rules.parse_doublet_results.output,
-        query_metadata = rules.qc.output,
+        query_metadata = rules.parse_doublet_results_seurat.output
+        # query_metadata = rules.qc.output,
         script = config["scripts"]["mapping_mnn"]
     output:
         config["directories"]["results"]+"/mapping/mapping_mnn_{sample}.txt.gz"
@@ -242,39 +242,39 @@ rule mapping_mnn:
         --atlas_sce {input.atlas_sce} --atlas_metadata {input.atlas_metadata} --query_metadata {input.query_metadata} \
         --npcs {params.npcs} --n_neighbours {params.n_neighbours} --outfile {output}  > {log}"
 
-rule mapping_mnn_all_samples:
-    input:
-        atlas_sce = config["directories"]["atlas"]+"/processed/SingleCellExperiment.rds",
-        atlas_metadata = config["directories"]["atlas"]+"/sample_metadata.txt.gz",
-        query_sce = rules.seurat_to_sce.output,
-        # query_metadata=rules.parse_doublet_results.output,
-        query_metadata = rules.qc.output,
-        script = config["scripts"]["mapping_mnn"]
-        # outdir=config["directories"]["results"]+"/mapping"
-    output:
-        config["directories"]["results"]+"/mapping/mapping_mnn_all_samples.txt.gz"
-    params:
-        samples = expand("{sample}", sample=config["samples"]),
-        atlas_stages=config["params"]["mapping_mnn"]["atlas_stages"],
-        npcs = config["params"]["mapping_mnn"]["npcs"],
-        n_neighbours = config["params"]["mapping_mnn"]["n_neighbours"]
-    conda:
-        "environment.yaml"
-    log: 
-        "logs/mapping_mnn_all_samples.log"
-    threads: 
-        config["slurm"]["mapping_mnn"]["threads"]
-    resources:
-        mem_mb = config["slurm"]["mapping_mnn_all_samples"]["memory"]
-    shell:
-        "Rscript {input.script} --query_samples {params.samples} --atlas_stages {params.atlas_stages} --query_sce {input.query_sce} \
-        --atlas_sce {input.atlas_sce} --atlas_metadata {input.atlas_metadata} --query_metadata {input.query_metadata} \
-        --npcs {params.npcs} --n_neighbours {params.n_neighbours} --outfile {output}  > {log}"
+# rule mapping_mnn_all_samples:
+#     input:
+#         atlas_sce = config["directories"]["atlas"]+"/processed/SingleCellExperiment.rds",
+#         atlas_metadata = config["directories"]["atlas"]+"/sample_metadata.txt.gz",
+#         query_sce = rules.seurat_to_sce.output,
+#         # query_metadata=rules.parse_doublet_results.output,
+#         query_metadata = rules.qc.output,
+#         script = config["scripts"]["mapping_mnn"]
+#         # outdir=config["directories"]["results"]+"/mapping"
+#     output:
+#         config["directories"]["results"]+"/mapping/mapping_mnn_all_samples.txt.gz"
+#     params:
+#         samples = expand("{sample}", sample=config["samples"]),
+#         atlas_stages=config["params"]["mapping_mnn"]["atlas_stages"],
+#         npcs = config["params"]["mapping_mnn"]["npcs"],
+#         n_neighbours = config["params"]["mapping_mnn"]["n_neighbours"]
+#     conda:
+#         "environment.yaml"
+#     log: 
+#         "logs/mapping_mnn_all_samples.log"
+#     threads: 
+#         config["slurm"]["mapping_mnn"]["threads"]
+#     resources:
+#         mem_mb = config["slurm"]["mapping_mnn_all_samples"]["memory"]
+#     shell:
+#         "Rscript {input.script} --query_samples {params.samples} --atlas_stages {params.atlas_stages} --query_sce {input.query_sce} \
+#         --atlas_sce {input.atlas_sce} --atlas_metadata {input.atlas_metadata} --query_metadata {input.query_metadata} \
+#         --npcs {params.npcs} --n_neighbours {params.n_neighbours} --outfile {output}  > {log}"
 
 rule parse_mapping_results:
     input:
-        # query_metadata = rules.parse_doublet_results.output,
-        query_metadata = rules.qc.output,
+        query_metadata = rules.parse_doublet_results_seurat.output,
+        # query_metadata = rules.qc.output,
         mapping_mnn = expand(config["directories"]["results"]+"/mapping/mapping_mnn_{sample}.txt.gz", sample=config["samples"]),
         # mapping_mnn = rules.mapping_mnn.output,
         script = config["scripts"]["parse_mapping"]
@@ -294,8 +294,8 @@ rule parse_mapping_results:
 
 rule parse_mapping_results_all_samples:
     input:
-        # query_metadata = rules.parse_doublet_results.output,
-        query_metadata = rules.qc.output,
+        query_metadata = rules.parse_doublet_results_seurat.output,
+        # query_metadata = rules.qc.output,
         # mapping_mnn = config["directories"]["results"]+"/mapping/mapping_mnn_all_samples.txt.gz",
         mapping_mnn = rules.mapping_mnn_all_samples.output,
         script = config["scripts"]["parse_mapping"]
