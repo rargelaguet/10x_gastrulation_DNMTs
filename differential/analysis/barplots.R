@@ -49,6 +49,8 @@ diff_markers.dt <- diff.dt[gene%in%unique(marker_genes.dt$gene)]
 to.plot <- diff_markers.dt %>% copy %>%
   .[,.(N=sum(sig,na.rm=T)) ,by=c("celltype","class")]
 
+to.plot[N>=125,N:=125]
+
 p <- ggplot(to.plot, aes(x=celltype, y=N)) +
   geom_bar(aes(fill = celltype), color="black", stat = 'identity') + 
   # geom_polygon(color="black", fill=NA, alpha=0.5, linetype="dashed", data=foo) +
@@ -80,21 +82,25 @@ dev.off()
 to.plot <- diff_markers.dt[sig==T] %>%
   .[,.N, by=c("celltype","class")]
 
+to.plot[N>=150,N:=150]
+
 p <- ggplot(to.plot, aes(x=celltype, y=N)) +
   geom_bar(aes(fill = celltype), color="black", stat = 'identity') + 
-  facet_wrap(~class) +
+  facet_wrap(~class, nrow=1) +
   scale_fill_manual(values=opts$celltype.colors, drop=F) +
   labs(x="", y="Number of DE genes") +
   guides(x = guide_axis(angle = 90)) +
-  theme_bw() +
+  theme_classic() +
   theme(
     legend.position = "none",
     axis.line = element_blank(),
-    axis.text.x = element_text(color="black", size=rel(0.75))
+    # axis.text.x = element_text(color="black", size=rel(0.75))
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank()
   )
 
 
-pdf(file.path(io$outdir,"DE_barplots_marker_genes.pdf"), width=11, height=8)
+pdf(file.path(io$outdir,"DE_barplots_marker_genes.pdf"), width=15, height=4)
 print(p)
 dev.off()
 

@@ -48,9 +48,9 @@ opts$celltypes = c(
 # Options
 opts$ko.classes <- c(
   "E8.5_Dnmt3aKO_Dnmt3bWT",
-  "E8.5_Dnmt3aHET_Dnmt3bKO",
-  "E8.5_Dnmt3aHET_Dnmt3bWT",
-  "E8.5_Dnmt3aKO_Dnmt3bHET",
+  # "E8.5_Dnmt3aHET_Dnmt3bKO",
+  # "E8.5_Dnmt3aHET_Dnmt3bWT",
+  # "E8.5_Dnmt3aKO_Dnmt3bHET",
   "E8.5_Dnmt3aKO_Dnmt3bKO",
   "E8.5_Dnmt3aWT_Dnmt3bKO",
   "E8.5_Dnmt1KO"

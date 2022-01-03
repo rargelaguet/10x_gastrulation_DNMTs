@@ -129,7 +129,7 @@ scripts:
     parse_mapping: ../mapping/run/parse_sample_metadata_after_mapping.R
     dimensionality_reduction_sce: ../dimensionality_reduction/dimensionality_reduction_sce.R
     dimensionality_reduction_seurat: ../dimensionality_reduction/dimensionality_reduction_seurat.R
-    pseudobulk_rna: ../pseudobulk/pseudobulk_rna.R
+    pseudobulk: ../pseudobulk/pseudobulk.R
     # celltype_validation_single_cells: ../celltype_validation/celltype_validation_single_cells.R
     # celltype_validation_pseudobulk: ../celltype_validation/celltype_validation_pseudobulk.R
     plot_mapping_results: ../mapping/analysis/plot_mapping_umap.R
@@ -160,8 +160,8 @@ params:
         npcs: 50
         n_neighbours: 25
 
-    pseudobulk_rna:
-        group_by: ["celltype.mapped"]
+    pseudobulk:
+        group_by: ["class_celltype"]
         normalisation_method: "cpm"
         
     dimensionality_reduction_sce:
@@ -225,7 +225,7 @@ slurm:  # memory in MB
     parse_mapping_results:
         memory: 3000
         threads: 1
-    pseudobulk_rna:
+    pseudobulk:
         memory: 15000
         threads: 1
     dimensionality_reduction_sce:
