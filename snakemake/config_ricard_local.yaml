@@ -71,8 +71,8 @@
 #     - WT_embryo9_Grosswendt2020
 
 samples:
-    - Dnmt3a_embryo4_Grosswendt2020
-    - WT_embryo9_Grosswendt2020
+    - Dnmt3a_E8.5_embryo3_Grosswendt2020
+    - WT_E8.5_embryo9_Grosswendt2020
 
 
 # classes:

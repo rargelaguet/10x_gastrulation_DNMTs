@@ -1,5 +1,3 @@
-# NOTE THAT THIS IS CURRENTLY IMPLEMENTED ONLY FOR THE MNN MAPPING
-
 here::i_am("mapping/analysis/plot_mapping_umap.R")
 
 source(here::here("settings.R"))
@@ -17,12 +15,14 @@ p$add_argument('--outdir',          type="character",                           
 args <- p$parse_args(commandArgs(TRUE))
 
 ## START TEST ##
-# args$query_metadata <- file.path(io$basedir,"results_new/mapping/sample_metadata_after_mapping.txt.gz")
-# args$atlas_metadata <- file.path(io$atlas.basedir,"sample_metadata.txt.gz")
-# args$outdir <- file.path(io$basedir,"results_new/mapping/pdf")
+args$query_metadata <- file.path(io$basedir,"results_new/mapping/sample_metadata_after_mapping.txt.gz")
+args$atlas_metadata <- file.path(io$atlas.basedir,"sample_metadata.txt.gz")
+args$outdir <- file.path(io$basedir,"results_new/mapping/pdf")
 ## END TEST ##
 
 dir.create(args$outdir, showWarnings = F)
+dir.create(file.path(args$outdir,"per_sample"), showWarnings = F)
+dir.create(file.path(args$outdir,"per_class"), showWarnings = F)
 
 #####################
 ## Define settings ##
@@ -104,17 +104,17 @@ plot.dimred <- function(plot_df, query.label, atlas.label = "Atlas") {
 ## Plot all cells ##
 ####################
 
-to.plot <- umap.dt %>% copy %>%
-  .[,index:=match(cell, sample_metadata[,closest.cell] )] %>% 
-  .[,mapped:=as.factor(!is.na(index))] %>% 
-  .[,mapped:=plyr::mapvalues(mapped, from = c("FALSE","TRUE"), to = c("Atlas cells","Query cells"))] %>%
-  setorder(mapped) 
-
-p <- plot.dimred(to.plot, query.label = "Query cells", atlas.label = "Atlas cells")
-
-pdf(sprintf("%s/umap_mapped_allcells.pdf",args$outdir), width=8, height=6.5)
-print(p)
-dev.off()
+# to.plot <- umap.dt %>% copy %>%
+#   .[,index:=match(cell, sample_metadata[,closest.cell] )] %>% 
+#   .[,mapped:=as.factor(!is.na(index))] %>% 
+#   .[,mapped:=plyr::mapvalues(mapped, from = c("FALSE","TRUE"), to = c("Atlas cells","Query cells"))] %>%
+#   setorder(mapped) 
+# 
+# p <- plot.dimred(to.plot, query.label = "Query cells", atlas.label = "Atlas cells")
+# 
+# pdf(sprintf("%s/umap_mapped_allcells.pdf",args$outdir), width=8, height=6.5)
+# print(p)
+# dev.off()
 
 ###############################
 ## Plot one sample at a time ##
@@ -132,7 +132,31 @@ for (i in samples.to.plot) {
   
   p <- plot.dimred(to.plot, query.label = i, atlas.label = "Atlas")
   
-  pdf(sprintf("%s/umap_mapped_%s.pdf",args$outdir,i), width=8, height=6.5)
+  pdf(sprintf("%s/per_sample/umap_mapped_%s.pdf",args$outdir,i), width=8, height=6.5)
   print(p)
   dev.off()
 }
+
+###############################
+## Plot one class at a time ##
+###############################
+
+classes.to.plot <- unique(sample_metadata$class)
+
+for (i in classes.to.plot) {
+  
+  to.plot <- umap.dt %>% copy %>%
+    .[,index:=match(cell, sample_metadata[class==i,closest.cell] )] %>% 
+    .[,mapped:=as.factor(!is.na(index))] %>% 
+    .[,mapped:=plyr::mapvalues(mapped, from = c("FALSE","TRUE"), to = c("Atlas",i))] %>%
+    setorder(mapped) 
+  
+  p <- plot.dimred(to.plot, query.label = i, atlas.label = "Atlas") + theme(legend.position = "none")
+  
+  pdf(sprintf("%s/per_class/umap_mapped_%s.pdf",args$outdir,i), width=8, height=6.5)
+  print(p)
+  dev.off()
+}
+
+# Completion token
+file.create(file.path(args$outdir,"completed.txt"))

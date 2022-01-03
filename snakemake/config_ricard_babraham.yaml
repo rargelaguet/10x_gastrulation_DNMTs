@@ -170,7 +170,8 @@ params:
         n_neighbors: 25
         min_dist: 0.3
         vars_to_regress: ["nFeature_RNA","mit_percent_RNA"]
-        colour_by: ["celltype.mapped","nFeature_RNA","mit_percent_RNA","sample","doublet_score","doublet_call"]
+        colour_by: ["celltype.mapped","nFeature_RNA","mit_percent_RNA","sample"]
+        # colour_by: ["celltype.mapped","nFeature_RNA","mit_percent_RNA","sample","doublet_score","doublet_call"]
 
     dimensionality_reduction_seurat:
         npcs: 30
@@ -179,7 +180,8 @@ params:
         min_dist: 0.3
         seed: 42
         vars_to_regress: ["nFeature_RNA","mit_percent_RNA"]
-        colour_by: ["celltype.mapped","nFeature_RNA","mit_percent_RNA","sample","doublet_score","doublet_call"]
+        colour_by: ["celltype.mapped","nFeature_RNA","mit_percent_RNA","sample"]
+        # colour_by: ["celltype.mapped","nFeature_RNA","mit_percent_RNA","sample","doublet_score","doublet_call"]
 
     plot_celltype_proportions:
         celltype_label: "celltype.mapped"

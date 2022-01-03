@@ -20,14 +20,18 @@ args <- p$parse_args(commandArgs(TRUE))
 #####################
 
 ## START TEST ##
-# args$metadata <- file.path(io$basedir,"results_new/mapping/sample_metadata_after_mapping.txt.gz")
-# args$celltype_label <- "celltype.mapped"
-# args$outdir <- file.path(io$basedir,"results_new/celltype_proportions/barplots")
+args$metadata <- file.path(io$basedir,"results_new/mapping/sample_metadata_after_mapping.txt.gz")
+args$celltype_label <- "celltype.mapped"
+args$outdir <- file.path(io$basedir,"results_new/celltype_proportions")
 ## END TEST ##
 
+# I/O
 dir.create(args$outdir, showWarnings = F)
 dir.create(file.path(args$outdir,"per_sample"), showWarnings = F)
 dir.create(file.path(args$outdir,"per_class"), showWarnings = F)
+
+# Options
+opts$remove_ExE_cells <- TRUE
 
 ##########################
 ## Load sample metadata ##
@@ -41,6 +45,12 @@ sample_metadata <- fread(args$metadata) %>%
 # Rename "_" to " " in cell types
 # to.plot[,celltype:=stringr::str_replace_all(celltype,"_"," ")]
 # names(opts$celltype.colors) <- names(opts$celltype.colors) %>% stringr::str_replace_all("_"," ")
+
+if (opts$remove_ExE_cells) {
+  print("Removing ExE cells...")
+  sample_metadata <- sample_metadata %>%
+    .[!celltype%in%c("Visceral_endoderm","ExE_endoderm","ExE_ectoderm","Parietal_endoderm")]
+}
 
 ################
 ## Per sample ##
@@ -120,6 +130,63 @@ for (i in classes.to.plot) {
   print(p)
   dev.off()
 }
+
+######################
+## Stacked barplots ##
+######################
+
+to.plot <- sample_metadata %>%
+  .[,N:=.N,by="sample"] %>%
+  .[,.(N=.N, celltype_proportion=.N/unique(N)),by=c("sample","celltype","class")] %>%
+  setorder(sample)  %>% .[,sample:=factor(sample,levels=opts$samples)]
+
+p <- ggplot(to.plot, aes(x=sample, y=celltype_proportion)) +
+  geom_bar(aes(fill=celltype), stat="identity", color="black") +
+  facet_wrap(~class, scales = "free_x") +
+  scale_fill_manual(values=opts$celltype.colors) +
+  theme_classic() +
+  theme(
+    legend.position = "none",
+    axis.title = element_blank(),
+    axis.text.y = element_blank(),
+    # axis.text.x = element_text(color="black", size=rel(0.75)),
+    axis.text.x = element_blank(),
+    axis.ticks = element_blank(),
+    axis.line = element_blank()
+  )
+
+pdf(sprintf("%s/celltype_proportions_stacked_barplots.pdf",args$outdir), width=9, height=7)
+print(p)
+dev.off()
+
+
+##############
+## Boxplots ##
+##############
+
+to.plot <- sample_metadata %>%
+  .[,N:=.N,by="sample"] %>%
+  .[,.(N=.N, celltype_proportion=.N/unique(N)),by=c("sample","celltype","class")] %>%
+  setorder(sample)  %>% .[,sample:=factor(sample,levels=opts$samples)]
+
+p <- ggplot(to.plot, aes(x=sample, y=celltype_proportion)) +
+  geom_bar(aes(fill=celltype), stat="identity", color="black") +
+  facet_wrap(~class, scales = "free_x") +
+  scale_fill_manual(values=opts$celltype.colors) +
+  theme_classic() +
+  theme(
+    legend.position = "none",
+    axis.title = element_blank(),
+    axis.text.y = element_blank(),
+    # axis.text.x = element_text(color="black", size=rel(0.75)),
+    axis.text.x = element_blank(),
+    axis.ticks = element_blank(),
+    axis.line = element_blank()
+  )
+
+pdf(sprintf("%s/celltype_proportions_stacked_barplots.pdf",args$outdir), width=9, height=7)
+print(p)
+dev.off()
 
 # Completion token
 file.create(file.path(args$outdir,"completed.txt"))
