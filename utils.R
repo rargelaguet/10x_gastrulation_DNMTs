@@ -281,3 +281,75 @@ smoother_aggregate_nearest_nb <- function(mat, D, k){
 give.n <- function(x){
   return(c(y = mean(x), label = length(x)))
 }
+
+sort.abs <- function(dt, sort.field) dt[order(-abs(dt[[sort.field]]))]
+
+
+#' Write count data in the 10x format
+#' Create a directory containing the count matrix and cell/gene annotation from a sparse matrix of UMI counts, 
+#' in the format produced by the CellRanger software suite.
+# https://rdrr.io/github/MarioniLab/DropletUtils/src/R/write10xCounts.R
+write10xCounts <- function(path, x, barcodes=colnames(x), gene.id=rownames(x), gene.symbol=gene.id, gene.type="Gene Expression",
+                           overwrite=FALSE, version=c("2", "3"))
+{
+  # Doing all the work on a temporary location next to 'path', as we have permissions there.
+  # This avoids problems with 'path' already existing.
+  temp.path <- tempfile(tmpdir=dirname(path)) 
+  on.exit({ 
+    if (file.exists(temp.path)) { unlink(temp.path, recursive=TRUE) } 
+  })
+  
+  # Checking the values.
+  if (length(gene.id)!=length(gene.symbol) || length(gene.id)!=nrow(x)) {
+    stop("lengths of 'gene.id' and 'gene.symbol' must be equal to 'nrow(x)'")
+  }
+  if (ncol(x)!=length(barcodes)) { 
+    stop("'barcodes' must of of the same length as 'ncol(x)'")
+  }
+  
+  # Determining what format to save in.
+  version <- match.arg(version)
+  .write_sparse(temp.path, x, barcodes, gene.id, gene.symbol, gene.type, version=version)
+  
+  # We don't put this at the top as the write functions might fail; 
+  # in which case, we would have deleted the existing 'path' for nothing.
+  if (overwrite) {
+    unlink(path, recursive=TRUE)
+  } else if (file.exists(path)) { 
+    stop("specified 'path' already exists")
+  }
+  file.rename(temp.path, path)
+  return(invisible(TRUE))
+}
+
+.write_sparse <- function(path, x, barcodes, gene.id, gene.symbol, gene.type, version="2") {
+  dir.create(path, showWarnings=FALSE)
+  # gene.info <- data.frame(gene.id, gene.symbol, stringsAsFactors=FALSE)
+  gene.info <- data.frame(gene.symbol, gene.id, stringsAsFactors=FALSE)
+  
+  if (version=="3") {
+    gene.info$gene.type <- rep(gene.type, length.out=nrow(gene.info))
+    mhandle <- file.path(path, "matrix.mtx")
+    bhandle <- gzfile(file.path(path, "barcodes.tsv.gz"), open="wb")
+    fhandle <- gzfile(file.path(path, "features.tsv.gz"), open="wb")
+    on.exit({
+      close(bhandle)
+      close(fhandle)
+    })
+  } else {
+    mhandle <- file.path(path, "matrix.mtx")
+    bhandle <- file.path(path, "barcodes.tsv")
+    fhandle <- file.path(path, "genes.tsv")
+  }
+  
+  Matrix::writeMM(x, file=mhandle)
+  write(barcodes, file=bhandle)
+  utils::write.table(gene.info, file=fhandle, row.names=FALSE, col.names=FALSE, quote=FALSE, sep="\t")
+  
+  if (version=="3") {
+    # Annoyingly, writeMM doesn't take connection objects.
+    R.utils::gzip(mhandle)
+  }
+  
+  return(NULL)
+}

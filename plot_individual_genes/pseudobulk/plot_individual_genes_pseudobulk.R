@@ -10,10 +10,49 @@ source(here::here("utils.R"))
 # I/O
 io$outdir <- file.path(io$basedir,"results_new/individual_genes/pseudobulk")
 io$sce.pseudobulk <- file.path(io$basedir,"results_new/pseudobulk/SingleCellExperiment_pseudobulk_class_celltype.rds")
-io$stats.pseudobulk <- file.path(io$basedir,"results_new/pseudobulk/pseudobulk_stats_class_celltype.txt.gz")
 
 # Define options
 opts$min.cells <- 25
+
+opts$celltypes = c(
+  "Epiblast",
+  "Primitive_Streak",
+  "Caudal_epiblast",
+  # "PGC",
+  "Anterior_Primitive_Streak",
+  "Notochord",
+  "Def._endoderm",
+  "Gut",
+  "Nascent_mesoderm",
+  "Mixed_mesoderm",
+  "Intermediate_mesoderm",
+  "Caudal_Mesoderm",
+  "Paraxial_mesoderm",
+  "Somitic_mesoderm",
+  "Pharyngeal_mesoderm",
+  "Cardiomyocytes",
+  "Allantois",
+  "ExE_mesoderm",
+  "Mesenchyme",
+  "Haematoendothelial_progenitors",
+  "Endothelium",
+  "Blood_progenitors_1",
+  "Blood_progenitors_2",
+  "Erythroid1",
+  "Erythroid2",
+  "Erythroid3",
+  "NMP",
+  "Rostral_neurectoderm",
+  # "Caudal_neurectoderm",
+  "Neural_crest",
+  "Forebrain_Midbrain_Hindbrain",
+  "Spinal_cord",
+  "Surface_ectoderm",
+  "Visceral_endoderm",
+  "ExE_endoderm"
+  # "ExE_ectoderm",
+  # "Parietal_endoderm"
+)
 
 ###############
 ## Load data ##
@@ -26,6 +65,9 @@ sce <- readRDS(io$sce.pseudobulk)
 sce$class <- stringr::str_split(colnames(sce), pattern = "-") %>% map_chr(1)
 sce$celltype <- stringr::str_split(colnames(sce), pattern = "-") %>% map_chr(2)
 
+# Filter celltypes
+sce <- sce[,sce$celltype%in%opts$celltypes]
+
 # Filter by minimum number of cells
 sce <- sce[,names(which(metadata(sce)$n_cells>=opts$min.cells))]
 
@@ -34,6 +76,8 @@ sce <- sce[,names(which(metadata(sce)$n_cells>=opts$min.cells))]
 #############
 
 genes.to.plot <- c("Tex19.1","Morc1","Dppa3","Rex1","Dppa5a","Dppa4","Dppa2","Zfp981")
+genes.to.plot <- c("Pou5f1","Epcam","Fst","Lefty2","Cdkn1c","Acta1")
+genes.to.plot <- grep("^Hox",rownames(sce),value=T)
 
 for (i in 1:length(genes.to.plot)) {
   

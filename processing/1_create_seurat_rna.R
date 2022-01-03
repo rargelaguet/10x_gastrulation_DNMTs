@@ -23,14 +23,16 @@ args <- p$parse_args(commandArgs(TRUE))
 ## START TEST ##
 # args <- list()
 # args$inputdir <- paste0(io$basedir,"/original")
-# args$outdir <- paste0(io$basedir,"/processed_new")
-# args$samples <- c("15_E8_5_D3A_WT_D3B_WT_L007","SIGAC6_E85_5_Dnmt3aKO_Dnmt3b_Het_L003") # opts$samples[1:2]
+# args$outdir <- paste0(io$basedir,"/processed_merged")
+# args$samples <- c("Dnmt3a_E8.5_embryo3_Grosswendt2020","WT_E8.5_embryo9_Grosswendt2020") # opts$samples[1:2]
 # args$test <- FALSE
 ## END TEST ##
+
 
 # These settings are important for consistency with ArchR, which provides little flexibility to edit cell names
 opts$trim.barcode <- FALSE
 opts$sample_cell_separator <- "_"
+opts$min.counts <- 500
 
 ##############################
 ## Load and merge data sets ##
@@ -52,9 +54,16 @@ for (i in args$samples) {
     .[,barcode:=ifelse(rep(opts$trim.barcode,.N),gsub("-1","",barcode),barcode)] %>%
     .[,c("sample","cell"):=list(i,sprintf("%s%s%s",i,opts$sample_cell_separator,barcode))]
   dim(cell.info[[i]])
+  stopifnot(!duplicated(cell.info[[i]]$barcode))
   
   # Load matrix  
   count_mtx[[i]] <- Read10X(file.path(args$inputdir,i))
+  
+  # Do initial filtering of low-quality cells
+  count_mtx[[i]] <- count_mtx[[i]][,colSums(count_mtx[[i]])>=opts$min.counts]
+  cell.info[[i]] <- cell.info[[i]][barcode%in%colnames(count_mtx[[i]])] %>% setkey(barcode) %>% .[colnames(count_mtx[[i]])]
+  stopifnot(complete.cases(cell.info[[i]]))
+  stopifnot(colnames(count_mtx[[i]])==cell.info[[i]]$barcode)
   
   # remove human genes for samples that are mapped to the mixed transcriptome
   if (any(grep("^mm10_",rownames(count_mtx[[i]])))) {
@@ -129,8 +138,8 @@ metadata <- seurat@meta.data %>% as.data.table %>% .[,orig.ident:=NULL] %>%
 # Add stage information
 metadata[,stage:=as.character(NA)] %>%
   # .[grepl("E8",sample),stage:="E8.5"] %>%
-  .[,stage:="E8.5"] %>%
-  .[grepl("E12",sample),stage:="E12.5"]
+  .[,stage:="E8.5"]# %>%
+  # .[grepl("E12",sample),stage:="E12.5"]
 print(table(metadata$stage))
 stopifnot(!is.na(metadata$stage))
 
@@ -145,6 +154,9 @@ stopifnot(metadata$sample%in%names(opts$sample2alias))
 metadata[,alias:=stringr::str_replace_all(sample,opts$sample2alias)]
 print(table(metadata$alias))
 stopifnot(!is.na(metadata$alias))
+
+# Parse metadata Grosswendt2020
+
 
 ##########
 ## Save ##

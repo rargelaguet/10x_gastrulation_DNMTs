@@ -71,8 +71,8 @@
 #     - WT_embryo9_Grosswendt2020
 
 samples:
-    - Dnmt3a_E8.5_embryo3_Grosswendt2020
-    - WT_E8.5_embryo9_Grosswendt2020
+    - Dnmt3a_embryo4_Grosswendt2020
+    - WT_embryo9_Grosswendt2020
 
 
 # classes:
@@ -98,21 +98,21 @@ classes:
 #################
 
 directories:
-    base: /bi/group/reik/ricard/data/10x_gastrulation_DNMTs
-    original_data: /bi/group/reik/ricard/data/10x_gastrulation_DNMTs/original
-    processed_data: /bi/group/reik/ricard/data/10x_gastrulation_DNMTs/processed_all
-    results: /bi/group/reik/ricard/data/10x_gastrulation_DNMTs/results_all
-    atlas: /bi/group/reik/ricard/data/pijuansala2019_gastrulation10x
+    base: /Users/argelagr/data/10x_gastrulation_DNMTs
+    original_data: /Users/argelagr/data/10x_gastrulation_DNMTs/original
+    processed_data: /Users/argelagr/data/10x_gastrulation_DNMTs/processed_all
+    results: /Users/argelagr/data/10x_gastrulation_DNMTs/results_all
+    atlas: /Users/argelagr/data/pijuansala2019_gastrulation10x
 
 ###############
 ## Resources ##
 ###############
 
 resources:
-    marker_genes: /bi/group/reik/ricard/data/pijuansala2019_gastrulation10x/results/marker_genes/all_stages/marker_genes.txt.gz
+    marker_genes: /Users/argelagr/data/pijuansala2019_gastrulation10x/results/marker_genes/all_stages/marker_genes.txt.gz
     celltypes: ["Epiblast", "Primitive_Streak", "Caudal_epiblast", "PGC", "Anterior_Primitive_Streak", "Notochord", "Def._endoderm", "Gut", "Nascent_mesoderm", "Mixed_mesoderm", "Intermediate_mesoderm", "Caudal_Mesoderm", "Paraxial_mesoderm", "Somitic_mesoderm", "Pharyngeal_mesoderm", "Cardiomyocytes", "Allantois", "ExE_mesoderm", "Mesenchyme", "Haematoendothelial_progenitors", "Endothelium", "Blood_progenitors_1", "Blood_progenitors_2", "Erythroid1", "Erythroid2", "Erythroid3", "NMP", "Rostral_neurectoderm", "Caudal_neurectoderm", "Neural_crest", "Forebrain_Midbrain_Hindbrain", "Spinal_cord", "Surface_ectoderm", "Visceral_endoderm", "ExE_endoderm", "ExE_ectoderm", "Parietal_endoderm"]
     stages: ["E8.5"]
-    gene_metadata: /bi/group/reik/ricard/data/ensembl/mouse/v87/BioMart/mRNA/Mmusculus_genes_BioMart.87.txt
+    gene_metadata: /Users/argelagr/data/ensembl/mouse/v87/BioMart/mRNA/Mmusculus_genes_BioMart.87.txt
 
 #############
 ## Scripts ##

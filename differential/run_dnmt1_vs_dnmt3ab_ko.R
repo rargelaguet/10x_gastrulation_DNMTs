@@ -56,7 +56,7 @@ for (i in opts$ko.classes) {
   celltypes.to.use <- sample_metadata %>% .[class==i,.N,by="celltype.mapped"] %>% .[N>=opts$min.cells,celltype.mapped]
   
   for (j in celltypes.to.use) {
-    outfile <- sprintf("%s/%s/%s_%s_vs_%s.txt.gz", io$outdir,i,j,opts$wt.class,i); dir.create(dirname(outfile), showWarnings = F)
+    outfile <- sprintf("%s/%s_%s_vs_%s.txt.gz", io$outdir,j,opts$wt.class,i); dir.create(dirname(outfile), showWarnings = F)
     if (!file.exists(outfile)) {
       
       # Define LSF command
@@ -69,7 +69,7 @@ for (i in opts$ko.classes) {
       
       # Run
       print(cmd)
-      # system(cmd)
+      system(cmd)
     }
   }
 }

@@ -28,18 +28,18 @@ rule all:
     input: 
         config["directories"]["processed_data"]+"/seurat.rds",
         config["directories"]["results"]+"/qc/sample_metadata_after_qc.txt.gz",
-        config["directories"]["processed_data"]+"/SingleCellExperiment.rds",
-        expand("%s/doublet_detection_seurat/doublets_{sample}.txt.gz" % config["directories"]["results"], sample=config["samples"]),
-        config["directories"]["results"]+"/doublet_detection_seurat/sample_metadata_after_doublets.txt.gz",
-        expand("%s/mapping/mapping_mnn_{sample}.txt.gz" % config["directories"]["results"], sample=config["samples"]),
-        config["directories"]["results"]+"/mapping/sample_metadata_after_mapping.txt.gz",
-        expand("%s/mapping/pdf/umap_mapped_allcells.pdf" % config["directories"]["results"]),
-        config["directories"]["results"]+"/celltype_proportions/completed.txt",
-        config["directories"]["results"]+"/celltype_proportions/comparisons/completed.txt",
-        expand("%s/dimensionality_reduction/sce/{classe}/completed.txt" % config["directories"]["results"], classe=config["classes"]),
-        expand("%s/dimensionality_reduction/seurat/{classe}/completed.txt" % config["directories"]["results"], classe=config["classes"]),
-        config["directories"]["results"]+"/sex_assignment/sample_metadata_after_sex_assignment.txt.gz",
-        config["directories"]["results"]+"/sex_assignment/sex_assignment.txt.gz"
+        config["directories"]["processed_data"]+"/SingleCellExperiment.rds"
+        # expand("%s/doublet_detection_seurat/doublets_{sample}.txt.gz" % config["directories"]["results"], sample=config["samples"]),
+        # config["directories"]["results"]+"/doublet_detection_seurat/sample_metadata_after_doublets.txt.gz",
+        # expand("%s/mapping/mapping_mnn_{sample}.txt.gz" % config["directories"]["results"], sample=config["samples"]),
+        # config["directories"]["results"]+"/mapping/sample_metadata_after_mapping.txt.gz",
+        # expand("%s/mapping/pdf/umap_mapped_allcells.pdf" % config["directories"]["results"]),
+        # config["directories"]["results"]+"/celltype_proportions/completed.txt",
+        # config["directories"]["results"]+"/celltype_proportions/comparisons/completed.txt",
+        # expand("%s/dimensionality_reduction/sce/{classe}/completed.txt" % config["directories"]["results"], classe=config["classes"]),
+        # expand("%s/dimensionality_reduction/seurat/{classe}/completed.txt" % config["directories"]["results"], classe=config["classes"]),
+        # config["directories"]["results"]+"/sex_assignment/sample_metadata_after_sex_assignment.txt.gz",
+        # config["directories"]["results"]+"/sex_assignment/sex_assignment.txt.gz"
 
 ##################################################
 ## Load count matrices and create Seurat object ##
@@ -220,8 +220,8 @@ rule mapping_mnn:
         atlas_sce = config["directories"]["atlas"]+"/processed/SingleCellExperiment.rds",
     	atlas_metadata = config["directories"]["atlas"]+"/sample_metadata.txt.gz",
         query_sce = rules.seurat_to_sce.output,
-        query_metadata = rules.parse_doublet_results_seurat.output
-        # query_metadata = rules.qc.output,
+        # query_metadata = rules.parse_doublet_results_seurat.output,
+        query_metadata = rules.qc.output,
         script = config["scripts"]["mapping_mnn"]
     output:
         config["directories"]["results"]+"/mapping/mapping_mnn_{sample}.txt.gz"
@@ -273,8 +273,8 @@ rule mapping_mnn:
 
 rule parse_mapping_results:
     input:
-        query_metadata = rules.parse_doublet_results_seurat.output,
-        # query_metadata = rules.qc.output,
+        # query_metadata = rules.parse_doublet_results_seurat.output,
+        query_metadata = rules.qc.output,
         mapping_mnn = expand(config["directories"]["results"]+"/mapping/mapping_mnn_{sample}.txt.gz", sample=config["samples"]),
         # mapping_mnn = rules.mapping_mnn.output,
         script = config["scripts"]["parse_mapping"]
@@ -292,25 +292,25 @@ rule parse_mapping_results:
         "Rscript {input.script} --metadata {input.query_metadata} --mapping_mnn {input.mapping_mnn} --outfile {output} > {log}"
 
 
-rule parse_mapping_results_all_samples:
-    input:
-        query_metadata = rules.parse_doublet_results_seurat.output,
-        # query_metadata = rules.qc.output,
-        # mapping_mnn = config["directories"]["results"]+"/mapping/mapping_mnn_all_samples.txt.gz",
-        mapping_mnn = rules.mapping_mnn_all_samples.output,
-        script = config["scripts"]["parse_mapping"]
-    output:
-        config["directories"]["results"]+"/mapping/sample_metadata_after_mapping_all_samples.txt.gz"
-    conda:
-        "environment.yaml"
-    log: 
-        "logs/parse_mapping_results.log"
-    threads: 
-        config["slurm"]["parse_mapping_results"]["threads"]
-    resources:
-        mem_mb = config["slurm"]["parse_mapping_results"]["memory"]
-    shell:
-        "Rscript {input.script} --metadata {input.query_metadata} --mapping_mnn {input.mapping_mnn} --outfile {output} > {log}"
+# rule parse_mapping_results_all_samples:
+#     input:
+#         # query_metadata = rules.parse_doublet_results_seurat.output,
+#         query_metadata = rules.qc.output,
+#         # mapping_mnn = config["directories"]["results"]+"/mapping/mapping_mnn_all_samples.txt.gz",
+#         mapping_mnn = rules.mapping_mnn_all_samples.output,
+#         script = config["scripts"]["parse_mapping"]
+#     output:
+#         config["directories"]["results"]+"/mapping/sample_metadata_after_mapping_all_samples.txt.gz"
+#     conda:
+#         "environment.yaml"
+#     log: 
+#         "logs/parse_mapping_results.log"
+#     threads: 
+#         config["slurm"]["parse_mapping_results"]["threads"]
+#     resources:
+#         mem_mb = config["slurm"]["parse_mapping_results"]["memory"]
+#     shell:
+#         "Rscript {input.script} --metadata {input.query_metadata} --mapping_mnn {input.mapping_mnn} --outfile {output} > {log}"
 
 ##########################
 ## Plot mapping results ##
@@ -365,9 +365,9 @@ rule plot_celltype_proportions:
 rule compare_celltype_proportions: 
     input:
         script = config["scripts"]["compare_celltype_proportions"],
-        metadata=rules.parse_mapping_results.output
+        metadata = rules.parse_mapping_results.output
     output:
-        config["directories"]["results"]+"/celltype_proportions/comparisons/completed.txt"
+        config["directories"]["results"] + "/celltype_proportions/comparisons/completed.txt"
     params:
         celltype_label = config["params"]["compare_celltype_proportions"]["celltype_label"],
         outdir = config["directories"]["results"]+"/celltype_proportions/comparisons"
@@ -448,57 +448,57 @@ rule dimensionality_reduction_seurat_class:
 ## Pseudobulk ##
 ################
 
-rule pseudobulk_rna:
-    input:
-        # seurat = rules.create_seurat.output.seurat,
-        sce = rules.seurat_to_sce.output,
-        metadata = rules.parse_mapping_results.output,
-        script = config["scripts"]["pseudobulk_rna"]
-    output:
-        seurat = config["directories"]["results"]+"/pseudobulk/Seurat_pseudobulk_{group_by}.rds",
-        sce = config["directories"]["results"]+"/pseudobulk/SingleCellExperiment_pseudobulk_{group_by}.rds"
-    params:
-        normalisation_method = config["params"]["pseudobulk_rna"]["normalisation_method"],
-        outdir = config["directories"]["results"]+"/pseudobulk"
-        # group_by=config["pseudobulk"]["group_by"]
-    conda:
-        "environment.yaml"
-    log: 
-        "logs/pseudobulk_rna_{group_by}.log"
-    threads: 
-        config["slurm"]["pseudobulk_rna"]["threads"]
-    resources:
-        mem_mb = config["slurm"]["pseudobulk_rna"]["memory"]
-    shell:
-        "Rscript {input.script} --sce {input.sce} --metadata {input.metadata} --group_by {wildcards.group_by} \
-        --normalisation_method {params.normalisation_method} --outdir {params.outdir} > {log}"
+# rule pseudobulk_rna:
+#     input:
+#         # seurat = rules.create_seurat.output.seurat,
+#         sce = rules.seurat_to_sce.output,
+#         metadata = rules.parse_mapping_results.output,
+#         script = config["scripts"]["pseudobulk_rna"]
+#     output:
+#         seurat = config["directories"]["results"]+"/pseudobulk/Seurat_pseudobulk_{group_by}.rds",
+#         sce = config["directories"]["results"]+"/pseudobulk/SingleCellExperiment_pseudobulk_{group_by}.rds"
+#     params:
+#         normalisation_method = config["params"]["pseudobulk_rna"]["normalisation_method"],
+#         outdir = config["directories"]["results"]+"/pseudobulk"
+#         # group_by=config["pseudobulk"]["group_by"]
+#     conda:
+#         "environment.yaml"
+#     log: 
+#         "logs/pseudobulk_rna_{group_by}.log"
+#     threads: 
+#         config["slurm"]["pseudobulk_rna"]["threads"]
+#     resources:
+#         mem_mb = config["slurm"]["pseudobulk_rna"]["memory"]
+#     shell:
+#         "Rscript {input.script} --sce {input.sce} --metadata {input.metadata} --group_by {wildcards.group_by} \
+#         --normalisation_method {params.normalisation_method} --outdir {params.outdir} > {log}"
 
 
 ####################
 ## Sex assignment ##
 ####################
 
-rule sex_assignment: 
-    input:
-        script = config["scripts"]["sex_assignment"],
-        metadata = rules.parse_mapping_results.output,
-        sce = rules.seurat_to_sce.output
-    output:
-        config["directories"]["results"]+"/sex_assignment/sample_metadata_after_sex_assignment.txt.gz",
-        config["directories"]["results"]+"/sex_assignment/sex_assignment.txt.gz"
-    params:
-        samples = expand("{sample}", sample=config["samples"]),
-        chrY_ratio_threshold = config["params"]["sex_assignment"]["chrY_ratio_threshold"],
-        outdir = config["directories"]["results"]+"/sex_assignment"
-    conda:
-        "environment.yaml"
-    log: 
-        "logs/sex_assignment.log"
-    threads: 
-        config["slurm"]["sex_assignment"]["threads"]
-    resources:
-        mem_mb = config["slurm"]["sex_assignment"]["memory"]        
-    shell:
-        "Rscript {input.script} --metadata {input.metadata} --sce {input.sce} --samples {params.samples} \
-        --chrY_ratio_threshold {params.chrY_ratio_threshold} --outdir {params.outdir} > {log}"
+# rule sex_assignment: 
+#     input:
+#         script = config["scripts"]["sex_assignment"],
+#         metadata = rules.parse_mapping_results.output,
+#         sce = rules.seurat_to_sce.output
+#     output:
+#         config["directories"]["results"]+"/sex_assignment/sample_metadata_after_sex_assignment.txt.gz",
+#         config["directories"]["results"]+"/sex_assignment/sex_assignment.txt.gz"
+#     params:
+#         samples = expand("{sample}", sample=config["samples"]),
+#         chrY_ratio_threshold = config["params"]["sex_assignment"]["chrY_ratio_threshold"],
+#         outdir = config["directories"]["results"]+"/sex_assignment"
+#     conda:
+#         "environment.yaml"
+#     log: 
+#         "logs/sex_assignment.log"
+#     threads: 
+#         config["slurm"]["sex_assignment"]["threads"]
+#     resources:
+#         mem_mb = config["slurm"]["sex_assignment"]["memory"]        
+#     shell:
+#         "Rscript {input.script} --metadata {input.metadata} --sce {input.sce} --samples {params.samples} \
+#         --chrY_ratio_threshold {params.chrY_ratio_threshold} --outdir {params.outdir} > {log}"
 
