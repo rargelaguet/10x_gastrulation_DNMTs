@@ -2,7 +2,7 @@ suppressPackageStartupMessages(library(scran))
 suppressPackageStartupMessages(library(scater))
 suppressPackageStartupMessages(library(batchelor))
 
-here::i_am("mapping/trajectories/mapping_mnn_trajectories.R")
+here::i_am("mapping/trajectories/mapping_mnn_trajectory.R")
 
 # Load default settings
 source(here::here("settings.R"))
