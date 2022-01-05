@@ -34,6 +34,7 @@ rule all:
         expand("%s/mapping/mapping_mnn_{sample}.txt.gz" % config["directories"]["results"], sample=config["samples"]),
         config["directories"]["results"]+"/mapping/sample_metadata_after_mapping.txt.gz",
         config["directories"]["results"]+"/mapping/pdf/completed.txt",
+        expand(config["directories"]["results"]+"/mapping/trajectories/{trajectory_name}/mapping_mnn_{sample}.txt.gz", sample=config["samples"], trajectory_name=config["params"]["mapping_mnn_trajectory"]["trajectories"]),
         config["directories"]["results"]+"/celltype_proportions/completed.txt",
         config["directories"]["results"]+"/celltype_proportions/comparisons/completed.txt",
         expand("%s/dimensionality_reduction/sce/{classe}/completed.txt" % config["directories"]["results"], classe=config["classes"]),
@@ -349,13 +350,12 @@ rule mapping_mnn_trajectory:
     output:
         config["directories"]["results"]+"/mapping/trajectories/{trajectory_name}/mapping_mnn_{sample}.txt.gz"
     params:
-        atlas_stages = config["params"]["mapping_mnn_trajectory"]["atlas_stages"],
         npcs = config["params"]["mapping_mnn_trajectory"]["npcs"],
         n_neighbours = config["params"]["mapping_mnn_trajectory"]["n_neighbours"]
     conda:
         "environment.yaml"
     log: 
-        "logs/mapping_mnn_trajectory_{blood}_{sample}.log"
+        "logs/mapping_mnn_trajectory_{trajectory_name}_{sample}.log"
     threads: 
         config["slurm"]["mapping_mnn_trajectory"]["threads"]
     resources:

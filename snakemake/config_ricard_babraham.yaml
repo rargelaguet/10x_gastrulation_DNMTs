@@ -122,7 +122,7 @@ scripts:
     doublet_detection_seurat: ../processing/4_doublet_detection_seurat.R
     parse_doublet_results: ../processing/5_parse_sample_metadata_after_doublets.R
     mapping_mnn: ../mapping/run/mnn/mapping_mnn.R
-    mapping_mnn_trajectories: ../mapping/trajectories/mapping_mnn_trajectories.R
+    mapping_mnn_trajectory: ../mapping/trajectories/mapping_mnn_trajectory.R
     parse_mapping: ../mapping/run/parse_sample_metadata_after_mapping.R
     dimensionality_reduction_sce: ../dimensionality_reduction/dimensionality_reduction_sce.R
     dimensionality_reduction_seurat: ../dimensionality_reduction/dimensionality_reduction_seurat.R
@@ -157,7 +157,7 @@ params:
         npcs: 50
         n_neighbours: 25
 
-    mapping_mnn_trajectories:
+    mapping_mnn_trajectory:
         npcs: 5
         n_neighbours: 15
         trajectories: ["NMP"]
@@ -222,7 +222,7 @@ slurm:  # memory in MB
     mapping_mnn:
         memory: 75000
         threads: 1
-    mapping_mnn_trajectories:
+    mapping_mnn_trajectory:
         memory: 30000
         threads: 1
     # mapping_mnn_all_samples:
