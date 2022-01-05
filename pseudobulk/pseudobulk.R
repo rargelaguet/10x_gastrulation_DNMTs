@@ -24,11 +24,11 @@ args <- p$parse_args(commandArgs(TRUE))
 #####################
 
 ## START TEST ##
-# args$metadata <- file.path(io$basedir,"results_new/mapping/sample_metadata_after_mapping.txt.gz")
-# args$sce <- file.path(io$basedir,"processed_new/SingleCellExperiment.rds")
-# args$group_by <- "class_celltype"
-# args$normalisation_method <- "cpm"
-# args$outdir <- file.path(io$basedir,"results_new/pseudobulk")
+args$metadata <- file.path(io$basedir,"results_new/mapping/sample_metadata_after_mapping.txt.gz")
+args$sce <- file.path(io$basedir,"processed_new/SingleCellExperiment.rds")
+args$group_by <- "class"
+args$normalisation_method <- "cpm"
+args$outdir <- file.path(io$basedir,"results_new/pseudobulk")
 ## END TEST ##
 
 dir.create(args$outdir, showWarnings=F)

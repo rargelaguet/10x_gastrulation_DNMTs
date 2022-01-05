@@ -8,47 +8,47 @@ source(here::here("utils.R"))
 #####################
 
 # I/O ##
-io$outdir <- file.path(io$basedir,"results_new/individual_genes")
+io$outdir <- file.path(io$basedir,"results_new/individual_genes/pluripotency_fig"); dir.create(io$outdir, showWarnings = F)
 
 ## Define options ##
 
 # Define cell types to plot
 opts$celltypes = c(
-	"Epiblast",
-	"Primitive_Streak",
+	# "Epiblast",
+	# "Primitive_Streak",
 	"Caudal_epiblast",
 	# "PGC",
-	"Anterior_Primitive_Streak",
-	"Notochord",
-	"Def._endoderm",
+	# "Anterior_Primitive_Streak",
+	# "Notochord",
+	# "Def._endoderm",
 	"Gut",
-	"Nascent_mesoderm",
-	"Mixed_mesoderm",
-	"Intermediate_mesoderm",
-	"Caudal_Mesoderm",
-	"Paraxial_mesoderm",
-	"Somitic_mesoderm",
-	"Pharyngeal_mesoderm",
+	# "Nascent_mesoderm",
+	# "Mixed_mesoderm",
+	# "Intermediate_mesoderm",
+	# "Caudal_Mesoderm",
+	# "Paraxial_mesoderm",
+	# "Somitic_mesoderm",
+	# "Pharyngeal_mesoderm",
 	"Cardiomyocytes",
-	"Allantois",
-	"ExE_mesoderm",
-	"Mesenchyme",
-	"Haematoendothelial_progenitors",
-	"Endothelium",
-	"Blood_progenitors",
+	# "Allantois",
+	# "ExE_mesoderm",
+	# "Mesenchyme",
+	# "Haematoendothelial_progenitors",
+	# "Endothelium",
+	# "Blood_progenitors",
 	# "Blood_progenitors_1",
 	# "Blood_progenitors_2",
-	"Erythroid",
+	# "Erythroid",
 	# "Erythroid1",
 	# "Erythroid2",
 	# "Erythroid3",
-	"NMP",
+	# "NMP",
 	"Rostral_neurectoderm",
 	"Caudal_neurectoderm",
-	"Neural_crest",
-	"Forebrain_Midbrain_Hindbrain",
-	"Spinal_cord",
-	"Surface_ectoderm"
+	# "Neural_crest",
+	# "Forebrain_Midbrain_Hindbrain",
+	"Spinal_cord"
+	# "Surface_ectoderm"
 	# "Visceral_endoderm",
 	# "ExE_endoderm",
 	# "ExE_ectoderm",
@@ -59,21 +59,12 @@ opts$celltypes = c(
 opts$classes <- c(
   "E8.5_WT",
   # "E8.5_Dnmt3aHET_Dnmt3bWT",
-  "E8.5_Dnmt3aKO_Dnmt3bWT",
-  "E8.5_Dnmt3aKO_Dnmt3bHET",
-  "E8.5_Dnmt3aWT_Dnmt3bKO",
-  "E8.5_Dnmt3aHET_Dnmt3bKO",
+  # "E8.5_Dnmt3aKO_Dnmt3bWT",
+  # "E8.5_Dnmt3aKO_Dnmt3bHET",
+  # "E8.5_Dnmt3aWT_Dnmt3bKO",
+  # "E8.5_Dnmt3aHET_Dnmt3bKO",
   "E8.5_Dnmt3aKO_Dnmt3bKO",
   "E8.5_Dnmt1KO"
-)
-
-opts$rename_celltypes <- c(
-  "Erythroid3" = "Erythroid",
-  "Erythroid2" = "Erythroid",
-  "Erythroid1" = "Erythroid",
-  "Blood_progenitors_1" = "Blood_progenitors",
-  "Blood_progenitors_2" = "Blood_progenitors",
-  "Anterior_Primitive_Streak" = "Primitive_Streak"
 )
 
 ##########################
@@ -81,12 +72,8 @@ opts$rename_celltypes <- c(
 ##########################
 
 sample_metadata <- fread(io$metadata) %>% 
-  .[,celltype.mapped:=stringr::str_replace_all(celltype.mapped,opts$rename_celltypes)] %>%
-  .[pass_rnaQC==TRUE & celltype.mapped%in%opts$celltypes & class%in%opts$classes]
-
-# Only consider cell types with sufficient observations in WT cells
-celltypes.to.use <- sample_metadata[class=="E8.5_WT",.(N=.N),by="celltype.mapped"] %>% .[N>=50,celltype.mapped]
-sample_metadata <- sample_metadata[celltype.mapped%in%celltypes.to.use]
+  .[pass_rnaQC==TRUE & celltype.mapped%in%opts$celltypes & class%in%opts$classes] %>%
+  .[,celltype.mapped:=factor(celltype.mapped,levels=opts$celltypes)]
 
 table(sample_metadata$class)
 table(sample_metadata$celltype.mapped)
@@ -101,33 +88,14 @@ sce <- load_SingleCellExperiment(io$sce, cells=sample_metadata$cell, normalise =
 # Add sample metadata as colData
 colData(sce) <- sample_metadata %>% tibble::column_to_rownames("cell") %>% DataFrame
 
-################
-## Parse data ##
-################
-
-# Remove underscores
-# sample_metadata %>%
-#   .[,class:=stringr::str_replace_all(class,"_"," ")] %>%
-#   .[,class:=factor(class, levels=opts$classes %>% stringr::str_replace_all(.,"_"," "))] %>%
-#   .[,celltype.mapped:=stringr::str_replace_all(celltype.mapped,"_"," ")] %>%
-#   .[,celltype.mapped:=factor(celltype.mapped, levels=opts$celltypes %>% stringr::str_replace_all(.,"_"," "))]
-  
-# Rename celltypes
-# .[,celltype.mapped:=stringr::str_replace_all(celltype.mapped,opts$rename_celltypes)] %>%
-#   .[,celltype.mapped:=factor(celltype.mapped, levels=opts$celltypes)] 
-
 ##########
 ## Plot ##
 ##########
 
-# genes.to.plot <- c("Tex19.1","Morc1","Dppa3","Rex1","Dppa5a","Dppa4","Dppa2","Zfp981")
-# genes.to.plot <- c("Lefty1","Cd34","Tmsb4x","Fgf3","Spata7","Cer1","Spink1","Dppa4","Dppa5a","Prc1","Lefty2","Ube2c","Hba-x","Hbb-y","Hba-a1","Hbb-bh1")
-# genes.to.plot <- c("Vegfa","Vegfb","Vegfc","Vegfd","Kdr","Flt1","Tal1","Runx1","Etv2)
-# genes.to.plot <- c("Tet1","Tet2","Tet3","Dnmt1","Dnmt3a","Dnmt3b","Dnmt3l")
-# genes.to.plot <- rownames(sce)[grep("Lefty",rownames(sce))]
 # genes.to.plot <- fread(io$atlas.marker_genes) %>% .[celltype=="Epiblast" & score>=0.80,gene]
-genes.to.plot <- fread(io$atlas.marker_genes)[,gene] %>% unique
-# genes.to.plot <- fread("/Users/ricard/data/gastrulation10x/results/differential/celltypes/E8.5/Neural_crest_vs_Forebrain_Midbrain_Hindbrain.txt.gz") %>% .[sig==T & logFC<(-2),gene]
+genes.to.plot <- c("Pim2", "Pou5f1", "Slc7a3", "Utf1", "Dppa5a")
+
+max.expr <- 4
 
 for (i in 1:length(genes.to.plot)) {
   
@@ -135,13 +103,15 @@ for (i in 1:length(genes.to.plot)) {
   
   if (gene %in% rownames(sce)) {
     print(sprintf("%s/%s: %s",i,length(genes.to.plot),gene))
-    outfile <- sprintf("%s/%s_boxplots_single_cells.pdf",io$outdir,gene)
+    outfile <- sprintf("%s/%s.pdf",io$outdir,gene)
   
     to.plot <- data.table(
       cell = colnames(sce),
       expr = logcounts(sce)[gene,]
     ) %>% merge(sample_metadata[,c("cell","sample","class","celltype.mapped")], by="cell") %>%
       .[,N:=.N,by=c("sample","celltype.mapped")] %>% .[N>=10]
+    
+    to.plot[expr>=4,expr:=4]
     
     p <- ggplot(to.plot, aes(x=class, y=expr, fill=class)) +
       geom_violin(scale = "width", alpha=0.8) +

@@ -28,8 +28,8 @@ opts$celltypes = c(
   "Caudal_epiblast",
   # "PGC",
   "Anterior_Primitive_Streak",
-  "Notochord",
-  "Def._endoderm",
+  # "Notochord",
+  # "Def._endoderm",
   "Gut",
   "Nascent_mesoderm",
   # "Mixed_mesoderm",
@@ -44,10 +44,8 @@ opts$celltypes = c(
   "Mesenchyme",
   "Haematoendothelial_progenitors",
   "Endothelium",
-  "Blood_progenitors",
   "Blood_progenitors_1",
   "Blood_progenitors_2",
-  "Erythroid",
   "Erythroid1",
   "Erythroid2",
   "Erythroid3",
@@ -77,6 +75,7 @@ opts$rename_celltypes <- c(
   # "Visceral_endoderm" = "ExE_endoderm"
 )
 
+
 ##############################
 ## Load precomputed results ##
 ##############################
@@ -95,7 +94,7 @@ diff.dt <- opts$ko.classes %>% map(function(i) { opts$celltypes %>% map(function
 diff.dt <- diff.dt %>% 
   .[,celltype:=stringr::str_replace_all(celltype,opts$rename_celltypes)] %>%
   .[,.(expr_ko=mean(expr_ko), expr_wt=mean(expr_wt), diff=mean(diff)), by=c("celltype","class","gene")]
-
+  
 # save
 # fwrite(diff.dt, file.path(io$outdir,"diff_rna_pseudobulk.txt.gz"))
 
@@ -103,8 +102,7 @@ diff.dt <- diff.dt %>%
 ## Heatmap per gene ##
 ######################
 
-# genes.to.plot <- c("Pim2", "Pou5f1", "Slc7a3", "Utf1", "Dppa5a")
-genes.to.plot <- fread(io$atlas.marker_genes)$gene %>% unique %>% .[!grepl("Rik$",.)]
+genes.to.plot <- c("Pim2", "Pou5f1", "Slc7a3", "Utf1", "Dppa5a")
 
 # i <- "Hoxc8"
 for (i in genes.to.plot) {
@@ -130,7 +128,46 @@ for (i in genes.to.plot) {
     )
   
   
-  pdf(file.path(io$outdir,sprintf("%s_logFC_heatmap_pseudobulk.pdf",i)), width=8, height=5)
+  pdf(file.path(io$outdir,sprintf("%s.pdf",i)), width=8, height=5)
   print(p)
   dev.off()
 }
+
+
+#####################################
+## Heatmap multiple genes together ##
+#####################################
+
+
+genes.to.plot <- c("Pim2", "Pou5f1", "Slc7a3", "Utf1", "Dppa5a")
+celltypes.to.plot <- c("Caudal_epiblast", "Gut", "Cardiomyocytes", "Rostral_neurectoderm", "Paraxial_mesoderm", "Spinal_cord")
+diff_filt.dt <- diff.dt[gene%in%genes.to.plot & celltype%in%celltypes.to.plot]
+
+# i <- "Hoxc8"
+to.plot <- expand.grid(X = unique(diff_filt.dt$celltype), Y = as.character(unique(diff_filt.dt$class))) %>% 
+  as.data.table %>% setnames(c("celltype","class")) %>%
+  merge(diff_filt.dt, by=c("celltype","class"), all.x=T) %>%
+  .[complete.cases(.)] %>%
+  setnames("diff","logFC")
+
+p <- ggplot(to.plot, aes(x=gene, y=class, fill=logFC)) +
+  geom_tile(color="black") +
+  facet_wrap(~celltype) +
+  # scale_fill_gradientn(colours = terrain.colors(10), na.value = 'gray70') +
+  # scale_fill_manual(values = wes_palette("GrandBudapest1", n = 3))
+  scale_fill_gradient2(low = "blue", mid = "white", high = "red", na.value = 'gray70' ) +
+  theme_classic() +
+  guides(x = guide_axis(angle = 90)) +
+  theme(
+    axis.text = element_text(color="black", size=rel(0.7)),
+    axis.title = element_blank(),
+    strip.background = element_blank(),
+    axis.ticks = element_blank(),
+    axis.line = element_blank()
+    # legend.title = element_blank()
+  )
+
+
+pdf(file.path(io$outdir,sprintf("tmp.pdf")), width=8, height=5)
+print(p)
+dev.off()

@@ -267,20 +267,16 @@ opts$sample2class <- c(
   "Dnmt3b_E8.5_embryo6_Grosswendt2020" = "Dnmt3b_KO",
   "Dnmt3b_E8.5_embryo7_Grosswendt2020" = "Dnmt3b_KO",
   "Dnmt3b_E8.5_embryo8_Grosswendt2020" = "Dnmt3b_KO",
-  "WT_E8.5_embryo1._Grosswendt2020" = "WT",
-  "WT_E8.5_embryo10_Grosswendt2020" = "WT",
   "WT_E8.5_embryo1_Grosswendt2020" = "WT",
-  "WT_E8.5_embryo2._Grosswendt2020" = "WT",
   "WT_E8.5_embryo2_Grosswendt2020" = "WT",
-  "WT_E8.5_embryo3._Grosswendt2020" = "WT",
   "WT_E8.5_embryo3_Grosswendt2020" = "WT",
-  "WT_E8.5_embryo4._Grosswendt2020" = "WT",
   "WT_E8.5_embryo4_Grosswendt2020" = "WT",
   "WT_E8.5_embryo5_Grosswendt2020" = "WT",
   "WT_E8.5_embryo6_Grosswendt2020" = "WT",
   "WT_E8.5_embryo7_Grosswendt2020" = "WT",
   "WT_E8.5_embryo8_Grosswendt2020" = "WT",
-  "WT_E8.5_embryo9_Grosswendt2020" = "WT"
+  "WT_E8.5_embryo9_Grosswendt2020" = "WT",
+  "WT_E8.5_embryo10_Grosswendt2020" = "WT"
 )
 
 opts$stages <- c(
@@ -360,20 +356,16 @@ opts$sample2alias <- c(
   "Dnmt3b_E8.5_embryo6_Grosswendt2020" = "Dnmt3b_KO_8",
   "Dnmt3b_E8.5_embryo7_Grosswendt2020" = "Dnmt3b_KO_9",
   "Dnmt3b_E8.5_embryo8_Grosswendt2020" = "Dnmt3b_KO_10",
-  "WT_E8.5_embryo1._Grosswendt2020" = "WT_8",
-  "WT_E8.5_embryo10_Grosswendt2020" = "WT_9",
-  "WT_E8.5_embryo1_Grosswendt2020" = "WT_10",
-  "WT_E8.5_embryo2._Grosswendt2020" = "WT_11",
-  "WT_E8.5_embryo2_Grosswendt2020" = "WT_12",
-  "WT_E8.5_embryo3._Grosswendt2020" = "WT_13",
-  "WT_E8.5_embryo3_Grosswendt2020" = "WT_14",
-  "WT_E8.5_embryo4._Grosswendt2020" = "WT_15",
-  "WT_E8.5_embryo4_Grosswendt2020" = "WT_16",
-  "WT_E8.5_embryo5_Grosswendt2020" = "WT_17",
-  "WT_E8.5_embryo6_Grosswendt2020" = "WT_18",
-  "WT_E8.5_embryo7_Grosswendt2020" = "WT_19",
-  "WT_E8.5_embryo8_Grosswendt2020" = "WT_20",
-  "WT_E8.5_embryo9_Grosswendt2020" = "WT_21"
+  "WT_E8.5_embryo1_Grosswendt2020" = "WT_8",
+  "WT_E8.5_embryo2_Grosswendt2020" = "WT_9",
+  "WT_E8.5_embryo3_Grosswendt2020" = "WT_10",
+  "WT_E8.5_embryo4_Grosswendt2020" = "WT_11",
+  "WT_E8.5_embryo5_Grosswendt2020" = "WT_12",
+  "WT_E8.5_embryo6_Grosswendt2020" = "WT_13",
+  "WT_E8.5_embryo7_Grosswendt2020" = "WT_14",
+  "WT_E8.5_embryo8_Grosswendt2020" = "WT_15",
+  "WT_E8.5_embryo9_Grosswendt2020" = "WT_16",
+  "WT_E8.5_embryo10_Grosswendt2020" = "WT_17"
 )
 
 # opts$aliases <- c(

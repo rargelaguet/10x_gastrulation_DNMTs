@@ -35,18 +35,18 @@ args <- p$parse_args(commandArgs(TRUE))
 #####################
 
 ## START TEST ##
-# args$sce <- io$sce
-# args$metadata <- file.path(io$basedir,"results_new/mapping/sample_metadata_after_mapping.txt.gz")
-# args$classes <- "E8.5_Dnmt3aKO_Dnmt3bWT"
-# args$features <- 2500
-# args$npcs <- 25
-# args$colour_by <- c("celltype.mapped","nFeature_RNA","sample","doublet_score","doublet_call")
-# args$vars_to_regress <- c("nFeature_RNA","mit_percent_RNA")
-# args$batch_correction <- NULL
-# args$remove_ExE_cells <- FALSE
-# args$n_neighbors <- 25
-# args$min_dist <- 0.5
-# args$outdir <- file.path(io$basedir,"results_new/dimensionality_reduction/sce")
+args$sce <- file.path(io$basedir,"processed_all/SingleCellExperiment.rds")
+args$metadata <- file.path(io$basedir,"results_all/mapping/sample_metadata_after_mapping.txt.gz")
+args$classes <- opts$classes; #"E8.5_Dnmt3aKO_Dnmt3bWT"
+args$features <- 2500
+args$npcs <- 25
+args$colour_by <- c("celltype.mapped","nFeature_RNA","sample","class")
+args$vars_to_regress <- c("nFeature_RNA","mit_percent_RNA")
+args$batch_correction <- NULL
+args$remove_ExE_cells <- FALSE
+args$n_neighbors <- 25
+args$min_dist <- 0.5
+args$outdir <- file.path(io$basedir,"results_new/dimensionality_reduction/sce/all")
 ## END TEST ##
 
 # if (isTRUE(args$test)) print("Test mode activated...")

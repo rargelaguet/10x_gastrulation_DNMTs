@@ -19,9 +19,9 @@ args <- p$parse_args(commandArgs(TRUE))
 #####################
 
 ## START TEST ##
-# args$metadata <- file.path(io$basedir,"results_new/mapping/sample_metadata_after_mapping.txt.gz")
+# args$metadata <- file.path(io$basedir,"results_all/mapping/sample_metadata_after_mapping.txt.gz")
 # args$celltype_label <- "celltype.mapped"
-# args$outdir <- file.path(io$basedir,"results_new/celltype_proportions/comparisons")
+# args$outdir <- file.path(io$basedir,"results_all/celltype_proportions/comparisons")
 ## END TEST ##
 
 # I/O
@@ -36,18 +36,18 @@ dir.create(file.path(args$outdir,"polar_plots/per_sample"), showWarnings = F)
 ## Define options ##
 ####################
 
-opts$classes <- c(
-  "E8.5_WT",
-  "E8.5_Dnmt3aKO_Dnmt3bWT",
-  "E8.5_Dnmt3aHET_Dnmt3bKO",
-  "E8.5_Dnmt3aHET_Dnmt3bWT",
-  "E8.5_Dnmt3aKO_Dnmt3bHET",
-  "E8.5_Dnmt3aKO_Dnmt3bKO",
-  "E8.5_Dnmt3aWT_Dnmt3bKO",
-  "E8.5_Dnmt1KO"
-)
+# opts$classes <- c(
+#   "E8.5_WT",
+#   "E8.5_Dnmt3aKO_Dnmt3bWT",
+#   "E8.5_Dnmt3aHET_Dnmt3bKO",
+#   "E8.5_Dnmt3aHET_Dnmt3bWT",
+#   "E8.5_Dnmt3aKO_Dnmt3bHET",
+#   "E8.5_Dnmt3aKO_Dnmt3bKO",
+#   "E8.5_Dnmt3aWT_Dnmt3bKO",
+#   "E8.5_Dnmt1KO"
+# )
 
-opts$wt.classes <- c("E8.5_WT")
+opts$wt.classes <- c("WT")
   
 opts$celltypes = c(
   "Epiblast",
@@ -105,6 +105,7 @@ opts$rename_celltypes <- c(
 opts$remove.ExE.celltypes <- FALSE
 opts$remove.blood <- FALSE
 opts$remove.small.lineages <- FALSE
+opts$remove.small.embryos <- TRUE
 
 ##########################
 ## Load sample metadata ##
@@ -114,7 +115,8 @@ sample_metadata <- fread(args$metadata) %>%
   .[pass_rnaQC==TRUE & celltype.mapped%in%opts$celltypes & class%in%opts$classes] %>%
   .[,celltype.mapped:=stringr::str_replace_all(celltype.mapped,opts$rename_celltypes)] %>%
   .[,celltype.mapped:=factor(celltype.mapped,levels=unique(celltype.mapped))] %>%
-  .[,c("cell","sample","alias","class","celltype.mapped")]
+  .[,dataset:=ifelse(grepl("Grosswendt",sample),"Grosswendt","This data set")] %>%
+  .[,c("cell","sample","alias","class","celltype.mapped","dataset")]
 
 # Filter cells
 if (opts$remove.blood) {
@@ -127,10 +129,16 @@ if (opts$remove.ExE.celltypes) {
     .[!celltype.mapped%in%c("ExE_ectoderm","Parietal_endoderm")]
 }
 
-if (opts$remove.small.lineages) {
-  opts$min.cells <- 250
+# if (opts$remove.small.lineages) {
+#   opts$min.cells <- 250
+#   sample_metadata <- sample_metadata %>%
+#     .[,N:=.N,by=c("celltype.mapped")] %>% .[N>opts$min.cells] %>% .[,N:=NULL]
+# }
+
+if (opts$remove.small.embryos) {
+  opts$min.cells <- 1000
   sample_metadata <- sample_metadata %>%
-    .[,N:=.N,by=c("celltype.mapped")] %>% .[N>opts$min.cells] %>% .[,N:=NULL]
+    .[,N:=.N,by="alias"] %>% .[N>opts$min.cells] %>% .[,N:=NULL]
 }
 
 # Print statistics
@@ -240,7 +248,8 @@ for (i in unique(proportions_per_sample.dt$class)) {
     .[N>=50,celltype.mapped] %>% as.character
   
   to.plot <- proportions_per_sample.dt %>%
-    .[class==i & celltype.mapped%in%celltypes.to.plot] 
+    .[class==i & celltype.mapped%in%celltypes.to.plot] %>%
+    merge(unique(sample_metadata[,c("sample","dataset")]),by="sample")
   
   celltype.order <- to.plot %>%
     .[,mean(diff_proportion),by="celltype.mapped"] %>% setorder(-V1) %>% .$celltype.mapped
@@ -255,6 +264,7 @@ for (i in unique(proportions_per_sample.dt$class)) {
     geom_boxplot(aes(fill = celltype.mapped), alpha=0.5) +
     # geom_text(y=-ylimits, aes(label=N.wt), size=2.5, data=text.dt) +
     # geom_text(y=ylimits, aes(label=N.ko), size=2.5, data=text.dt) +
+    facet_wrap(~dataset,nrow=1) +
     coord_flip(ylim=c(-ylimits,ylimits)) +
     geom_hline(yintercept=0, linetype="dashed", size=0.5) +
     scale_fill_manual(values=opts$celltype.colors, drop=F) +
@@ -267,7 +277,7 @@ for (i in unique(proportions_per_sample.dt$class)) {
       axis.text.x = element_text(color="black")
     )
   
-  pdf(sprintf("%s/boxplots/per_class/%s_boxplots.pdf",args$outdir,i))
+  pdf(sprintf("%s/boxplots/per_class/%s_boxplots.pdf",args$outdir,i), width=9, height=7)
   print(p)
   dev.off()
 }

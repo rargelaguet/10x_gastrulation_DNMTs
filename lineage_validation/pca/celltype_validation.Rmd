@@ -1,0 +1,152 @@
+---
+title: "Cell type validation"
+---
+  
+```{r load_modules, echo=FALSE, include=FALSE}
+library(SingleCellExperiment)
+library(scran)
+library(scater)
+```
+
+# Define settings
+
+Define I/O
+```{r define_io, echo=FALSE}
+source(here::here("settings.R"))
+source(here::here("utils.R"))
+```
+
+Define options
+```{r}
+# opts$celltypes = c(
+#   "Forebrain_Midbrain_Hindbrain",
+#   "Neural_crest"
+# )
+```
+
+Update sample metadata
+```{r load_metadata, echo=FALSE}
+# sample_metadata <- fread(io$metadata) %>%
+#   .[pass_QC==TRUE] %>%
+#   setnames("celltype.mapped_mnn","celltype") %>%
+#   .[celltype%in%opts$celltypes & sample%in%opts$samples]
+# table(sample_metadata$celltype)
+```
+
+```{r}
+foo <- fread("/Users/argelagr/data/10x_gastrulation_DNMTs/results_old/mapping/sample_metadata_after_mapping.txt.gz")
+bar <- fread("/Users/argelagr/data/10x_gastrulation_DNMTs/results_new/mapping/sample_metadata_after_mapping.txt.gz")
+baz <- foo[celltype.mapped=="Epiblast",c("cell","class","celltype.mapped")] %>%
+  merge(bar[,c("cell","class","celltype.mapped")],by="cell")
+
+cells <- intersect(foo[celltype.mapped=="Epiblast",cell], bar[pass_rnaQC==T,cell])
+sample_metadata <- fread(io$metadata) %>% .[cell%in%cells]
+```
+
+# Load data
+
+Load RNA expression data as SingleCellExperiment object
+```{r load_data, echo=FALSE}
+sce <- load_SingleCellExperiment(io$sce, normalise = TRUE, cells = sample_metadata$cell)
+
+colData(sce) <- sample_metadata %>% as.data.frame %>% tibble::column_to_rownames("cell") %>%
+  .[colnames(sce),] %>% DataFrame()
+
+dim(sce)
+```
+
+# Load diferential expression from the atlas
+
+```{r}
+genes.to.plot <- fread(io$atlas.marker_genes) %>% .[celltype=="Epiblast",gene]
+```
+
+```{r}
+io$diff.dir <- paste0(io$atlas.basedir,"/results/differential/celltypes/all_stages")
+file <- sprintf("%s/%s_vs_%s.txt.gz", io$diff.dir,opts$celltypes[1],opts$celltypes[2])
+diff.dt <- fread(file) %>% 
+  .[sig==T & abs(logFC)>=1] %>%
+  .[,sign:=sprintf("Up in %s",opts$celltypes[2])] %>% .[logFC<0,sign:=c(sprintf("Up in %s",opts$celltypes[1]))] 
+```
+
+# Feature selection
+
+```{r}
+# hvgs <- diff.dt$gene[diff.dt$gene%in%rownames(sce)]
+# sce_filt <- sce[hvgs,]
+sce_filt <- sce[genes.to.plot,]
+dim(sce_filt)
+```
+
+# Dimensionality reduction
+
+```{r}
+sce_filt <- runPCA(sce_filt, ncomponents = 2, ntop=nrow(sce_filt))
+reducedDim(sce, "PCA") <- reducedDim(sce_filt, "PCA") 
+```
+
+```{r}
+plotPCA(sce_filt, colour_by="Utf1", ncomponents = c(1,2))
+```
+
+```{r}
+table(sce_filt$celltype.mapped)
+sce_filt$foo <- sce_filt$celltype.mapped =="Epiblast"
+table(sce_filt$foo)
+plotPCA(sce_filt, colour_by="foo", ncomponents = c(1,2))
+```
+
+```{r}
+plotPCA(sce_filt, colour_by="celltype.mapped", ncomponents = c(1,2)) +
+  scale_colour_manual(values=opts$celltype.colors) +
+  theme(legend.position = "none")
+```
+
+```{r}
+genes.to.plot <- diff.dt[logFC<0] %>% head(n=6) %>% .$gene
+
+for (i in genes.to.plot) {
+  p <- plotPCA(sce, colour_by=i, ncomponents = c(1,2))
+  print(p)
+}
+```
+
+```{r}
+genes.to.plot <- diff.dt[logFC>0] %>% head(n=6) %>% .$gene
+
+for (i in genes.to.plot) {
+  p <- plotPCA(sce, colour_by=i, ncomponents = c(1,2))
+  print(p)
+}
+```
+
+```{r}
+genes.to.plot <- diff.dt$gene[diff.dt$gene%in%rownames(sce)] 
+
+to.plot <- sce[genes.to.plot,] %>% logcounts %>%
+  as.matrix %>% t %>% scale(center = F, scale = T) %>% t %>%
+  as.data.table(keep.rownames = T) %>%
+  setnames("rn","gene") %>%
+  melt(id.vars="gene", variable.name="cell") %>% 
+  merge(diff.dt[,c("gene","sign")], by="gene") %>%
+  .[,.(value=mean(value)),by=c("cell","sign")] %>%
+  dcast(cell~sign) %>%
+  merge(
+    sample_metadata[,c("cell","celltype","celltype.predicted","stage")]
+  )
+```
+
+```{r}
+ggscatter(to.plot, x=sprintf("Up in %s",opts$celltypes[1]), y=sprintf("Up in %s",opts$celltypes[2]), fill="celltype", size=2, shape=21, stroke=0.15)   +
+  labs(x=sprintf("Genes up in %s",opts$celltypes[1]), y=sprintf("Up in %s",opts$celltypes[2])) +
+  # geom_abline(slope=1, intercept=0) +
+  # coord_fixed() +
+  scale_fill_manual(values=opts$celltype.colors) +
+  theme(
+    axis.text = element_text(color="black", size=rel(0.75)),
+    legend.title = element_blank(),
+    legend.position = "none"
+  )
+```
+
+

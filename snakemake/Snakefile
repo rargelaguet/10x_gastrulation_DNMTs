@@ -39,7 +39,8 @@ rule all:
         expand("%s/dimensionality_reduction/sce/{classe}/completed.txt" % config["directories"]["results"], classe=config["classes"]),
         expand("%s/dimensionality_reduction/seurat/{classe}/completed.txt" % config["directories"]["results"], classe=config["classes"]),
         config["directories"]["results"]+"/sex_assignment/sample_metadata_after_sex_assignment.txt.gz",
-        config["directories"]["results"]+"/sex_assignment/sex_assignment.txt.gz"
+        config["directories"]["results"]+"/sex_assignment/sex_assignment.txt.gz",
+        expand(config["directories"]["results"]+"/pseudobulk/SingleCellExperiment_pseudobulk_{pseudobulk_group_by}.rds", pseudobulk_group_by=config["params"]["pseudobulk"]["group_by"])
 
 ##################################################
 ## Load count matrices and create Seurat object ##
@@ -124,91 +125,91 @@ rule seurat_to_sce:
 #######################
 
 # THIS RULE SOMETIMES FAILS AND I HAVE NO IDEA WHY
-rule doublet_detection:
-    input:
-        sce = rules.seurat_to_sce.output,
-        metadata = rules.qc.output,
-        script = config["scripts"]["doublet_detection"]
-    output:
-        outfile=config["directories"]["results"]+"/doublet_detection/doublets_{sample}.txt.gz"
-        # metadata=config["directories"]["results"]+"/doublet_detection/sample_metadata_after_doublet_detection.txt.gz"
-    params:
-        doublet_score_threshold = config["params"]["doublet_detection"]["doublet_score_threshold"]
-    conda:
-        "environment.yaml"
-    log: 
-        "logs/doublet_detection_{sample}.log"
-    threads: 
-        config["slurm"]["doublet_detection"]["threads"]
-    resources:
-        mem_mb = config["slurm"]["doublet_detection"]["memory"]
-    shell:
-        "Rscript {input.script} --metadata {input.metadata} --sce {input.sce} --samples {wildcards.sample} \
-        --hybrid_score_threshold {params.doublet_score_threshold}  --outfile {output} > {log}"
+# rule doublet_detection:
+#     input:
+#         sce = rules.seurat_to_sce.output,
+#         metadata = rules.qc.output,
+#         script = config["scripts"]["doublet_detection"]
+#     output:
+#         outfile=config["directories"]["results"]+"/doublet_detection/doublets_{sample}.txt.gz"
+#         # metadata=config["directories"]["results"]+"/doublet_detection/sample_metadata_after_doublet_detection.txt.gz"
+#     params:
+#         doublet_score_threshold = config["params"]["doublet_detection"]["doublet_score_threshold"]
+#     conda:
+#         "environment.yaml"
+#     log: 
+#         "logs/doublet_detection_{sample}.log"
+#     threads: 
+#         config["slurm"]["doublet_detection"]["threads"]
+#     resources:
+#         mem_mb = config["slurm"]["doublet_detection"]["memory"]
+#     shell:
+#         "Rscript {input.script} --metadata {input.metadata} --sce {input.sce} --samples {wildcards.sample} \
+#         --hybrid_score_threshold {params.doublet_score_threshold}  --outfile {output} > {log}"
 
-rule parse_doublet_results:
-    input:
-        metadata = rules.qc.output,
-        script = config["scripts"]["parse_doublet_results"],
-        # doublet_files=expand(config["directories"]["results"]+"/doublet_detection/doublets_{sample}.txt.gz", sample=config["samples"])
-        doublet_files = expand(rules.doublet_detection.output, sample=config["samples"])
-    output:
-        config["directories"]["results"]+"/doublet_detection/sample_metadata_after_doublets.txt.gz"
-    params:
-        outdir = config["directories"]["results"]+"/doublet_detection"
-    conda:
-        "environment.yaml"
-    log: 
-        "logs/parse_doublet_results.log"
-    threads: 
-        config["slurm"]["parse_doublet_results"]["threads"]
-    resources:
-        mem_mb = config["slurm"]["parse_doublet_results"]["memory"]
-    shell:
-        "Rscript {input.script} --metadata {input.metadata} --doublet_files {input.doublet_files} --outdir {params.outdir} > {log}"
+# rule parse_doublet_results:
+#     input:
+#         metadata = rules.qc.output,
+#         script = config["scripts"]["parse_doublet_results"],
+#         # doublet_files=expand(config["directories"]["results"]+"/doublet_detection/doublets_{sample}.txt.gz", sample=config["samples"])
+#         doublet_files = expand(rules.doublet_detection.output, sample=config["samples"])
+#     output:
+#         config["directories"]["results"]+"/doublet_detection/sample_metadata_after_doublets.txt.gz"
+#     params:
+#         outdir = config["directories"]["results"]+"/doublet_detection"
+#     conda:
+#         "environment.yaml"
+#     log: 
+#         "logs/parse_doublet_results.log"
+#     threads: 
+#         config["slurm"]["parse_doublet_results"]["threads"]
+#     resources:
+#         mem_mb = config["slurm"]["parse_doublet_results"]["memory"]
+#     shell:
+#         "Rscript {input.script} --metadata {input.metadata} --doublet_files {input.doublet_files} --outdir {params.outdir} > {log}"
 
 
-rule doublet_detection_seurat:
-    input:
-        seurat = rules.create_seurat.output.seurat,
-        metadata = rules.qc.output,
-        script = config["scripts"]["doublet_detection_seurat"]
-    output:
-        outfile=config["directories"]["results"]+"/doublet_detection_seurat/doublets_{sample}.txt.gz"
-    params:
-        number_doublets = config["params"]["doublet_detection_seurat"]["number_doublets"]
-    conda:
-        "environment.yaml"
-    log: 
-        "logs/doublet_detection_{sample}.log"
-    threads: 
-        config["slurm"]["doublet_detection_seurat"]["threads"]
-    resources:
-        mem_mb = config["slurm"]["doublet_detection_seurat"]["memory"]
-    shell:
-        "Rscript {input.script} --metadata {input.metadata} --seurat {input.seurat} --sample {wildcards.sample} \
-        --number_doublets {params.number_doublets}  --outfile {output} > {log}"
+# rule doublet_detection_seurat:
+#     input:
+#         seurat = rules.create_seurat.output.seurat,
+#         metadata = rules.qc.output,
+#         script = config["scripts"]["doublet_detection_seurat"]
+#     output:
+#         outfile=config["directories"]["results"]+"/doublet_detection_seurat/doublets_{sample}.txt.gz"
+#     params:
+#         number_doublets = config["params"]["doublet_detection_seurat"]["number_doublets"]
+#     conda:
+#         "environment.yaml"
+#     log: 
+#         "logs/doublet_detection_{sample}.log"
+#     threads: 
+#         config["slurm"]["doublet_detection_seurat"]["threads"]
+#     resources:
+#         mem_mb = config["slurm"]["doublet_detection_seurat"]["memory"]
+#     shell:
+#         "Rscript {input.script} --metadata {input.metadata} --seurat {input.seurat} --sample {wildcards.sample} \
+#         --number_doublets {params.number_doublets}  --outfile {output} > {log}"
 
-rule parse_doublet_results_seurat:
-    input:
-        metadata = rules.qc.output,
-        script = config["scripts"]["parse_doublet_results"],
-        # doublet_files=expand(config["directories"]["results"]+"/doublet_detection/doublets_{sample}.txt.gz", sample=config["samples"])
-        doublet_files = expand(rules.doublet_detection_seurat.output, sample=config["samples"])
-    output:
-        config["directories"]["results"]+"/doublet_detection_seurat/sample_metadata_after_doublets.txt.gz"
-    params:
-        outdir = config["directories"]["results"]+"/doublet_detection_seurat"
-    conda:
-        "environment.yaml"
-    log: 
-        "logs/parse_doublet_results_seurat.log"
-    threads: 
-        config["slurm"]["parse_doublet_results"]["threads"]
-    resources:
-        mem_mb = config["slurm"]["parse_doublet_results"]["memory"]
-    shell:
-        "Rscript {input.script} --metadata {input.metadata} --doublet_files {input.doublet_files} --outdir {params.outdir} > {log}"
+# rule parse_doublet_results_seurat:
+#     input:
+#         metadata = rules.qc.output,
+#         script = config["scripts"]["parse_doublet_results"],
+#         # doublet_files=expand(config["directories"]["results"]+"/doublet_detection/doublets_{sample}.txt.gz", sample=config["samples"])
+#         doublet_files = expand(rules.doublet_detection_seurat.output, sample=config["samples"])
+#     output:
+#         config["directories"]["results"]+"/doublet_detection_seurat/sample_metadata_after_doublets.txt.gz"
+#     params:
+#         outdir = config["directories"]["results"]+"/doublet_detection_seurat"
+#     conda:
+#         "environment.yaml"
+#     log: 
+#         "logs/parse_doublet_results_seurat.log"
+#     threads: 
+#         config["slurm"]["parse_doublet_results"]["threads"]
+#     resources:
+#         mem_mb = config["slurm"]["parse_doublet_results"]["memory"]
+#     shell:
+#         "Rscript {input.script} --metadata {input.metadata} --doublet_files {input.doublet_files} --outdir {params.outdir} > {log}"
 
 
 ##########################
@@ -312,9 +313,6 @@ rule parse_mapping_results:
 #     shell:
 #         "Rscript {input.script} --metadata {input.query_metadata} --mapping_mnn {input.mapping_mnn} --outfile {output} > {log}"
 
-##########################
-## Plot mapping results ##
-##########################
 
 rule plot_mapping_results: 
     input:
@@ -336,6 +334,36 @@ rule plot_mapping_results:
     shell:
         "Rscript {input.script} --query_metadata {input.query_metadata} --atlas_metadata {input.atlas_metadata} \
         --outdir {params.outdir} > {log}"
+
+##########################
+## Mapping trajectories ##
+##########################
+
+rule mapping_mnn_trajectory:
+    input:
+        atlas_sce = config["directories"]["atlas"]+"/results/trajectories/{trajectory_name}/{trajectory_name}_SingleCellExperiment.rds",
+        atlas_metadata = config["directories"]["atlas"]+"/results/trajectories/{trajectory_name}/{trajectory_name}_sample_metadata.txt.gz",
+        query_sce = rules.seurat_to_sce.output,
+        query_metadata = rules.parse_mapping_results.output,
+        script = config["scripts"]["mapping_mnn_trajectory"]
+    output:
+        config["directories"]["results"]+"/mapping/trajectories/{trajectory_name}/mapping_mnn_{sample}.txt.gz"
+    params:
+        atlas_stages = config["params"]["mapping_mnn_trajectory"]["atlas_stages"],
+        npcs = config["params"]["mapping_mnn_trajectory"]["npcs"],
+        n_neighbours = config["params"]["mapping_mnn_trajectory"]["n_neighbours"]
+    conda:
+        "environment.yaml"
+    log: 
+        "logs/mapping_mnn_trajectory_{blood}_{sample}.log"
+    threads: 
+        config["slurm"]["mapping_mnn_trajectory"]["threads"]
+    resources:
+        mem_mb = config["slurm"]["mapping_mnn_trajectory"]["memory"]
+    shell:
+        "Rscript {input.script} --query_samples {wildcards.sample} --query_sce {input.query_sce} \
+        --atlas_sce {input.atlas_sce} --atlas_metadata {input.atlas_metadata} --query_metadata {input.query_metadata} \
+        --trajectory_name {wildcards.trajectory_name} --npcs {params.npcs} --n_neighbours {params.n_neighbours} --outfile {output}  > {log}"
 
 ################################
 ## Plot cell type proportions ##
@@ -448,28 +476,27 @@ rule dimensionality_reduction_seurat_class:
 ## Pseudobulk ##
 ################
 
-rule pseudobulk_rna:
+rule pseudobulk:
     input:
         sce = rules.seurat_to_sce.output,
         metadata = rules.parse_mapping_results.output,
-        script = config["scripts"]["pseudobulk_rna"]
+        script = config["scripts"]["pseudobulk"]
     output:
-        seurat = config["directories"]["results"]+"/pseudobulk/Seurat_pseudobulk_{group_by}.rds",
-        sce = config["directories"]["results"]+"/pseudobulk/SingleCellExperiment_pseudobulk_{group_by}.rds"
+        # seurat = config["directories"]["results"]+"/pseudobulk/Seurat_pseudobulk_{pseudobulk_group_by}.rds",
+        config["directories"]["results"]+"/pseudobulk/SingleCellExperiment_pseudobulk_{pseudobulk_group_by}.rds"
     params:
-        normalisation_method = config["params"]["pseudobulk_rna"]["normalisation_method"],
+        normalisation_method = config["params"]["pseudobulk"]["normalisation_method"],
         outdir = config["directories"]["results"]+"/pseudobulk"
-        # group_by=config["pseudobulk"]["group_by"]
     conda:
         "environment.yaml"
     log: 
-        "logs/pseudobulk_rna_{group_by}.log"
+        "logs/pseudobulk_{pseudobulk_group_by}.log"
     threads: 
-        config["slurm"]["pseudobulk_rna"]["threads"]
+        config["slurm"]["pseudobulk"]["threads"]
     resources:
-        mem_mb = config["slurm"]["pseudobulk_rna"]["memory"]
+        mem_mb = config["slurm"]["pseudobulk"]["memory"]
     shell:
-        "Rscript {input.script} --sce {input.sce} --metadata {input.metadata} --group_by {wildcards.group_by} \
+        "Rscript {input.script} --sce {input.sce} --metadata {input.metadata} --group_by {wildcards.pseudobulk_group_by} \
         --normalisation_method {params.normalisation_method} --outdir {params.outdir} > {log}"
 
 

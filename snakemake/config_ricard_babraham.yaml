@@ -1,97 +1,93 @@
-# samples:
-#     # - E125_DNMT3A_HET_A_L001
-#     # - E125_DNMT3A_HET_A_L003
-#     # - E125_DNMT3A_KO_B_L002
-#     # - E125_DNMT3A_KO_E_L004
-#     # - A_E12_5_D3a_Het_L001
-#     # - B_E12_5_D3a_KO_L002
-#     - SIGAA6_E85_2_Dnmt3aKO_Dnmt3b_WT_L001
-#     - SIGAB6_E85_3_Dnmt3aWT_Dnmt3b_WT_L002
-#     - SIGAC6_E85_5_Dnmt3aKO_Dnmt3b_Het_L003
-#     - SIGAD6_E85_8_Dnmt3aHet_Dnmt3b_KO_L004
-#     - 15_E8_5_D3A_WT_D3B_WT_L007
-#     - 17_E8_5_D3A_KO_D3B_WT_L008
-#     - 2_E8_5_D3A_WT_D3B_KO_L003
-#     - 3_E8_5_D3A_HET_D3B_WT_L004
-#     - 7_E8_5_D3A_WT_D3B_KO_L005
-#     - 8_E8_5_D3A_KO_D3B_KO_L006
-#     - E8_5_Dnmt1_KO_male_SIGAC8_L001
-#     - E8_5_Dnmt1_KO_male_SIGAD8_L002
-#     - E8_5_Dnmt1_KO_male_SIGAE8_L003
-#     - E8_5_Dnmt1_WT_female_SIGAB8_L004
-#     - E8_5_Dnmt1_WT_female_SIGAF8_L005
-#     - E8_5_Dnmt3ab_WT_female_SIGAA8_L006
-#     - SIGAH10_Dnmt3ab_WT_L002
-#     - SIGAH11_Dnmt3ab_WT_L003
-#     - SIGAH9_Dnmt3a_KO_Dnmt3b_Het_L001
-#     - SIGAG5_9_dnmt3ab_DKO_L005
-#     - Dnmt1_embryo10_Grosswendt2020
-#     - Dnmt1_embryo11_Grosswendt2020
-#     - Dnmt1_embryo12_Grosswendt2020
-#     - Dnmt1_embryo1_Grosswendt2020
-#     - Dnmt1_embryo2_Grosswendt2020
-#     - Dnmt1_embryo3_Grosswendt2020
-#     - Dnmt1_embryo4_Grosswendt2020
-#     - Dnmt1_embryo5_Grosswendt2020
-#     - Dnmt1_embryo6_Grosswendt2020
-#     - Dnmt1_embryo7_Grosswendt2020
-#     - Dnmt1_embryo8_Grosswendt2020
-#     - Dnmt1_embryo9_Grosswendt2020
-#     - Dnmt3a_embryo10_Grosswendt2020
-#     - Dnmt3a_embryo1_Grosswendt2020
-#     - Dnmt3a_embryo2_Grosswendt2020
-#     - Dnmt3a_embryo3_Grosswendt2020
-#     - Dnmt3a_embryo4_Grosswendt2020
-#     - Dnmt3a_embryo5_Grosswendt2020
-#     - Dnmt3a_embryo6_Grosswendt2020
-#     - Dnmt3a_embryo7_Grosswendt2020
-#     - Dnmt3a_embryo8_Grosswendt2020
-#     - Dnmt3a_embryo9_Grosswendt2020
-#     - Dnmt3b_embryo1_Grosswendt2020
-#     - Dnmt3b_embryo2_Grosswendt2020
-#     - Dnmt3b_embryo3_Grosswendt2020
-#     - Dnmt3b_embryo4_Grosswendt2020
-#     - Dnmt3b_embryo5_Grosswendt2020
-#     - Dnmt3b_embryo6_Grosswendt2020
-#     - Dnmt3b_embryo7_Grosswendt2020"
-#     - Dnmt3b_embryo8_Grosswendt2020
-#     - WT_embryo1._Grosswendt2020
-#     - WT_embryo10_Grosswendt2020
-#     - WT_embryo1_Grosswendt2020
-#     - WT_embryo2._Grosswendt2020
-#     - WT_embryo2_Grosswendt2020
-#     - WT_embryo3._Grosswendt2020
-#     - WT_embryo3_Grosswendt2020
-#     - WT_embryo4._Grosswendt2020
-#     - WT_embryo4_Grosswendt2020
-#     - WT_embryo5_Grosswendt2020
-#     - WT_embryo6_Grosswendt2020
-#     - WT_embryo7_Grosswendt2020
-#     - WT_embryo8_Grosswendt2020
-#     - WT_embryo9_Grosswendt2020
-
 samples:
+    # - E125_DNMT3A_HET_A_L001
+    # - E125_DNMT3A_HET_A_L003
+    # - E125_DNMT3A_KO_B_L002
+    # - E125_DNMT3A_KO_E_L004
+    # - A_E12_5_D3a_Het_L001
+    # - B_E12_5_D3a_KO_L002
+    - SIGAA6_E85_2_Dnmt3aKO_Dnmt3b_WT_L001
+    - SIGAB6_E85_3_Dnmt3aWT_Dnmt3b_WT_L002
+    - SIGAC6_E85_5_Dnmt3aKO_Dnmt3b_Het_L003
+    - SIGAD6_E85_8_Dnmt3aHet_Dnmt3b_KO_L004
+    - 15_E8_5_D3A_WT_D3B_WT_L007
+    - 17_E8_5_D3A_KO_D3B_WT_L008
+    - 2_E8_5_D3A_WT_D3B_KO_L003
+    - 3_E8_5_D3A_HET_D3B_WT_L004
+    - 7_E8_5_D3A_WT_D3B_KO_L005
+    - 8_E8_5_D3A_KO_D3B_KO_L006
+    - E8_5_Dnmt1_KO_male_SIGAC8_L001
+    - E8_5_Dnmt1_KO_male_SIGAD8_L002
+    - E8_5_Dnmt1_KO_male_SIGAE8_L003
+    - E8_5_Dnmt1_WT_female_SIGAB8_L004
+    - E8_5_Dnmt1_WT_female_SIGAF8_L005
+    - E8_5_Dnmt3ab_WT_female_SIGAA8_L006
+    - SIGAH10_Dnmt3ab_WT_L002
+    - SIGAH11_Dnmt3ab_WT_L003
+    - SIGAH9_Dnmt3a_KO_Dnmt3b_Het_L001
+    - SIGAG5_9_dnmt3ab_DKO_L005
+    - Dnmt1_E8.5_embryo10_Grosswendt2020
+    - Dnmt1_E8.5_embryo11_Grosswendt2020
+    - Dnmt1_E8.5_embryo12_Grosswendt2020
+    - Dnmt1_E8.5_embryo1_Grosswendt2020
+    - Dnmt1_E8.5_embryo2_Grosswendt2020
+    - Dnmt1_E8.5_embryo3_Grosswendt2020
+    - Dnmt1_E8.5_embryo4_Grosswendt2020
+    - Dnmt1_E8.5_embryo5_Grosswendt2020
+    - Dnmt1_E8.5_embryo6_Grosswendt2020
+    - Dnmt1_E8.5_embryo7_Grosswendt2020
+    - Dnmt1_E8.5_embryo8_Grosswendt2020
+    - Dnmt1_E8.5_embryo9_Grosswendt2020
+    - Dnmt3a_E8.5_embryo10_Grosswendt2020
+    - Dnmt3a_E8.5_embryo1_Grosswendt2020
+    - Dnmt3a_E8.5_embryo2_Grosswendt2020
     - Dnmt3a_E8.5_embryo3_Grosswendt2020
+    - Dnmt3a_E8.5_embryo4_Grosswendt2020
+    - Dnmt3a_E8.5_embryo5_Grosswendt2020
+    - Dnmt3a_E8.5_embryo6_Grosswendt2020
+    - Dnmt3a_E8.5_embryo7_Grosswendt2020
+    - Dnmt3a_E8.5_embryo8_Grosswendt2020
+    - Dnmt3a_E8.5_embryo9_Grosswendt2020
+    - Dnmt3b_E8.5_embryo1_Grosswendt2020
+    - Dnmt3b_E8.5_embryo2_Grosswendt2020
+    - Dnmt3b_E8.5_embryo3_Grosswendt2020
+    - Dnmt3b_E8.5_embryo4_Grosswendt2020
+    - Dnmt3b_E8.5_embryo5_Grosswendt2020
+    - Dnmt3b_E8.5_embryo6_Grosswendt2020
+    - Dnmt3b_E8.5_embryo7_Grosswendt2020
+    - Dnmt3b_E8.5_embryo8_Grosswendt2020
+    - WT_E8.5_embryo1_Grosswendt2020
+    - WT_E8.5_embryo2_Grosswendt2020
+    - WT_E8.5_embryo3_Grosswendt2020
+    - WT_E8.5_embryo4_Grosswendt2020
+    - WT_E8.5_embryo5_Grosswendt2020
+    - WT_E8.5_embryo6_Grosswendt2020
+    - WT_E8.5_embryo7_Grosswendt2020
+    - WT_E8.5_embryo8_Grosswendt2020
     - WT_E8.5_embryo9_Grosswendt2020
+    - WT_E8.5_embryo10_Grosswendt2020
+
+# samples:
+#     - Dnmt3a_E8.5_embryo3_Grosswendt2020
+#     - WT_E8.5_embryo9_Grosswendt2020
 
 
-# classes:
+classes:
 #     # - E12.5_Dnmt3aWT_Dnmt3bHET
 #     # - E12.5_Dnmt3aWT_Dnmt3bKO
 #     # - E12.5_Dnmt3aHET_Dnmt3bWT
 #     # - E12.5_Dnmt3aKO_Dnmt3bWT
-#   - Dnmt3a_KO
-#   - WT
-#   - Dnmt3a_HET_Dnmt3b_KO
-#   - Dnmt3a_HET_Dnmt3b_WT
-#   - Dnmt3a_KO_Dnmt3b_HET
-#   - Dnmt3ab_KO
-#   - Dnmt3b_KO
-#   - Dnmt1_KO
+  - WT
+  - Dnmt3a_HET_Dnmt3b_KO
+  - Dnmt3a_HET_Dnmt3b_WT
+  - Dnmt3a_KO_Dnmt3b_HET
+  - Dnmt3a_KO
+  - Dnmt3ab_KO
+  - Dnmt3b_KO
+  - Dnmt1_KO
 
-classes:
-    - Dnmt3a_KO
-    - WT
+# classes:
+#     - Dnmt3a_KO
+#     - WT
 
 #################
 ## Directories ##
@@ -126,6 +122,7 @@ scripts:
     doublet_detection_seurat: ../processing/4_doublet_detection_seurat.R
     parse_doublet_results: ../processing/5_parse_sample_metadata_after_doublets.R
     mapping_mnn: ../mapping/run/mnn/mapping_mnn.R
+    mapping_mnn_trajectories: ../mapping/trajectories/mapping_mnn_trajectories.R
     parse_mapping: ../mapping/run/parse_sample_metadata_after_mapping.R
     dimensionality_reduction_sce: ../dimensionality_reduction/dimensionality_reduction_sce.R
     dimensionality_reduction_seurat: ../dimensionality_reduction/dimensionality_reduction_seurat.R
@@ -159,6 +156,12 @@ params:
         atlas_stages: ["E6.5","E6.75","E7.0","E7.25","E7.5","E7.75","E8.0","E8.25","E8.5"]
         npcs: 50
         n_neighbours: 25
+
+    mapping_mnn_trajectories:
+        npcs: 5
+        n_neighbours: 15
+        trajectories: ["NMP"]
+        # trajectories: ["blood", "NMP"]
 
     pseudobulk:
         group_by: ["class_celltype"]
@@ -199,49 +202,52 @@ params:
 
 slurm:  # memory in MB
     create_seurat: 
-        memory: 75000
+        memory: 120000
         threads: 1
     qc: 
-        memory: 5000
+        memory: 10000
         threads: 1
     seurat_to_sce:
-        memory: 50000
-        threads: 1
-    doublet_detection:
-        memory: 15000
-        threads: 1
-    doublet_detection_seurat:
-        memory: 35000
-        threads: 1
-    parse_doublet_results:
-        memory: 2000
-        threads: 1
-    mapping_mnn:
-        memory: 80000
-        threads: 1
-    mapping_mnn_all_samples:
         memory: 100000
         threads: 1
+    # doublet_detection:
+    #     memory: 15000
+    #     threads: 1
+    # doublet_detection_seurat:
+    #     memory: 35000
+    #     threads: 1
+    # parse_doublet_results:
+    #     memory: 2000
+    #     threads: 1
+    mapping_mnn:
+        memory: 75000
+        threads: 1
+    mapping_mnn_trajectories:
+        memory: 30000
+        threads: 1
+    # mapping_mnn_all_samples:
+    #     memory: 100000
+    #     threads: 1
     parse_mapping_results:
-        memory: 3000
+        memory: 5000
         threads: 1
     pseudobulk:
-        memory: 15000
-        threads: 1
-    dimensionality_reduction_sce:
         memory: 25000
         threads: 1
+    dimensionality_reduction_sce:
+        memory: 30000
+        threads: 1
     dimensionality_reduction_seurat:
-        memory: 40000
+        memory: 50000
         threads: 1
     plot_mapping_results:
-        memory: 4000
+        memory: 5000
         threads: 1
     plot_celltype_proportions:
-        memory: 4000
+        memory: 5000
         threads: 1
     compare_celltype_proportions:
-        memory: 4000
+        memory: 5000
         threads: 1
     sex_assignment:
         memory: 30000
