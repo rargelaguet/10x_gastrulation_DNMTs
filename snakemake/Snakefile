@@ -365,6 +365,26 @@ rule mapping_mnn_trajectory:
         --atlas_sce {input.atlas_sce} --atlas_metadata {input.atlas_metadata} --query_metadata {input.query_metadata} \
         --trajectory_name {wildcards.trajectory_name} --npcs {params.npcs} --n_neighbours {params.n_neighbours} --outfile {output}  > {log}"
 
+rule parse_mapping_trajectory_results:
+    input:
+        # query_metadata = rules.parse_doublet_results_seurat.output,
+        query_metadata = rules.parse_mapping_results.output,
+        mapping_mnn = expand(config["directories"]["results"]+"/mapping/trajectories/{trajectory_name}/mapping_mnn_{sample}.txt.gz", sample=config["samples"]),
+        # mapping_mnn = rules.mapping_mnn.output,
+        script = config["scripts"]["parse_mapping"]
+    output:
+        config["directories"]["results"]+"/mapping/trajectories/{trajectory_name}/sample_metadata_after_mapping.txt.gz"
+    conda:
+        "environment.yaml"
+    log: 
+        "logs/parse_mapping_results_{trajectory_name}.log"
+    threads: 
+        config["slurm"]["parse_mapping_results"]["threads"]
+    resources:
+        mem_mb = config["slurm"]["parse_mapping_results"]["memory"]
+    shell:
+        "Rscript {input.script} --metadata {input.query_metadata} --mapping_mnn {input.mapping_mnn} --outfile {output} > {log}"
+
 ################################
 ## Plot cell type proportions ##
 ################################

@@ -12,8 +12,6 @@ io$outdir <- file.path(io$basedir,"results_new/individual_genes/pseudobulk")
 io$sce.pseudobulk <- file.path(io$basedir,"results_new/pseudobulk/SingleCellExperiment_pseudobulk_class_celltype.rds")
 
 # Define options
-opts$min.cells <- 25
-
 opts$celltypes = c(
   "Epiblast",
   "Primitive_Streak",
@@ -53,6 +51,7 @@ opts$celltypes = c(
   # "ExE_ectoderm",
   # "Parietal_endoderm"
 )
+opts$min.cells <- 30
 
 ###############
 ## Load data ##
@@ -66,7 +65,7 @@ sce$class <- stringr::str_split(colnames(sce), pattern = "-") %>% map_chr(1)
 sce$celltype <- stringr::str_split(colnames(sce), pattern = "-") %>% map_chr(2)
 
 # Filter celltypes
-sce <- sce[,sce$celltype%in%opts$celltypes]
+# sce <- sce[,sce$celltype%in%opts$celltypes]
 
 # Filter by minimum number of cells
 sce <- sce[,names(which(metadata(sce)$n_cells>=opts$min.cells))]
@@ -75,9 +74,10 @@ sce <- sce[,names(which(metadata(sce)$n_cells>=opts$min.cells))]
 ## Barplots ##
 #############
 
-genes.to.plot <- c("Tex19.1","Morc1","Dppa3","Rex1","Dppa5a","Dppa4","Dppa2","Zfp981")
-genes.to.plot <- c("Pou5f1","Epcam","Fst","Lefty2","Cdkn1c","Acta1")
-genes.to.plot <- grep("^Hox",rownames(sce),value=T)
+# genes.to.plot <- c("Tex19.1","Morc1","Dppa3","Rex1","Dppa5a","Dppa4","Dppa2","Zfp981")
+# genes.to.plot <- c("Pou5f1","Epcam","Fst","Lefty2","Cdkn1c","Acta1")
+# genes.to.plot <- grep("^Hox",rownames(sce),value=T)
+genes.to.plot <- fread(io$atlas.marker_genes)[,gene] %>% unique
 
 for (i in 1:length(genes.to.plot)) {
   
@@ -85,7 +85,7 @@ for (i in 1:length(genes.to.plot)) {
   
   if (gene %in% rownames(sce)) {
     print(sprintf("%s/%s: %s",i,length(genes.to.plot),gene))
-    outfile <- sprintf("%s/%s.pdf",io$outdir,gene)
+    outfile <- sprintf("%s/%s_barplot_pseudobulk.pdf",io$outdir,gene)
   
     to.plot <- data.table(
       sample = colnames(sce),

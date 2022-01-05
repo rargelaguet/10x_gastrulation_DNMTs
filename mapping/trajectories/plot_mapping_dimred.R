@@ -15,9 +15,9 @@ p$add_argument('--outdir',          type="character",                           
 args <- p$parse_args(commandArgs(TRUE))
 
 ## START TEST ##
-args$query_metadata <- file.path(io$basedir,"results_new/mapping/trajectories/NMP/sample_metadata_after_mapping.txt.gz")
+args$query_metadata <- file.path(io$basedir,"results_all/mapping/trajectories/NMP/sample_metadata_after_mapping.txt.gz")
 args$atlas_metadata <- file.path(io$atlas.basedir,"results/trajectories/NMP/NMP_sample_metadata.txt.gz")
-args$outdir <- file.path(io$basedir,"results_new/mapping/pdf")
+args$outdir <- file.path(io$basedir,"results_all/mapping/trajectories/NMP/pdf")
 ## END TEST ##
 
 dir.create(args$outdir, showWarnings = F)
@@ -118,11 +118,11 @@ for (i in samples.to.plot) {
 ## Plot one class at a time ##
 ###############################
 
-classes.to.plot <- unique(sample_metadata$cell)
+classes.to.plot <- unique(sample_metadata$class)
 
 for (i in classes.to.plot) {
   
-  to.plot <- umap.dt %>% copy %>%
+  to.plot <- meta_atlas %>% copy %>%
     .[,index:=match(cell, sample_metadata[class==i,closest.cell] )] %>% 
     .[,mapped:=as.factor(!is.na(index))] %>% 
     .[,mapped:=plyr::mapvalues(mapped, from = c("FALSE","TRUE"), to = c("Atlas",i))] %>%

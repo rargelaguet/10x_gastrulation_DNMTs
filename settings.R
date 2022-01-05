@@ -194,20 +194,16 @@ opts$samples <- c(
   "Dnmt3b_E8.5_embryo6_Grosswendt2020",
   "Dnmt3b_E8.5_embryo7_Grosswendt2020", 
   "Dnmt3b_E8.5_embryo8_Grosswendt2020",
-  "WT_E8.5_embryo1._Grosswendt2020",
-  "WT_E8.5_embryo10_Grosswendt2020",
   "WT_E8.5_embryo1_Grosswendt2020",
-  "WT_E8.5_embryo2._Grosswendt2020",
   "WT_E8.5_embryo2_Grosswendt2020",
-  "WT_E8.5_embryo3._Grosswendt2020",
   "WT_E8.5_embryo3_Grosswendt2020",
-  "WT_E8.5_embryo4._Grosswendt2020",
   "WT_E8.5_embryo4_Grosswendt2020",
   "WT_E8.5_embryo5_Grosswendt2020",
   "WT_E8.5_embryo6_Grosswendt2020",
   "WT_E8.5_embryo7_Grosswendt2020",
   "WT_E8.5_embryo8_Grosswendt2020",
-  "WT_E8.5_embryo9_Grosswendt2020"
+  "WT_E8.5_embryo9_Grosswendt2020",
+  "WT_E8.5_embryo10_Grosswendt2020"
 )
 
 opts$sample2class <- c(
