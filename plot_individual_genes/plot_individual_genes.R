@@ -126,7 +126,7 @@ colData(sce) <- sample_metadata %>% tibble::column_to_rownames("cell") %>% DataF
 # genes.to.plot <- c("Tet1","Tet2","Tet3","Dnmt1","Dnmt3a","Dnmt3b","Dnmt3l")
 # genes.to.plot <- rownames(sce)[grep("Lefty",rownames(sce))]
 # genes.to.plot <- fread(io$atlas.marker_genes) %>% .[celltype=="Epiblast" & score>=0.80,gene]
-genes.to.plot <- fread(io$atlas.marker_genes)[,gene] %>% unique
+genes.to.plot <- fread(io$atlas.marker_genes)[,gene] %>% unique %>% head(n=3)
 # genes.to.plot <- fread("/Users/ricard/data/gastrulation10x/results/differential/celltypes/E8.5/Neural_crest_vs_Forebrain_Midbrain_Hindbrain.txt.gz") %>% .[sig==T & logFC<(-2),gene]
 
 for (i in 1:length(genes.to.plot)) {

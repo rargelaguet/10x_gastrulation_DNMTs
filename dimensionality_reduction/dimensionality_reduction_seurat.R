@@ -63,6 +63,7 @@ if (args$classes[1]=="all") {
 ##########################
 
 sample_metadata <- fread(args$metadata) %>%
+  .[,dataset:=ifelse(grepl("Grosswendt",sample),"Grosswendt","This data set")]
   .[pass_rnaQC==TRUE & class%in%args$classes]
 
 if (args$remove_ExE_cells) {

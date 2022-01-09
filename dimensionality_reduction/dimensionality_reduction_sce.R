@@ -35,18 +35,18 @@ args <- p$parse_args(commandArgs(TRUE))
 #####################
 
 ## START TEST ##
-args$sce <- file.path(io$basedir,"processed_all/SingleCellExperiment.rds")
-args$metadata <- file.path(io$basedir,"results_all/mapping/sample_metadata_after_mapping.txt.gz")
-args$classes <- opts$classes; #"E8.5_Dnmt3aKO_Dnmt3bWT"
-args$features <- 2500
-args$npcs <- 25
-args$colour_by <- c("celltype.mapped","nFeature_RNA","sample","class")
-args$vars_to_regress <- c("nFeature_RNA","mit_percent_RNA")
-args$batch_correction <- NULL
-args$remove_ExE_cells <- FALSE
-args$n_neighbors <- 25
-args$min_dist <- 0.5
-args$outdir <- file.path(io$basedir,"results_new/dimensionality_reduction/sce/all")
+# args$sce <- file.path(io$basedir,"processed_all/SingleCellExperiment.rds")
+# args$metadata <- file.path(io$basedir,"results_all/mapping/sample_metadata_after_mapping.txt.gz")
+# args$classes <- opts$classes; #"E8.5_Dnmt3aKO_Dnmt3bWT"
+# args$features <- 2500
+# args$npcs <- 25
+# args$colour_by <- c("celltype.mapped","nFeature_RNA","sample","class")
+# args$vars_to_regress <- c("nFeature_RNA","mit_percent_RNA")
+# args$batch_correction <- NULL
+# args$remove_ExE_cells <- FALSE
+# args$n_neighbors <- 25
+# args$min_dist <- 0.5
+# args$outdir <- file.path(io$basedir,"results_new/dimensionality_reduction/sce/all")
 ## END TEST ##
 
 # if (isTRUE(args$test)) print("Test mode activated...")
@@ -66,6 +66,7 @@ if (args$classes[1]=="all") {
 ##########################
 
 sample_metadata <- fread(args$metadata) %>%
+  .[,dataset:=ifelse(grepl("Grosswendt",sample),"Grosswendt","This data set")] %>%
   .[pass_rnaQC==TRUE & class%in%args$classes]
 
 # tmp <- fread("/Users/argelagr/data/10x_gastrulation_DNMTs/results_new/doublet_detection_seurat/sample_metadata_after_doublets.txt.gz") %>%

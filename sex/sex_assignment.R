@@ -20,11 +20,11 @@ args <- p$parse_args(commandArgs(TRUE))
 #####################
 
 ## START TEST ##
-# args$samples <- opts$samples[1:2]
-# args$sce <- io$sce
-# args$metadata <- io$metadata
-# args$outdir <- paste0(io$basedir,"/results_new/sex")
-# args$chrY_ratio_threshold <- 1e-3
+# args$samples <- opts$samples
+# args$sce <- paste0(io$basedir,"/processed_all/SingleCellExperiment.rds")
+# args$metadata <- file.path(io$basedir,"results_all/mapping/sample_metadata_after_mapping.txt.gz")
+# args$outdir <- paste0(io$basedir,"/results_all/sex_assignment")
+# args$chrY_ratio_threshold <- 0.1
 ## END TEST ##
 
 # I/O
@@ -71,29 +71,6 @@ dt <- args$samples %>% map(function(i) {
 }) %>% rbindlist %>% merge(gene_metadata[,c("chr","ens_id","symbol")], by="symbol")
 
 
-##########
-## Plot ##
-##########
-
-to.plot <- dt[chr=="chrY"] %>% 
- .[,foo:=mean(expr),by="symbol"] %>% .[foo>0] %>% .[,foo:=NULL] 
-
-p <- ggbarplot(to.plot, x="symbol", y="expr", facet="sample", fill="gray70") +
-# p <- ggbarplot(to.plot, x="ens_id", y="counts", facet="sample", fill="gray70") +
-  labs(x="", y="Expression levels") +
-  guides(x = guide_axis(angle = 90)) +
-  theme(
-    axis.text.x = element_text(colour="black",size=rel(0.75)),
-    axis.ticks.x = element_line(size=rel(0.5)),
-    axis.text.y = element_text(colour="black",size=rel(0.8)),
-    strip.background = element_blank(),
-    strip.text = element_text(size=rel(0.8), color="black")
-  )
-
-pdf(file.path(args$outdir,"sex_ychr_expr_per_gene.pdf"), width=14, height=10)
-print(p)
-dev.off()
-
 ###################################################
 ## Barplots of chrXY/chr1 count ratio per embryo ##
 ###################################################
@@ -120,6 +97,29 @@ pdf(file.path(args$outdir,"sex_ychr_expr_aggregated.pdf"))
 print(p)
 dev.off()
 
+#########################################
+## Plot expression of individual genes ##
+#########################################
+
+to.plot <- dt[chr=="chrY"] %>% 
+  merge(sex_assignment.dt[,c("sex","sample")], by="sample") %>%
+ .[,foo:=mean(expr),by="symbol"] %>% .[foo>0] %>% .[,foo:=NULL] 
+
+p <- ggbarplot(to.plot, x="symbol", y="expr", facet="sample", fill="sex") +
+# p <- ggbarplot(to.plot, x="ens_id", y="counts", facet="sample", fill="gray70") +
+  labs(x="", y="Expression levels") +
+  guides(x = guide_axis(angle = 90)) +
+  theme(
+    axis.text.x = element_text(colour="black",size=rel(0.75)),
+    axis.ticks.x = element_line(size=rel(0.5)),
+    axis.text.y = element_text(colour="black",size=rel(0.5)),
+    strip.background = element_blank(),
+    strip.text = element_text(size=rel(0.5), color="black")
+  )
+
+pdf(file.path(args$outdir,"sex_ychr_expr_per_gene.pdf"), width=14, height=10)
+print(p)
+dev.off()
 
 #############################
 ## Plot expression of Xist ##
@@ -132,7 +132,7 @@ p <- ggbarplot(to.plot, x="sample", y="expr", fill="sex") +
   labs(x="", y="Xist expression") +
   guides(x = guide_axis(angle = 90)) +
   theme(
-    axis.text.x = element_text(colour="black",size=rel(0.6)),
+    axis.text.x = element_text(colour="black",size=rel(0.5)),
     axis.text.y = element_text(colour="black",size=rel(0.8))
   )
 
