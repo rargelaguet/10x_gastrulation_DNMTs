@@ -20,8 +20,8 @@ p$add_argument('--outfile',   type="character",    help='Output file')
 args <- p$parse_args(commandArgs(TRUE))
 
 ## START TEST
-# args$groupA <- "E8.5_WT"
-# args$groupB <- "E8.5_Dnmt3aKO_Dnmt3bKO"
+# args$groupA <- "WT"
+# args$groupB <- "Dnmt1_KO"
 # args$group_label <- "class"
 # args$celltypes <- c("Blood_progenitors")
 ## END TEST
@@ -72,6 +72,7 @@ opts$rename_celltypes <- c(
 
 sample_metadata <- fread(io$metadata) %>%
   .[,celltype.mapped:=stringr::str_replace_all(celltype.mapped,opts$rename_celltypes)] %>%
+  .[,dataset:=ifelse(grepl("Grosswendt",sample),"CRISPR","KO")] %>%
   .[pass_rnaQC==TRUE & celltype.mapped%in%args$celltypes]
 
 stopifnot(args$group_label%in%colnames(sample_metadata))
@@ -94,7 +95,7 @@ sce <- load_SingleCellExperiment(
   normalise = TRUE, 
   cells = sample_metadata$cell
 )
-sce$group <- sample_metadata$group
+colData(sce) <- sample_metadata %>% tibble::column_to_rownames("cell") %>% DataFrame
 
 # Load gene metadata
 gene_metadata <- fread(io$gene_metadata) %>%

@@ -449,6 +449,7 @@ rule dimensionality_reduction_sce_class:
         n_neighbors = config["params"]["dimensionality_reduction_sce"]["n_neighbors"],
         min_dist = config["params"]["dimensionality_reduction_sce"]["min_dist"],
         vars_to_regress = config["params"]["dimensionality_reduction_sce"]["vars_to_regress"],
+        batch_correction = config["params"]["dimensionality_reduction_sce"]["batch_correction"],
         npcs = config["params"]["dimensionality_reduction_sce"]["npcs"],
         features = config["params"]["dimensionality_reduction_sce"]["features"],
         colour_by = config["params"]["dimensionality_reduction_sce"]["colour_by"]
@@ -462,7 +463,7 @@ rule dimensionality_reduction_sce_class:
         mem_mb = config["slurm"]["dimensionality_reduction_sce"]["memory"]
     shell:
         "Rscript {input.script} --sce {input.sce} --metadata {input.metadata} --classes {wildcards.classe} --npcs {params.npcs} --features {params.features} \
-        --vars_to_regress {params.vars_to_regress} --n_neighbors {params.n_neighbors} --min_dist {params.min_dist} --colour_by {params.colour_by} --outdir {params.outdir} > {log}"
+        --batch_correction {params.batch_correction} --vars_to_regress {params.vars_to_regress} --n_neighbors {params.n_neighbors} --min_dist {params.min_dist} --colour_by {params.colour_by} --outdir {params.outdir} > {log}"
 
 
 rule dimensionality_reduction_seurat_class: 
@@ -476,6 +477,7 @@ rule dimensionality_reduction_seurat_class:
         outdir = config["directories"]["results"]+"/dimensionality_reduction/seurat/{classe}",
         n_neighbors = config["params"]["dimensionality_reduction_seurat"]["n_neighbors"],
         min_dist = config["params"]["dimensionality_reduction_seurat"]["min_dist"],
+        batch_correction = config["params"]["dimensionality_reduction_seurat"]["batch_correction"],
         vars_to_regress = config["params"]["dimensionality_reduction_seurat"]["vars_to_regress"],
         npcs = config["params"]["dimensionality_reduction_seurat"]["npcs"],
         features = config["params"]["dimensionality_reduction_seurat"]["features"],
@@ -490,7 +492,7 @@ rule dimensionality_reduction_seurat_class:
         mem_mb = config["slurm"]["dimensionality_reduction_seurat"]["memory"]
     shell:
         "Rscript {input.script} --seurat {input.seurat} --metadata {input.metadata} --classes {wildcards.classe} --npcs {params.npcs} --features {params.features} \
-        --vars_to_regress {params.vars_to_regress} --n_neighbors {params.n_neighbors} --min_dist {params.min_dist} --colour_by {params.colour_by} --outdir {params.outdir} > {log}"
+        --batch_correction {params.batch_correction} --vars_to_regress {params.vars_to_regress} --n_neighbors {params.n_neighbors} --min_dist {params.min_dist} --colour_by {params.colour_by} --outdir {params.outdir} > {log}"
 
 
 ################

@@ -6,8 +6,8 @@ source(here::here("utils.R"))
 #####################
 
 # I/O
-io$indir <- file.path(io$basedir,"results_new/differential/pseudobulk")
-io$outdir <- file.path(io$basedir,"results_new/differential/pseudobulk/pdf/individual_genes"); dir.create(io$outdir, showWarnings = F)
+io$indir <- file.path(io$basedir,"results_all/differential/pseudobulk")
+io$outdir <- file.path(io$basedir,"results_all/differential/pseudobulk/pdf/individual_genes"); dir.create(io$outdir, showWarnings = F)
 
 # Options
 opts$ko.classes <- c(
@@ -97,7 +97,7 @@ diff.dt <- diff.dt %>%
   .[,.(expr_ko=mean(expr_ko), expr_wt=mean(expr_wt), diff=mean(diff)), by=c("celltype","class","gene")]
 
 # save
-# fwrite(diff.dt, file.path(io$outdir,"diff_rna_pseudobulk.txt.gz"))
+fwrite(diff.dt, file.path(io$outdir,"diff_pseudobulk.txt.gz"))
 
 ######################
 ## Heatmap per gene ##

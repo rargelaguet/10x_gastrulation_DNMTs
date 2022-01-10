@@ -3,6 +3,7 @@ here::i_am("dimensionality_reduction/dimensionality_reduction_sce.R")
 source(here::here("settings.R"))
 source(here::here("utils.R"))
 
+suppressPackageStartupMessages(library(batchelor))
 suppressPackageStartupMessages(library(scater))
 suppressPackageStartupMessages(library(scran))
 
@@ -35,18 +36,18 @@ args <- p$parse_args(commandArgs(TRUE))
 #####################
 
 ## START TEST ##
-# args$sce <- file.path(io$basedir,"processed_all/SingleCellExperiment.rds")
-# args$metadata <- file.path(io$basedir,"results_all/mapping/sample_metadata_after_mapping.txt.gz")
-# args$classes <- opts$classes; #"E8.5_Dnmt3aKO_Dnmt3bWT"
-# args$features <- 2500
-# args$npcs <- 25
-# args$colour_by <- c("celltype.mapped","nFeature_RNA","sample","class")
-# args$vars_to_regress <- c("nFeature_RNA","mit_percent_RNA")
-# args$batch_correction <- NULL
-# args$remove_ExE_cells <- FALSE
-# args$n_neighbors <- 25
-# args$min_dist <- 0.5
-# args$outdir <- file.path(io$basedir,"results_new/dimensionality_reduction/sce/all")
+args$sce <- file.path(io$basedir,"processed_all/SingleCellExperiment.rds")
+args$metadata <- file.path(io$basedir,"results_all/mapping/sample_metadata_after_mapping.txt.gz")
+args$classes <- opts$classes[2]; #"E8.5_Dnmt3aKO_Dnmt3bWT"
+args$features <- 2500
+args$npcs <- 30
+args$colour_by <- c("celltype.mapped","nFeature_RNA","sample","dataset")
+args$vars_to_regress <- c("nFeature_RNA")
+args$batch_correction <- "dataset"
+args$remove_ExE_cells <- TRUE
+args$n_neighbors <- 25
+args$min_dist <- 0.5
+args$outdir <- file.path(io$basedir,"results_all/dimensionality_reduction/sce")
 ## END TEST ##
 
 # if (isTRUE(args$test)) print("Test mode activated...")
@@ -96,8 +97,6 @@ if (length(args$batch_correction)>0) {
   if (length(unique(sample_metadata[[args$batch_correction]]))==1) {
     message(sprintf("There is a single level for %s, no batch correction applied",args$batch_correction))
     args$batch_correction <- NULL
-  } else {
-    library(batchelor)
   }
 }
 
@@ -113,6 +112,11 @@ if (length(args$vars_to_regress)>0) {
 # Load RNA expression data as SingleCellExperiment object
 sce <- load_SingleCellExperiment(args$sce, cells=sample_metadata$cell, normalise = TRUE)
 
+# Use multi-batch normalisation if using batch correction
+# if (length(args$batch_correction)>0) {
+#   sce <- multiBatchNorm(sce, batch = sce[[args$batch_correction]])
+# }
+
 # Add sample metadata as colData
 colData(sce) <- sample_metadata %>% tibble::column_to_rownames("cell") %>% DataFrame
 
@@ -120,12 +124,11 @@ colData(sce) <- sample_metadata %>% tibble::column_to_rownames("cell") %>% DataF
 ## Feature selection ##
 #######################
 
-decomp <- modelGeneVar(sce)
-# if (length(args$batch_correction)>0) {
-#   decomp <- modelGeneVar(sce, block=colData(sce)[[args$batch_correction]])
-# } else {
-#   decomp <- modelGeneVar(sce)
-# }
+if (length(args$batch_correction)>0) {
+  decomp <- modelGeneVar(sce, block=colData(sce)[[args$batch_correction]])
+} else {
+  decomp <- modelGeneVar(sce)
+}
 decomp <- decomp[decomp$mean > 0.01,]
 hvgs <- decomp[order(decomp$FDR),] %>% head(n=args$features) %>% rownames
 
@@ -148,15 +151,12 @@ if (length(args$vars_to_regress)>0) {
 ## PCA + Batch correction ##
 ############################
 
-# outfile <- sprintf("%s/%s_pca_features%d_pcs%d.txt.gz",args$outdir, paste(args$samples,collapse="-"), args$features, args$npcs)
-sce_filt <- runPCA(sce_filt, ncomponents = args$npcs, ntop=args$features)  
-
 if (length(args$batch_correction)>0) {
   suppressPackageStartupMessages(library(batchelor))
   print(sprintf("Applying MNN batch correction for variable: %s", args$batch_correction))
   outfile <- sprintf("%s/%s_pca_features%d_pcs%d_batchcorrectionby%s.txt.gz",args$outdir, paste(args$samples,collapse="-"), args$features, args$npcs,paste(args$batch_correction,collapse="-"))
   pca <- multiBatchPCA(sce_filt, batch = colData(sce_filt)[[args$batch_correction]], d = args$npcs)
-  pca.corrected <- reducedMNN(pca)$corrected
+  pca.corrected <- reducedMNN(pca)$corrected[colnames(sce),]
   colnames(pca.corrected) <- paste0("PC",1:ncol(pca.corrected))
   reducedDim(sce_filt, "PCA") <- pca.corrected
 } else {
@@ -167,6 +167,8 @@ if (length(args$batch_correction)>0) {
 # Save PCA coordinates
 pca.dt <- reducedDim(sce_filt,"PCA") %>% round(3) %>% as.data.table(keep.rownames = T) %>% setnames("rn","cell")
 fwrite(pca.dt, sprintf("%s/pca_features%d_pcs%d.txt.gz",args$outdir, args$features, args$npcs))
+
+# cor(reducedDim(sce_filt,"PCA"),sce_filt$nFeature_RNA)
 
 ##########
 ## UMAP ##

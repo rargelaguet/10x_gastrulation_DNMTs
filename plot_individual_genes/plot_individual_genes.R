@@ -8,7 +8,7 @@ source(here::here("utils.R"))
 #####################
 
 # I/O ##
-io$outdir <- file.path(io$basedir,"results_new/individual_genes")
+io$outdir <- file.path(io$basedir,"results_all/individual_genes")
 
 ## Define options ##
 
@@ -56,15 +56,29 @@ opts$celltypes = c(
 )
 
 # Define classes to plot
+# opts$classes <- c(
+#   "E8.5_WT",
+#   # "E8.5_Dnmt3aHET_Dnmt3bWT",
+#   "E8.5_Dnmt3aKO_Dnmt3bWT",
+#   "E8.5_Dnmt3aKO_Dnmt3bHET",
+#   "E8.5_Dnmt3aWT_Dnmt3bKO",
+#   "E8.5_Dnmt3aHET_Dnmt3bKO",
+#   "E8.5_Dnmt3aKO_Dnmt3bKO",
+#   "E8.5_Dnmt1KO"
+# )
 opts$classes <- c(
-  "E8.5_WT",
-  # "E8.5_Dnmt3aHET_Dnmt3bWT",
-  "E8.5_Dnmt3aKO_Dnmt3bWT",
-  "E8.5_Dnmt3aKO_Dnmt3bHET",
-  "E8.5_Dnmt3aWT_Dnmt3bKO",
-  "E8.5_Dnmt3aHET_Dnmt3bKO",
-  "E8.5_Dnmt3aKO_Dnmt3bKO",
-  "E8.5_Dnmt1KO"
+  # "E12.5_Dnmt3aWT_Dnmt3bHET",
+  # "E12.5_Dnmt3b_KO",
+  # "E12.5_Dnmt3a_HET_Dnmt3b_WT",
+  # "E12.5_Dnmt3a_KO",
+  # "Dnmt3a_HET_Dnmt3b_KO",
+  # "Dnmt3a_HET_Dnmt3b_WT",
+  # "Dnmt3a_KO_Dnmt3b_HET",
+  "WT",
+  "Dnmt3a_KO",
+  "Dnmt3b_KO",
+  "Dnmt1_KO",
+  "Dnmt3ab_KO"
 )
 
 opts$rename_celltypes <- c(
@@ -81,11 +95,13 @@ opts$rename_celltypes <- c(
 ##########################
 
 sample_metadata <- fread(io$metadata) %>% 
-  .[,celltype.mapped:=stringr::str_replace_all(celltype.mapped,opts$rename_celltypes)] %>%
-  .[pass_rnaQC==TRUE & celltype.mapped%in%opts$celltypes & class%in%opts$classes]
+  .[,dataset:=ifelse(grepl("Grosswendt",sample),"CRISPR","KO")] %>% .[,dataset:=factor(dataset,levels=c("KO","CRISPR"))] %>%
+  .[,celltype.mapped:=stringr::str_replace_all(celltype.mapped,opts$rename_celltypes)] %>% 
+  .[pass_rnaQC==TRUE & celltype.mapped%in%opts$celltypes & class%in%opts$classes] %>%
+  .[,class:=factor(class,levels=opts$classes)] %>% .[,celltype.mapped:=factor(celltype.mapped,levels=opts$celltypes)]
 
 # Only consider cell types with sufficient observations in WT cells
-celltypes.to.use <- sample_metadata[class=="E8.5_WT",.(N=.N),by="celltype.mapped"] %>% .[N>=50,celltype.mapped]
+celltypes.to.use <- sample_metadata[class=="WT",.(N=.N),by="celltype.mapped"] %>% .[N>=50,celltype.mapped]
 sample_metadata <- sample_metadata[celltype.mapped%in%celltypes.to.use]
 
 table(sample_metadata$class)
@@ -140,35 +156,36 @@ for (i in 1:length(genes.to.plot)) {
     to.plot <- data.table(
       cell = colnames(sce),
       expr = logcounts(sce)[gene,]
-    ) %>% merge(sample_metadata[,c("cell","sample","class","celltype.mapped")], by="cell") %>%
+    ) %>% merge(sample_metadata[,c("cell","sample","class","celltype.mapped","dataset")], by="cell") %>%
       .[,N:=.N,by=c("sample","celltype.mapped")] %>% .[N>=10]
     
-    p <- ggplot(to.plot, aes(x=class, y=expr, fill=class)) +
-      geom_violin(scale = "width", alpha=0.8) +
-      geom_boxplot(width=0.5, outlier.shape=NA, alpha=0.8) +
-      stat_summary(fun.data = give.n, geom = "text", size=3) +
-      # geom_jitter(size=2, shape=21, stroke=0.2, alpha=0.5) +
-      # scale_fill_manual(values=opts$colors) +
-      scale_fill_brewer(palette="Dark2") +
-      facet_wrap(~celltype.mapped, scales="fixed") +
-      theme_classic() +
-      labs(x="",y=sprintf("%s expression",gene)) +
-      guides(x = guide_axis(angle = 90)) +
-      theme(
-        strip.text = element_text(size=rel(0.85)),
-        axis.text.x = element_text(colour="black",size=rel(0.9)),
-        axis.text.y = element_text(colour="black",size=rel(0.9)),
-        axis.ticks.x = element_blank(),
-        axis.title.y = element_text(colour="black",size=rel(1.0)),
-        legend.position = "top",
-        legend.title = element_blank(),
-        legend.text = element_text(size=rel(0.85))
-      )
-    
-      pdf(outfile, width=10, height=9)
-      print(p)
+    p_list <- list()
+    for (j in levels(to.plot$dataset)) {
+      p_list[[j]] <- ggplot(to.plot[dataset==j], aes(x=class, y=expr, fill=class)) +
+        geom_violin(scale = "width", alpha=0.8) +
+        geom_boxplot(width=0.5, outlier.shape=NA, alpha=0.8) +
+        # stat_summary(fun.data = give.n, geom = "text", size=3) +
+        # scale_fill_brewer(palette="Dark2") +
+        scale_fill_manual(values=opts$classes.colors) +
+        facet_wrap(~celltype.mapped, scales="fixed") +
+        theme_classic() +
+        labs(x="",y=sprintf("%s expression",gene), title=j) +
+        guides(x = guide_axis(angle = 90)) +
+        theme(
+          plot.title = element_text(hjust = 0.5),
+          strip.text = element_text(size=rel(0.85)),
+          axis.text.x = element_text(colour="black",size=rel(0.9)),
+          axis.text.y = element_text(colour="black",size=rel(0.9)),
+          axis.ticks.x = element_blank(),
+          axis.title.y = element_text(colour="black",size=rel(1.0)),
+          legend.position = "none",
+          legend.title = element_blank(),
+          legend.text = element_text(size=rel(0.85))
+        )
+      }
+      pdf(outfile, width=17, height=9)
+      print(cowplot::plot_grid(plotlist=p_list, ncol = 2))
       dev.off()
-        
   } else {
     print(sprintf("%s not found",gene))
   }

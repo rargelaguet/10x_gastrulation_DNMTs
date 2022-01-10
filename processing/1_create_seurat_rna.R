@@ -156,7 +156,7 @@ print(table(metadata$alias))
 stopifnot(!is.na(metadata$alias))
 
 # Parse metadata Grosswendt2020
-metadata[,dataset:=ifelse(grepl("Grosswendt",sample),"Grosswendt","This_data_set")]
+metadata[,dataset:=ifelse(grepl("Grosswendt",sample),"CRISPR","KO")]
 
 ##########
 ## Save ##

@@ -22,7 +22,7 @@ p$add_argument('--colour_by',       type="character",  default="celltype.mapped"
 p$add_argument('--seed',            type="integer",    default=42,                  help='Random seed')
 p$add_argument('--outdir',          type="character",                               help='Output file')
 p$add_argument('--remove_ExE_cells', action="store_true",                                 help='Remove ExE cells?')
-# p$add_argument('--batch.correction',type="character",                               help='Metadata column to apply batch correction on')
+p$add_argument('--batch_correction', type="character",                               help='Metadata column to apply batch correction on')
 # p$add_argument('--SCTransform', action="store_true",                                 help='Remove ExE cells?')
 
 args <- p$parse_args(commandArgs(TRUE))
@@ -32,17 +32,18 @@ args <- p$parse_args(commandArgs(TRUE))
 #####################
 
 ## START TEST ##
-# args$seurat <- io$seurat
-# args$metadata <- file.path(io$basedir,"results_new/mapping/sample_metadata_after_mapping.txt.gz")
-# args$classes <- "E8.5_WT"
+# args$seurat <- file.path(io$basedir,"processed_all/seurat.rds")
+# args$metadata <- file.path(io$basedir,"results_all/mapping/sample_metadata_after_mapping.txt.gz")
+# args$classes <- "Dnmt1_KO"
 # args$features <- 2500
 # args$npcs <- 30
-# args$colour_by <- c("celltype.mapped","sample","nFeature_RNA")
+# args$colour_by <- c("celltype.mapped","sample","nFeature_RNA","dataset")
+# args$batch_correction <- "dataset"
 # args$vars_to_regress <- c("nFeature_RNA","mit_percent_RNA")
 # args$n_neighbors <- 25
 # args$min_dist <- 0.5
 # args$seed <- 42
-# args$outdir <- file.path(io$basedir,"results_new/dimensionality_reduction/seurat")
+# args$outdir <- file.path(io$basedir,"results_all/dimensionality_reduction/seurat")
 # args$remove_ExE_cells <- TRUE
 ## END TEST ##
 
@@ -63,7 +64,7 @@ if (args$classes[1]=="all") {
 ##########################
 
 sample_metadata <- fread(args$metadata) %>%
-  .[,dataset:=ifelse(grepl("Grosswendt",sample),"Grosswendt","This data set")]
+  .[,dataset:=ifelse(grepl("Grosswendt",sample),"Grosswendt","This data set")] %>%
   .[pass_rnaQC==TRUE & class%in%args$classes]
 
 if (args$remove_ExE_cells) {
@@ -73,6 +74,7 @@ if (args$remove_ExE_cells) {
 }
 
 table(sample_metadata$class)
+table(sample_metadata$dataset)
 table(sample_metadata$celltype.mapped)
 
 ###################
@@ -82,15 +84,13 @@ table(sample_metadata$celltype.mapped)
 stopifnot(args$colour_by %in% colnames(sample_metadata))
 # stopifnot(unique(sample_metadata$celltype.mapped) %in% names(opts$celltype.colors))
 
-# if (length(args$batch.correction)>0) {
-#   stopifnot(args$batch.correction%in%colnames(sample_metadata))
-#   if (length(unique(sample_metadata[[args$batch.correction]]))==1) {
-#     message(sprintf("There is a single level for %s, no batch correction applied",args$batch.correction))
-#     args$batch.correction <- NULL
-#   } else {
-#     library(batchelor)
-#   }
-# }
+if (length(args$batch_correction)>0) {
+  stopifnot(args$batch_correction%in%colnames(sample_metadata))
+  if (length(unique(sample_metadata[[args$batch_correction]]))==1) {
+    message(sprintf("There is a single level for %s, no batch correction applied",args$batch_correction))
+    args$batch_correction <- NULL
+  }
+}
 
 if (length(args$vars_to_regress)>0) {
   stopifnot(args$vars_to_regress%in%colnames(sample_metadata))
@@ -130,23 +130,62 @@ seurat@meta.data <- foo
 ## Feature selection ##
 #######################
 
-seurat <- FindVariableFeatures(seurat, selection.method = 'vst', nfeatures = args$features)
-# seurat <- FindVariableFeatures(seurat, selection.method = 'vst', nfeatures = 1000, assay = "SCT")
+if (is.null(args$batch_correction)) {
+  seurat <- FindVariableFeatures(seurat, selection.method = 'vst', nfeatures = args$features)
+  # seurat <- FindVariableFeatures(seurat, selection.method = 'vst', nfeatures = 1000, assay = "SCT")
+}
 
 ###########################################
 ## Scale data and regress out covariates ##
 ###########################################
 
+if (is.null(args$batch_correction)) {
 # seurat <- ScaleData(seurat, features=var.genes, vars_to_regress=c("nFeature_RNA","mitochondrial_percent_RNA"))
-seurat <- ScaleData(seurat, 
-  features = VariableFeatures(seurat), 
-  vars.to.regress = args$vars_to_regress, 
-  verbose = FALSE
-)
+  seurat <- ScaleData(seurat, 
+    features = VariableFeatures(seurat), 
+    vars.to.regress = args$vars_to_regress, 
+    verbose = FALSE
+  )
+}
 
-############################
-## PCA + Batch correction ##
-############################
+
+######################
+## Batch correction ##
+######################
+
+if (length(args$batch_correction)>0) {
+  seurat.list <- SplitObject(seurat, split.by = args$batch_correction)
+
+  for (i in 1:length(seurat.list)) {
+    
+    # Normalisation
+    seurat.list[[i]] <- NormalizeData(
+      object = seurat.list[[i]], 
+      verbose = FALSE
+    )
+    
+    # Feature selection
+    seurat.list[[i]] <- FindVariableFeatures(
+      object = seurat.list[[i]],
+      selection.method = "vst",
+      nfeatures = 2000, 
+      verbose = FALSE
+    )
+  }
+
+  anchors <- FindIntegrationAnchors(object.list = seurat.list, dims = 1:30)
+
+  seurat <- IntegrateData(anchorset = anchors, dims = 1:30)
+
+  DefaultAssay(seurat) <- "integrated"
+  seurat <- ScaleData(seurat, verbose = FALSE)
+  
+  rm(anchors,seurat.list)
+}
+
+#########
+## PCA ##
+#########
 
 seurat <- RunPCA(seurat, features = VariableFeatures(seurat), npcs = args$npcs, verbose = FALSE)
 

@@ -25,7 +25,12 @@ doDiffExpr <- function(sce, groups, min_detection_rate_per_group = 0.50) {
   
   # Define design matrix (with intercept)
   cdr <- colMeans(logcounts(sce)>0)
+  # design <- model.matrix(~cdr+sce$dataset+sce$group)
   design <- model.matrix(~cdr+sce$group)
+  
+  # colnames(design) <- c("intercept","cdr","batch","ko")
+  # contrast.matrix <- makeContrasts(ko, levels=design)
+  
   
   # Estimate dispersions
   sce_edger  <- estimateDisp(sce_edger,design)

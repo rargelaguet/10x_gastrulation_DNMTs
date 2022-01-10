@@ -7,7 +7,7 @@ source(here::here("settings.R"))
 #####################
 
 io$script <- here::here("differential/differential.R")
-io$outdir <- file.path(io$basedir,"results_new/differential"); dir.create(io$outdir, showWarnings=F)
+io$outdir <- file.path(io$basedir,"results_all/differential"); dir.create(io$outdir, showWarnings=F)
 
 # Rename celltypes
 opts$rename_celltypes <- c(
@@ -23,17 +23,26 @@ opts$rename_celltypes <- c(
   # "Visceral_endoderm" = "ExE_endoderm"
 )
 
+# opts$ko.classes <- c(
+#   "E8.5_Dnmt3aKO_Dnmt3bWT",
+#   "E8.5_Dnmt3aHET_Dnmt3bKO",
+#   "E8.5_Dnmt3aHET_Dnmt3bWT",
+#   "E8.5_Dnmt3aKO_Dnmt3bHET",
+#   "E8.5_Dnmt3aKO_Dnmt3bKO",
+#   "E8.5_Dnmt3aWT_Dnmt3bKO"
+#   # "E8.5_Dnmt1KO"
+# )
 opts$ko.classes <- c(
-  "E8.5_Dnmt3aKO_Dnmt3bWT",
-  "E8.5_Dnmt3aHET_Dnmt3bKO",
-  "E8.5_Dnmt3aHET_Dnmt3bWT",
-  "E8.5_Dnmt3aKO_Dnmt3bHET",
-  "E8.5_Dnmt3aKO_Dnmt3bKO",
-  "E8.5_Dnmt3aWT_Dnmt3bKO"
-  # "E8.5_Dnmt1KO"
+  "Dnmt3a_KO", 
+  # "Dnmt3a_HET_Dnmt3b_KO", 
+  # "Dnmt3a_HET_Dnmt3b_WT", 
+  # "Dnmt3a_KO_Dnmt3b_HET", 
+  "Dnmt3ab_KO", 
+  "Dnmt3b_KO",
+  "Dnmt1_KO"
 )
 
-opts$wt.class <- "E8.5_WT"
+opts$wt.class <- "WT"
 
 ##########################
 ## Load sample metadata ##
@@ -55,7 +64,7 @@ print(table(sample_metadata$celltype.mapped,sample_metadata$class))
 
 opts$min.cells <- 50
 
-# j <- "Blood_progenitors"; i <- "E8.5_Dnmt3aKO_Dnmt3bKO"
+# j <- "Blood_progenitors"; i <- "Dnmt1_KO"
 for (i in opts$ko.classes) {
   
   # Define cell types to use 
@@ -69,7 +78,7 @@ for (i in opts$ko.classes) {
       if (grepl("BI",Sys.info()['nodename'])) {
         lsf <- ""
       } else if (grepl("pebble|headstone", Sys.info()['nodename'])) {
-        lsf <- sprintf("sbatch -n 1 --mem 30G --wrap")
+        lsf <- sprintf("sbatch -n 1 --mem 50G --wrap")
       }
       cmd <- sprintf("%s 'Rscript %s --groupA %s --groupB %s --celltype %s --group_label class --outfile %s'", lsf, io$script, opts$wt.class, i, j, outfile)
       

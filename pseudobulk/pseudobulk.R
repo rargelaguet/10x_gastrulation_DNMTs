@@ -24,14 +24,26 @@ args <- p$parse_args(commandArgs(TRUE))
 #####################
 
 ## START TEST ##
-# args$metadata <- file.path(io$basedir,"results_new/mapping/sample_metadata_after_mapping.txt.gz")
-# args$sce <- file.path(io$basedir,"processed_new/SingleCellExperiment.rds")
-# args$group_by <- "class"
+# args$metadata <- file.path(io$basedir,"results_all/mapping/sample_metadata_after_mapping.txt.gz")
+# args$sce <- file.path(io$basedir,"processed_all/SingleCellExperiment.rds")
+# args$group_by <- "class_celltype_dataset"
 # args$normalisation_method <- "cpm"
-# args$outdir <- file.path(io$basedir,"results_new/pseudobulk")
+# args$outdir <- file.path(io$basedir,"results_all/pseudobulk")
 ## END TEST ##
 
+# I/O
 dir.create(args$outdir, showWarnings=F)
+
+# Options
+# opts$rename_celltypes <- c(
+#   "Erythroid3" = "Erythroid",
+#   "Erythroid2" = "Erythroid",
+#   "Erythroid1" = "Erythroid",
+#   "Blood_progenitors_1" = "Blood_progenitors",
+#   "Blood_progenitors_2" = "Blood_progenitors",
+#   "Anterior_Primitive_Streak" = "Primitive_Streak"
+# )
+# .[,celltype.mapped:=stringr::str_replace_all(celltype.mapped,opts$rename_celltypes)] %>%
 
 ###############
 ## Load data ##
@@ -39,7 +51,9 @@ dir.create(args$outdir, showWarnings=F)
 
 # Load cell metadata
 sample_metadata <- fread(args$metadata) %>%
-  .[,class_celltype:=sprintf("%s-%s",class,celltype.mapped)] %>%
+  .[,dataset:=ifelse(grepl("Grosswendt",sample),"CRISPR","KO")] %>%
+  # .[,class_celltype:=sprintf("%s-%s",class,celltype.mapped)] %>%
+  .[,class_celltype_dataset:=sprintf("%s-%s-%s",class,celltype.mapped,dataset)] %>%
   .[pass_rnaQC==TRUE & !is.na(eval(as.name(args$group_by)))]
 
 # Load SingleCellExperiment

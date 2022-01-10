@@ -8,6 +8,7 @@ source(here::here("utils.R"))
 #####################
 
 # I/O ##
+io$sce <- file.path(io$basedir,"processed_all/SingleCellExperiment.rds")
 io$outdir <- "/Users/argelagr/data/shiny_dnmt_tet"
 
 ## Define options ##
@@ -56,16 +57,21 @@ opts$celltypes = c(
 )
 
 # Define classes to plot
-opts$classes <- c(
-  "E8.5_WT",
-  # "E8.5_Dnmt3aHET_Dnmt3bWT",
-  "E8.5_Dnmt3aKO_Dnmt3bWT",
-  "E8.5_Dnmt3aKO_Dnmt3bHET",
-  "E8.5_Dnmt3aWT_Dnmt3bKO",
-  "E8.5_Dnmt3aHET_Dnmt3bKO",
-  "E8.5_Dnmt3aKO_Dnmt3bKO",
-  "E8.5_Dnmt1KO"
-)
+# opts$classes <- c(
+#   # "E12.5_Dnmt3aWT_Dnmt3bHET",
+#   # "E12.5_Dnmt3b_KO",
+#   # "E12.5_Dnmt3a_HET_Dnmt3b_WT",
+#   # "E12.5_Dnmt3a_KO",
+#   "Dnmt3a_KO", 
+#   "WT", 
+#   "Dnmt3a_HET_Dnmt3b_KO", 
+#   # "Dnmt3a_HET_Dnmt3b_WT", 
+#   "Dnmt3a_KO_Dnmt3b_HET", 
+#   "Dnmt3ab_KO", 
+#   "Dnmt3b_KO",
+#   "Dnmt1_KO"
+# )
+opts$classes <- c("WT", "Dnmt1_KO") # for testing
 
 # opts$rename_celltypes <- c(
 #   "Erythroid3" = "Erythroid",
@@ -81,8 +87,13 @@ opts$classes <- c(
 ##########################
 
 sample_metadata <- fread(io$metadata) %>% 
+  .[,dataset:=ifelse(grepl("Grosswendt",sample),"Grosswendt","This data set")] %>%
   # .[,celltype.mapped:=stringr::str_replace_all(celltype.mapped,opts$rename_celltypes)] %>%
   .[pass_rnaQC==TRUE & celltype.mapped%in%opts$celltypes & class%in%opts$classes]
+
+table(sample_metadata$dataset)
+table(sample_metadata$class)
+table(sample_metadata$celltype.mapped)
 
 ###############
 ## Load data ##
@@ -101,21 +112,22 @@ colData(sce) <- sample_metadata %>% tibble::column_to_rownames("cell") %>% DataF
 sce <- sce[!grepl("*Rik|^Gm|^mt-|^Rps|^Rpl|^Olf",rownames(sce)),]
 
 # Remove genes that are not expressed
-tmp <- sparseMatrixStats::rowVars(logcounts(sce))
-sce <- sce[tmp>0,]
+sce <- sce[sparseMatrixStats::rowVars(logcounts(sce))>0,]
 
 ##########
 ## Save ##
 ##########
 
 # Save metadata
-cols <- c(c("cell", "sample", "nFeature_RNA", "mit_percent_RNA", "rib_percent_RNA", "stage", "class", "alias", "celltype.mapped", "celltype.score", "closest.cell"))
+cols <- c(c("cell", "sample", "nFeature_RNA", "mit_percent_RNA", "rib_percent_RNA", "stage", "class", "alias", "dataset", "celltype.mapped", "celltype.score", "closest.cell"))
 sample_metadata_to_save <- sample_metadata[,..cols]
 fwrite(sample_metadata_to_save, file.path(io$outdir,"cell_metadata.txt.gz"), quote=F, sep="\t", na="NA")
 
-# Save RNA cells
-rna_cells <- colnames(sce)
-write.table(rna_cells, paste0(io$outdir,"/cells_rna.txt"), row.names = F, col.names = F, quote=F)
+# Save gene names
+write.table(rownames(sce), paste0(io$outdir,"/genes.txt"), row.names = F, col.names = F, quote=F)
+
+# Save cell names
+write.table(colnames(sce), paste0(io$outdir,"/cells_rna.txt"), row.names = F, col.names = F, quote=F)
 
 # Save expression matrix
 io$hdf5.outfile <- file.path(io$outdir,"rna_expr.hdf5")

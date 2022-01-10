@@ -33,8 +33,8 @@ if (grepl("ricard",Sys.info()['nodename'])) {
 }
 
 io$metadata <- paste0(io$basedir,"/sample_metadata.txt.gz")
-io$seurat <- paste0(io$basedir,"/processed_new/seurat.rds")
-io$sce <- paste0(io$basedir,"/processed_new/SingleCellExperiment.rds")
+io$seurat <- paste0(io$basedir,"/processed_all/seurat.rds")
+io$sce <- paste0(io$basedir,"/processed_all/SingleCellExperiment.rds")
 # io$sex <- paste0(io$basedir,"/results/sex/sex_assignment.txt.gz")
 
 # Atlas information
@@ -294,6 +294,27 @@ opts$classes <- c(
   "Dnmt3b_KO",
   "Dnmt1_KO"
 )
+
+
+opts$classes.colors <- c(
+  # "E12.5_Dnmt3aWT_Dnmt3bHET",
+  # "E12.5_Dnmt3b_KO",
+  # "E12.5_Dnmt3a_HET_Dnmt3b_WT",
+  # "E12.5_Dnmt3a_KO",
+  # "Dnmt3a_HET_Dnmt3b_KO" = "", 
+  # "Dnmt3a_HET_Dnmt3b_WT" = "", 
+  # "Dnmt3a_KO_Dnmt3b_HET" = "", 
+  "WT" = "#ffffb3", 
+  "Dnmt3a_KO" = "#8dd3c7", 
+  "Dnmt3b_KO" = "#fb8072", 
+  "Dnmt3ab_KO" = "#bebada", 
+  "Dnmt1_KO" = "#80b1d3"
+)
+
+
+
+
+
 
 opts$sample2alias <- c(
   # "E125_DNMT3A_HET_A_L001" = "E12.5_Dnmt3aWT_Dnmt3bHET_1",
