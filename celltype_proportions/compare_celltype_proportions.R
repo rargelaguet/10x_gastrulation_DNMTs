@@ -19,9 +19,9 @@ args <- p$parse_args(commandArgs(TRUE))
 #####################
 
 ## START TEST ##
-args$metadata <- file.path(io$basedir,"results_all/mapping/sample_metadata_after_mapping.txt.gz")
-args$celltype_label <- "celltype.mapped"
-args$outdir <- file.path(io$basedir,"results_all/celltype_proportions/comparisons/test")
+# args$metadata <- file.path(io$basedir,"results_all/mapping/sample_metadata_after_mapping.txt.gz")
+# args$celltype_label <- "celltype.mapped"
+# args$outdir <- file.path(io$basedir,"results_all/celltype_proportions/comparisons/test")
 ## END TEST ##
 
 # I/O
