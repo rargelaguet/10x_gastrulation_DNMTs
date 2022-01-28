@@ -6,7 +6,7 @@ source(here::here("utils.R"))
 #####################
 
 io$imprinted.genes <- "/Users/argelagr/data/mm10_regulation/imprinting/parsed/mousebook_imprinted_genes.txt.gz"
-io$outdir <- paste0(io$basedir,"/results_new/imprinting")
+io$outdir <- paste0(io$basedir,"/results_all/imprinting"); dir.create(io$outdir, showWarnings = F)
 
 # Define cell types to plot
 opts$celltypes <- c(
@@ -53,14 +53,14 @@ opts$celltypes <- c(
 
 # Define classes to plot
 opts$classes <- c(
-  "E8.5_WT",
-  "E8.5_Dnmt3aHET_Dnmt3bWT",
-  "E8.5_Dnmt3aKO_Dnmt3bWT",
-  "E8.5_Dnmt3aKO_Dnmt3bHET",
-  "E8.5_Dnmt3aWT_Dnmt3bKO",
-  "E8.5_Dnmt3aHET_Dnmt3bKO",
-  "E8.5_Dnmt3aKO_Dnmt3bKO",
-  "E8.5_Dnmt1KO"
+  # "Dnmt3a_HET_Dnmt3b_KO",
+  # "Dnmt3a_HET_Dnmt3b_WT",
+  # "Dnmt3a_KO_Dnmt3b_HET",
+  "WT",
+  "Dnmt3a_KO",
+  "Dnmt3b_KO",
+  "Dnmt1_KO",
+  "Dnmt3ab_KO"
 )
 
 # opts$rename_celltypes <- c(

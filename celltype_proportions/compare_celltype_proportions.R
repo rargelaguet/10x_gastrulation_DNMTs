@@ -19,33 +19,31 @@ args <- p$parse_args(commandArgs(TRUE))
 #####################
 
 ## START TEST ##
-# args$metadata <- file.path(io$basedir,"results_all/mapping/sample_metadata_after_mapping.txt.gz")
-# args$celltype_label <- "celltype.mapped"
-# args$outdir <- file.path(io$basedir,"results_all/celltype_proportions/comparisons")
+args$metadata <- file.path(io$basedir,"results_all/mapping/sample_metadata_after_mapping.txt.gz")
+args$celltype_label <- "celltype.mapped"
+args$outdir <- file.path(io$basedir,"results_all/celltype_proportions/comparisons/test")
 ## END TEST ##
 
 # I/O
+dir.create(args$outdir, showWarnings = F)
 dir.create(file.path(args$outdir,"boxplots"), showWarnings = F)
 dir.create(file.path(args$outdir,"boxplots/per_class"), showWarnings = F)
 dir.create(file.path(args$outdir,"boxplots/per_sample"), showWarnings = F)
 dir.create(file.path(args$outdir,"polar_plots"), showWarnings = F)
 dir.create(file.path(args$outdir,"polar_plots/per_class"), showWarnings = F)
+dir.create(file.path(args$outdir,"polar_plots/per_dataset"), showWarnings = F)
 dir.create(file.path(args$outdir,"polar_plots/per_sample"), showWarnings = F)
 
 ####################
 ## Define options ##
 ####################
 
-# opts$classes <- c(
-#   "E8.5_WT",
-#   "E8.5_Dnmt3aKO_Dnmt3bWT",
-#   "E8.5_Dnmt3aHET_Dnmt3bKO",
-#   "E8.5_Dnmt3aHET_Dnmt3bWT",
-#   "E8.5_Dnmt3aKO_Dnmt3bHET",
-#   "E8.5_Dnmt3aKO_Dnmt3bKO",
-#   "E8.5_Dnmt3aWT_Dnmt3bKO",
-#   "E8.5_Dnmt1KO"
-# )
+opts$ko.classes <- c(
+  "Dnmt3a_KO", 
+  "Dnmt3b_KO",
+  "Dnmt1_KO",
+  "Dnmt3ab_KO"
+)
 
 opts$wt.classes <- c("WT")
   
@@ -85,8 +83,8 @@ opts$celltypes = c(
   "Surface_ectoderm",
   "Visceral_endoderm",
   "ExE_endoderm",
-  "ExE_ectoderm"
-  # "Parietal_endoderm"
+  "ExE_ectoderm",
+  "Parietal_endoderm"
 )
 
 opts$rename_celltypes <- c(
@@ -112,10 +110,10 @@ opts$remove.small.embryos <- TRUE
 ##########################
 
 sample_metadata <- fread(args$metadata) %>%
-  .[pass_rnaQC==TRUE & celltype.mapped%in%opts$celltypes & class%in%opts$classes] %>%
+  .[pass_rnaQC==TRUE & celltype.mapped%in%opts$celltypes & class%in%c(opts$ko.classes,opts$wt.classes)] %>%
   .[,celltype.mapped:=stringr::str_replace_all(celltype.mapped,opts$rename_celltypes)] %>%
   .[,celltype.mapped:=factor(celltype.mapped,levels=unique(celltype.mapped))] %>%
-  .[,dataset:=ifelse(grepl("Grosswendt",sample),"Grosswendt","This data set")] %>%
+  .[,dataset:=ifelse(grepl("Grosswendt",sample),"CRISPR","KO")] %>%
   .[,c("cell","sample","alias","class","celltype.mapped","dataset")]
 
 # Filter cells
@@ -136,7 +134,7 @@ if (opts$remove.ExE.celltypes) {
 # }
 
 if (opts$remove.small.embryos) {
-  opts$min.cells <- 1000
+  opts$min.cells <- 1500
   sample_metadata <- sample_metadata %>%
     .[,N:=.N,by="alias"] %>% .[N>opts$min.cells] %>% .[,N:=NULL]
 }
@@ -167,7 +165,7 @@ wt_proportions.dt <- sample_metadata %>%
 #   .[,ncells:=.N, by="sample"] %>%
 #   .[,.(proportion=.N/unique(ncells), N=.N),by=c("celltype.mapped","sample","class")]
 ko_proportions_per_sample.dt <- sample_metadata %>%
-  .[!class%in%opts$wt.classes] %>%
+  .[class%in%opts$ko.classes] %>%
   setkey(celltype.mapped,sample) %>%
   .[CJ(celltype.mapped,sample, unique = TRUE), .N, by = .EACHI] %>%
   merge(unique(sample_metadata[,c("sample","class")]), by="sample") %>%
@@ -179,7 +177,7 @@ ko_proportions_per_sample.dt <- sample_metadata %>%
 #   .[,ncells:=.N, by="class"] %>%
 #   .[,.(proportion=.N/unique(ncells), N=.N),by=c("celltype.mapped","class")]
 ko_proportions_per_class.dt <- sample_metadata %>%
-  .[!class%in%opts$wt.classes] %>%
+  .[class%in%opts$ko.classes] %>%
   setkey(celltype.mapped,class) %>%
   .[CJ(celltype.mapped,class, unique = TRUE), .N, by = .EACHI] %>%
   .[,ncells:=sum(N), by="class"] %>% .[,proportion:=(N+1)/ncells]
@@ -239,7 +237,55 @@ for (i in unique(proportions_per_sample.dt$sample)) {
 ## Boxplots per class ##  
 #######################
 
-ylim <- max(abs(proportions_per_sample.dt$diff_proportion)) + 0.25
+ylimits <- max(abs(proportions_per_sample.dt$diff_proportion)) + 0.25
+
+for (i in unique(proportions_per_sample.dt$class)) {
+  
+  celltypes.to.plot <- proportions_per_sample.dt %>%
+    .[class==i,.(N=sum(N.ko)+sum(N.wt)),by=c("class","celltype.mapped")] %>% 
+    # .[N>=50,celltype.mapped] %>% as.character
+    .[N>=5,celltype.mapped] %>% as.character
+  
+  to.plot <- proportions_per_sample.dt %>%
+    .[class==i & celltype.mapped%in%celltypes.to.plot] %>%
+    merge(unique(sample_metadata[,c("sample","dataset")]),by="sample")
+  
+  celltype.order <- to.plot %>%
+    .[,mean(diff_proportion),by="celltype.mapped"] %>% setorder(-V1) %>% .$celltype.mapped
+  to.plot <- to.plot %>% .[,celltype.mapped:=factor(celltype.mapped,levels=celltype.order)]
+  
+  # text.dt <- proportions_per_class.dt %>% 
+  #   .[class==i & celltype.mapped%in%celltype.order] %>% 
+  #   .[,celltype.mapped:=factor(celltype.mapped,levels=celltype.order)]
+  
+  p <- ggplot(to.plot, aes(x=celltype.mapped, y=diff_proportion)) +
+    geom_point(aes(fill = celltype.mapped), shape=21, size=1) +
+    geom_boxplot(aes(fill = celltype.mapped), alpha=0.5) +
+    # geom_text(y=-ylimits, aes(label=N.wt), size=2.5, data=text.dt) +
+    # geom_text(y=ylimits, aes(label=N.ko), size=2.5, data=text.dt) +
+    coord_flip(ylim=c(-ylimits,ylimits)) +
+    geom_hline(yintercept=0, linetype="dashed", size=0.5) +
+    scale_fill_manual(values=opts$celltype.colors, drop=F) +
+    theme_classic() +
+    labs(y="Difference in proportions (log2)", x="", title=i) +
+    theme(
+      legend.position = "none",
+      # axis.title = element_blank(),
+      plot.title = element_text(size=rel(1.25), hjust=0.5, color="black"),
+      axis.text.y = element_text(color="black"),
+      axis.text.x = element_text(color="black")
+    )
+  
+  pdf(sprintf("%s/boxplots/per_class/%s_boxplots.pdf",args$outdir,i), width=9, height=7)
+  print(p)
+  dev.off()
+}
+
+##########################
+## Boxplots per dataset ##  
+##########################
+
+ylimits <- max(abs(proportions_per_sample.dt$diff_proportion)) + 0.25
 
 for (i in unique(proportions_per_sample.dt$class)) {
   
@@ -277,7 +323,7 @@ for (i in unique(proportions_per_sample.dt$class)) {
       axis.text.x = element_text(color="black")
     )
   
-  pdf(sprintf("%s/boxplots/per_class/%s_boxplots.pdf",args$outdir,i), width=9, height=7)
+  pdf(sprintf("%s/boxplots/per_dataset/%s_boxplots.pdf",args$outdir,i), width=9, height=7)
   print(p)
   dev.off()
 }

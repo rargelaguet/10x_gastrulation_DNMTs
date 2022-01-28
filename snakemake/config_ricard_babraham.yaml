@@ -12,7 +12,7 @@ samples:
     - 15_E8_5_D3A_WT_D3B_WT_L007
     - 17_E8_5_D3A_KO_D3B_WT_L008
     - 2_E8_5_D3A_WT_D3B_KO_L003
-    - 3_E8_5_D3A_HET_D3B_WT_L004
+    # - 3_E8_5_D3A_HET_D3B_WT_L004
     - 7_E8_5_D3A_WT_D3B_KO_L005
     - 8_E8_5_D3A_KO_D3B_KO_L006
     - E8_5_Dnmt1_KO_male_SIGAC8_L001
@@ -66,28 +66,12 @@ samples:
     - WT_E8.5_embryo9_Grosswendt2020
     - WT_E8.5_embryo10_Grosswendt2020
 
-# samples:
-#     - Dnmt3a_E8.5_embryo3_Grosswendt2020
-#     - WT_E8.5_embryo9_Grosswendt2020
-
-
-# classes:
-# #     # - E12.5_Dnmt3aWT_Dnmt3bHET
-# #     # - E12.5_Dnmt3aWT_Dnmt3bKO
-# #     # - E12.5_Dnmt3aHET_Dnmt3bWT
-# #     # - E12.5_Dnmt3aKO_Dnmt3bWT
-#   - WT
-#   - Dnmt3a_HET_Dnmt3b_KO
-#   - Dnmt3a_HET_Dnmt3b_WT
-#   - Dnmt3a_KO_Dnmt3b_HET
-#   - Dnmt3a_KO
-#   - Dnmt3ab_KO
-#   - Dnmt3b_KO
-#   - Dnmt1_KO
-
 classes:
-    # - Dnmt3a_KO
-    - WT
+  - WT
+  - Dnmt3a_KO
+  - Dnmt3ab_KO
+  - Dnmt3b_KO
+  - Dnmt1_KO
 
 #################
 ## Directories ##
@@ -96,8 +80,8 @@ classes:
 directories:
     base: /bi/group/reik/ricard/data/10x_gastrulation_DNMTs
     original_data: /bi/group/reik/ricard/data/10x_gastrulation_DNMTs/original
-    processed_data: /bi/group/reik/ricard/data/10x_gastrulation_DNMTs/processed_all
-    results: /bi/group/reik/ricard/data/10x_gastrulation_DNMTs/results_all
+    processed_data: /bi/group/reik/ricard/data/10x_gastrulation_DNMTs/processed
+    results: /bi/group/reik/ricard/data/10x_gastrulation_DNMTs/results
     atlas: /bi/group/reik/ricard/data/pijuansala2019_gastrulation10x
 
 ###############
@@ -142,7 +126,7 @@ scripts:
 
 params:
     qc:
-        min_nFeature_RNA: 1000
+        min_nFeature_RNA: 1500
         max_nFeature_RNA: 10000
         percent_mt: 30
         percent_rib: 35
@@ -165,7 +149,7 @@ params:
         # trajectories: ["blood", "NMP"]
 
     pseudobulk:
-        group_by: ["class_celltype"]
+        group_by: ["class_celltype", "class_celltype_dataset", "class_sample_celltype"]
         normalisation_method: "cpm"
         
     dimensionality_reduction_sce:

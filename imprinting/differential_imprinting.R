@@ -7,14 +7,25 @@ source(here::here("utils.R"))
 ##############
 
 # Load settings
-source("/Users/ricard/10x_gastrulation_DNMTs/settings.R")
-source("/Users/ricard/10x_gastrulation_DNMTs/differential/analysis/utils.R")
+# source("/Users/ricard/10x_gastrulation_DNMTs/settings.R")
+source(here::here("differential/analysis/utils.R"))
 
 # I/O
 io$imprinted.genes <- "/Users/argelagr/data/mm10_regulation/imprinting/parsed/mousebook_imprinted_genes.txt.gz"
-io$indir <- paste0(io$basedir,"/results_new/differential")
-io$outdir <- paste0(io$basedir,"/results_new/imprinting")
+io$indir <- paste0(io$basedir,"/results_all/differential")
+io$outdir <- paste0(io$basedir,"/results_all/imprinting")
 
+# Options
+# opts$classes <- c(
+#   # "Dnmt3a_HET_Dnmt3b_KO",
+#   # "Dnmt3a_HET_Dnmt3b_WT",
+#   # "Dnmt3a_KO_Dnmt3b_HET",
+#   "WT",
+#   "Dnmt3a_KO",
+#   "Dnmt3b_KO",
+#   "Dnmt1_KO",
+#   "Dnmt3ab_KO"
+# )
 opts$min.cells <- 30
 
 #############################################
@@ -65,9 +76,9 @@ dev.off()
 
 
 
-###############
-## Heatmaps ##
-###############
+###################################
+## Heatmaps, one class at a time ##
+###################################
 
 opts$max.logFC <- 4; opts$min.logFC <- -4
 
@@ -96,13 +107,18 @@ for (i in opts$ko.classes) {
   dev.off()
 }
 
+###########################
+## Heatmaps, all classes ##
+###########################
+
+stop("FILL IN MISSING VALUES")
 
 to.plot <- diff_imprinted.dt %>% copy %>%
   .[logFC>opts$max.logFC,logFC:=opts$max.logFC] %>%
   .[logFC<opts$min.logFC,logFC:=opts$min.logFC]
 
 p <- ggplot(to.plot, aes(x=gene, y=celltype, fill=logFC)) +
-  geom_tile() +
+  geom_tile(color="black") +
   facet_wrap(~class, scales="free") +
   scale_fill_gradient2(low = "red", mid = "white", high = "blue", midpoint = 0, limits=c(opts$min.logFC-0.01,opts$max.logFC+0.01)) +
   labs(x="", y="") +
@@ -110,8 +126,11 @@ p <- ggplot(to.plot, aes(x=gene, y=celltype, fill=logFC)) +
   theme_classic() +
   theme(
     legend.position = "top",
+    strip.background = element_blank(),
     axis.line = element_blank(),
-    axis.text = element_text(color="black", size=rel(0.45)),
+    axis.text.y = element_text(color="black", size=rel(0.45)),
+    axis.text.x = element_text(color="black", size=rel(0.65)),
+    strip.text = element_text(color="black", size=rel(1)),
     axis.ticks = element_line(size=rel(0.75))
   )
 

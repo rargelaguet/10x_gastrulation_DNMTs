@@ -7,28 +7,29 @@ source(here::here("utils.R"))
 
 # I/O
 io$indir <- file.path(io$basedir,"results_all/differential/pseudobulk")
-io$outdir <- file.path(io$basedir,"results_all/differential/pseudobulk/pdf/individual_genes"); dir.create(io$outdir, showWarnings = F)
+# io$outdir <- file.path(io$basedir,"results_all/differential/pseudobulk/pdf"); dir.create(io$outdir, showWarnings = F)
+io$outdir <- file.path(io$basedir,"results_all/differential/pseudobulk/pdf"); dir.create(io$outdir, showWarnings = F)
 
 # Options
 opts$ko.classes <- c(
-  "E8.5_Dnmt3aKO_Dnmt3bWT",
-  # "E8.5_Dnmt3aHET_Dnmt3bKO",
-  # "E8.5_Dnmt3aHET_Dnmt3bWT",
-  # "E8.5_Dnmt3aKO_Dnmt3bHET",
-  "E8.5_Dnmt3aKO_Dnmt3bKO",
-  "E8.5_Dnmt3aWT_Dnmt3bKO",
-  "E8.5_Dnmt1KO"
+  "Dnmt3a_KO", 
+  # "Dnmt3a_HET_Dnmt3b_KO", 
+  # "Dnmt3a_HET_Dnmt3b_WT", 
+  # "Dnmt3a_KO_Dnmt3b_HET", 
+  "Dnmt3b_KO",
+  "Dnmt1_KO"
+  # "Dnmt3ab_KO"
 )
 
-opts$wt.class <- "E8.5_WT"
+opts$wt.class <- "WT"
 
 opts$celltypes = c(
   "Epiblast",
   "Primitive_Streak",
   "Caudal_epiblast",
   # "PGC",
-  "Anterior_Primitive_Streak",
-  "Notochord",
+  # "Anterior_Primitive_Streak",
+  # "Notochord",
   "Def._endoderm",
   "Gut",
   "Nascent_mesoderm",
@@ -97,21 +98,25 @@ diff.dt <- diff.dt %>%
   .[,.(expr_ko=mean(expr_ko), expr_wt=mean(expr_wt), diff=mean(diff)), by=c("celltype","class","gene")]
 
 # save
-fwrite(diff.dt, file.path(io$outdir,"diff_pseudobulk.txt.gz"))
+# fwrite(diff.dt, file.path(io$outdir,"diff_pseudobulk.txt.gz"))
 
 ######################
 ## Heatmap per gene ##
 ######################
 
 # genes.to.plot <- c("Pim2", "Pou5f1", "Slc7a3", "Utf1", "Dppa5a")
-genes.to.plot <- fread(io$atlas.marker_genes)$gene %>% unique %>% .[!grepl("Rik$",.)]
+# genes.to.plot <- fread(io$atlas.marker_genes)$gene %>% unique %>% .[!grepl("Rik$",.)] %>% head(n=3)
+genes.to.plot <- c("Hoxc9","Hoxc8","Hoxb9","Hoxa9")
+
+stopifnot(genes.to.plot%in%unique(diff.dt$gene))
 
 # i <- "Hoxc8"
 for (i in genes.to.plot) {
   
   to.plot <- expand.grid(X = unique(diff.dt$celltype), Y = unique(diff.dt$class)) %>% 
     as.data.table %>% setnames(c("celltype","class")) %>%
-    merge(diff.dt[gene==i], by=c("celltype","class"), all.x=T)
+    merge(diff.dt[gene==i], by=c("celltype","class"), all.x=T) %>%
+    .[,class:=factor(class,levels=rev(opts$ko.classes))]
   
   p <- ggplot(to.plot, aes(x=celltype, y=class, fill=diff)) +
     geom_tile(color="black") +
@@ -134,3 +139,46 @@ for (i in genes.to.plot) {
   print(p)
   dev.off()
 }
+
+
+
+#######################
+## Heatmap all genes ##
+#######################
+
+genes.to.plot <- c("Trh","Rhox5","Rhox6","Rhox9","Trap1a","Xlr3a")
+genes.to.plot <- c("Hoxc9","Hoxc8","Hoxb9","Hoxa9")
+genes.to.plot <-  c("Pou5f1", "Zfp42", "Utf1", "Pim2", "Slc7a3", "Dppa5a", "Fgf5", "Dppa3", "Dppa4", "Tfap2c", "Nanog","Nr0b1","Pecam1","Gng3","Bex1","Dnmt3b")
+# genes.to.plot <-  c("Bex1","Gng3","Dnmt3b")
+stopifnot(genes.to.plot%in%unique(diff.dt$gene))
+
+# i <- "Hoxc8"
+to.plot <- expand.grid(X = unique(diff.dt$celltype), Y = unique(diff.dt$class)) %>% 
+  as.data.table %>% setnames(c("celltype","class")) %>%
+  merge(diff.dt[gene%in%genes.to.plot], by=c("celltype","class"), all.x=T) %>%
+  .[,class:=factor(class,levels=opts$ko.classes)]
+
+to.plot <- to.plot[!is.na(gene)]
+
+p <- ggplot(to.plot, aes(x=celltype, y=class, fill=diff)) +
+  geom_tile(color="black") +
+  # scale_fill_gradientn(colours = terrain.colors(10), na.value = 'gray70') +
+  # scale_fill_manual(values = wes_palette("GrandBudapest1", n = 3))
+  scale_fill_gradient2(low = "blue", mid = "white", high = "red", na.value = 'gray70' ) +
+  facet_wrap(~gene) +
+  theme_classic() +
+  guides(x = guide_axis(angle = 90)) +
+  theme(
+    axis.text.x = element_text(color="black", size=rel(0.6)),
+    axis.text.y = element_text(color="black", size=rel(0.9)),
+    axis.title = element_blank(),
+    strip.background = element_blank(),
+    axis.ticks = element_blank(),
+    axis.line = element_blank(),
+    legend.title = element_blank()
+  )
+  
+  
+pdf(file.path(io$outdir,"logFC_heatmap_pseudobulk_ExE_genes.pdf"), width=8, height=5)
+print(p)
+dev.off()

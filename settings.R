@@ -44,6 +44,10 @@ io$atlas.differential <- paste0(io$atlas.basedir,"/results/differential")
 # io$atlas.average_expression_per_celltype <- paste0(io$atlas.basedir,"/results/marker_genes/avg_expr_per_celltype_and_gene.txt.gz")
 io$atlas.sce <- paste0(io$atlas.basedir,"/processed/SingleCellExperiment.rds")
 
+# paga
+io$paga.connectivity <- file.path(io$atlas.basedir,"results/paga/paga_connectivity.csv")
+io$paga.coordinates <- file.path(io$atlas.basedir,"results/paga/paga_coordinates.csv")
+
 
 #############
 ## Options ##
@@ -151,7 +155,7 @@ opts$samples <- c(
   "15_E8_5_D3A_WT_D3B_WT_L007",
   "17_E8_5_D3A_KO_D3B_WT_L008",
   "2_E8_5_D3A_WT_D3B_KO_L003",
-  "3_E8_5_D3A_HET_D3B_WT_L004",
+  # "3_E8_5_D3A_HET_D3B_WT_L004",
   "7_E8_5_D3A_WT_D3B_KO_L005",
   "8_E8_5_D3A_KO_D3B_KO_L006",
   "E8_5_Dnmt1_KO_male_SIGAC8_L001",
@@ -215,12 +219,14 @@ opts$sample2class <- c(
   # "B_E12_5_D3a_KO_L002"  = "E12.5_Dnmt3a_KO ",
   "SIGAA6_E85_2_Dnmt3aKO_Dnmt3b_WT_L001" = "Dnmt3a_KO",
   "SIGAB6_E85_3_Dnmt3aWT_Dnmt3b_WT_L002" = "WT",
-  "SIGAC6_E85_5_Dnmt3aKO_Dnmt3b_Het_L003" = "Dnmt3a_KO_Dnmt3b_HET",
-  "SIGAD6_E85_8_Dnmt3aHet_Dnmt3b_KO_L004" = "Dnmt3a_HET_Dnmt3b_KO",
+  # "SIGAC6_E85_5_Dnmt3aKO_Dnmt3b_Het_L003" = "Dnmt3a_KO_Dnmt3b_HET",
+  "SIGAC6_E85_5_Dnmt3aKO_Dnmt3b_Het_L003" = "Dnmt3a_KO",
+  # "SIGAD6_E85_8_Dnmt3aHet_Dnmt3b_KO_L004" = "Dnmt3a_HET_Dnmt3b_KO",
+  "SIGAD6_E85_8_Dnmt3aHet_Dnmt3b_KO_L004" = "Dnmt3b_KO",
   "15_E8_5_D3A_WT_D3B_WT_L007" = "WT",
   "17_E8_5_D3A_KO_D3B_WT_L008" = "Dnmt3a_KO",
   "2_E8_5_D3A_WT_D3B_KO_L003" = "Dnmt3b_KO",
-  "3_E8_5_D3A_HET_D3B_WT_L004" = "Dnmt3a_HET_Dnmt3b_WT",
+  # "3_E8_5_D3A_HET_D3B_WT_L004" = "Dnmt3a_HET_Dnmt3b_WT",
   "7_E8_5_D3A_WT_D3B_KO_L005" = "Dnmt3b_KO",
   "8_E8_5_D3A_KO_D3B_KO_L006" = "Dnmt3ab_KO",
   "E8_5_Dnmt1_KO_male_SIGAC8_L001" = "Dnmt1_KO",
@@ -231,8 +237,10 @@ opts$sample2class <- c(
   "E8_5_Dnmt3ab_WT_female_SIGAA8_L006" = "WT",
   "SIGAH10_Dnmt3ab_WT_L002" = "WT",
   "SIGAH11_Dnmt3ab_WT_L003" = "WT",
-  "SIGAH9_Dnmt3a_KO_Dnmt3b_Het_L001" = "Dnmt3a_KO_Dnmt3b_HET",
-  "SIGAG5_9_dnmt3ab_DKO_L005" = "Dnmt3ab_KO",
+  # "SIGAH9_Dnmt3a_KO_Dnmt3b_Het_L001" = "Dnmt3a_KO_Dnmt3b_HET",
+  "SIGAH9_Dnmt3a_KO_Dnmt3b_Het_L001" = "Dnmt3a_KO",
+  # "SIGAG5_9_dnmt3ab_DKO_L005" = "Dnmt3ab_KO",
+  "SIGAG5_9_dnmt3ab_DKO_L005" = "Dnmt3b_KO",
   "Dnmt1_E8.5_embryo10_Grosswendt2020" = "Dnmt1_KO",
   "Dnmt1_E8.5_embryo11_Grosswendt2020" = "Dnmt1_KO",
   "Dnmt1_E8.5_embryo12_Grosswendt2020" = "Dnmt1_KO",
@@ -280,19 +288,32 @@ opts$stages <- c(
   "E8.5"
 )
 
+opts$atlas.stages <- c(
+  "E6.5",
+  "E6.75",
+  "E7.0",
+  "E7.25",
+  "E7.5",
+  "E7.75",
+  "E8.0",
+  "E8.25",
+  "E8.5"
+  # "mixed_gastrulation"
+)
+
 opts$classes <- c(
   # "E12.5_Dnmt3aWT_Dnmt3bHET",
   # "E12.5_Dnmt3b_KO",
   # "E12.5_Dnmt3a_HET_Dnmt3b_WT",
   # "E12.5_Dnmt3a_KO",
-  "Dnmt3a_KO", 
   "WT", 
-  "Dnmt3a_HET_Dnmt3b_KO", 
-  "Dnmt3a_HET_Dnmt3b_WT", 
-  "Dnmt3a_KO_Dnmt3b_HET", 
-  "Dnmt3ab_KO", 
+  "Dnmt3a_KO", 
+  # "Dnmt3a_HET_Dnmt3b_KO", 
+  # "Dnmt3a_HET_Dnmt3b_WT", 
+  # "Dnmt3a_KO_Dnmt3b_HET", 
   "Dnmt3b_KO",
-  "Dnmt1_KO"
+  "Dnmt1_KO",
+  "Dnmt3ab_KO"
 )
 
 
@@ -307,14 +328,21 @@ opts$classes.colors <- c(
   "WT" = "#ffffb3", 
   "Dnmt3a_KO" = "#8dd3c7", 
   "Dnmt3b_KO" = "#fb8072", 
-  "Dnmt3ab_KO" = "#bebada", 
-  "Dnmt1_KO" = "#80b1d3"
+  "Dnmt1_KO" = "#80b1d3",
+  "Dnmt3ab_KO" = "#bebada"
 )
 
-
-
-
-
+opts$stage.colors = c(
+  "E8.5" = "#440154FF",
+  "E8.25" = "#472D7BFF",
+  "E8.0" = "#3B528BFF",
+  "E7.75" = "#2C728EFF",
+  "E7.5" = "#21908CFF",
+  "E7.25" = "#27AD81FF",
+  "E7.0" = "#5DC863FF",
+  "E6.75" = "#AADC32FF",
+  "E6.5" = "#FDE725FF"
+)
 
 opts$sample2alias <- c(
   # "E125_DNMT3A_HET_A_L001" = "E12.5_Dnmt3aWT_Dnmt3bHET_1",
@@ -332,14 +360,18 @@ opts$sample2alias <- c(
   "E8_5_Dnmt3ab_WT_female_SIGAA8_L006" = "WT_5",
   "SIGAH10_Dnmt3ab_WT_L002" = "WT_6",
   "SIGAH11_Dnmt3ab_WT_L003" = "WT_7",
-  "SIGAC6_E85_5_Dnmt3aKO_Dnmt3b_Het_L003" = "Dnmt3a_KO_Dnmt3b_HET_1",
-  "SIGAH9_Dnmt3a_KO_Dnmt3b_Het_L001" = "Dnmt3a_KO_Dnmt3b_HET_2",
-  "SIGAD6_E85_8_Dnmt3aHet_Dnmt3b_KO_L004" = "Dnmt3a_HET_Dnmt3b_KO",
+  # "SIGAC6_E85_5_Dnmt3aKO_Dnmt3b_Het_L003" = "Dnmt3a_KO_Dnmt3b_HET_1",
+  "SIGAC6_E85_5_Dnmt3aKO_Dnmt3b_Het_L003" = "Dnmt3a_KO_13",
+  # "SIGAH9_Dnmt3a_KO_Dnmt3b_Het_L001" = "Dnmt3a_KO_Dnmt3b_HET_2",
+  "SIGAH9_Dnmt3a_KO_Dnmt3b_Het_L001" = "Dnmt3a_KO_14",
+  # "SIGAD6_E85_8_Dnmt3aHet_Dnmt3b_KO_L004" = "Dnmt3a_HET_Dnmt3b_KO",
+  "SIGAD6_E85_8_Dnmt3aHet_Dnmt3b_KO_L004" = "Dnmt3b_KO_11",
   "2_E8_5_D3A_WT_D3B_KO_L003" = "Dnmt3b_KO_1",
   "7_E8_5_D3A_WT_D3B_KO_L005" = "Dnmt3b_KO_2",
-  "3_E8_5_D3A_HET_D3B_WT_L004" = "Dnmt3a_HET_Dnmt3b_WT",
+  # "3_E8_5_D3A_HET_D3B_WT_L004" = "Dnmt3a_HET_Dnmt3b_WT",
   "8_E8_5_D3A_KO_D3B_KO_L006" = "Dnmt3ab_KO_1",
-  "SIGAG5_9_dnmt3ab_DKO_L005" = "Dnmt3ab_KO_2",
+  # "SIGAG5_9_dnmt3ab_DKO_L005" = "Dnmt3ab_KO_2",
+  "SIGAG5_9_dnmt3ab_DKO_L005" = "Dnmt3b_KO_12",
   "E8_5_Dnmt1_KO_male_SIGAC8_L001" = "Dnmt1_KO_1",
   "E8_5_Dnmt1_KO_male_SIGAD8_L002" = "Dnmt1_KO_2",
   "E8_5_Dnmt1_KO_male_SIGAE8_L003" = "Dnmt1_KO_3",

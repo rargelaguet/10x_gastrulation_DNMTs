@@ -12,8 +12,8 @@ source(here::here("differential/analysis/utils.R"))
 ##############
 
 # I/O
-io$indir <- file.path(io$basedir,"results_new/differential")
-io$outdir <- file.path(io$basedir,"results_new/differential/pdf/volcano_plots"); dir.create(io$outdir, showWarnings = F)
+io$indir <- file.path(io$basedir,"results_all/differential")
+io$outdir <- file.path(io$basedir,"results_all/differential/pdf/volcano_plots"); dir.create(io$outdir, showWarnings = F, recursive = T)
 
 # Options
 opts$min.cells <- 50
@@ -23,6 +23,8 @@ opts$min.cells <- 50
 ###############
 
 source(here::here("differential/analysis/load_data.R"))
+
+diff.dt <- diff.dt[!is.na(logFC)]
 
 ####################
 ## Filter results ##

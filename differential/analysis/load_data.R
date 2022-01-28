@@ -47,15 +47,15 @@ opts$celltypes = c(
 
 # Options
 opts$ko.classes <- c(
-  "E8.5_Dnmt3aKO_Dnmt3bWT",
-  # "E8.5_Dnmt3aHET_Dnmt3bKO",
-  # "E8.5_Dnmt3aHET_Dnmt3bWT",
-  # "E8.5_Dnmt3aKO_Dnmt3bHET",
-  "E8.5_Dnmt3aKO_Dnmt3bKO",
-  "E8.5_Dnmt3aWT_Dnmt3bKO",
-  "E8.5_Dnmt1KO"
+  "Dnmt3a_KO", 
+  # "Dnmt3a_HET_Dnmt3b_KO", 
+  # "Dnmt3a_HET_Dnmt3b_WT", 
+  # "Dnmt3a_KO_Dnmt3b_HET", 
+  # "Dnmt3ab_KO", 
+  "Dnmt3b_KO",
+  "Dnmt1_KO"
 )
-opts$wt.class <- "E8.5_WT"
+opts$wt.class <- "WT"
 
 # Define statistical significance
 opts$threshold_fdr <- 0.01
@@ -73,10 +73,9 @@ diff.dt <- opts$ko.classes %>% map(function(i) { opts$celltypes %>% map(function
   }
 }) %>% rbindlist }) %>% rbindlist %>%
   .[,celltype:=factor(celltype,levels=opts$celltypes)] %>%
-  .[,class:=factor(class,levels=opts$ko.classes)]
-
-# Define statistical significance
-diff.dt %>% .[, sig := (padj_fdr<=opts$threshold_fdr & abs(logFC)>=opts$min.logFC)]
+  .[,class:=factor(class,levels=opts$ko.classes)] %>% 
+  .[, sign := ifelse(logFC>0,sprintf("Upregulated in %s",class),sprintf("Downregulated in %s",class))] %>%
+  .[, sig := (padj_fdr<=opts$threshold_fdr & abs(logFC)>=opts$min.logFC)]
 
 # Print stats
 print(sprintf("Number of classes: %s",length(unique(diff.dt$class))))
