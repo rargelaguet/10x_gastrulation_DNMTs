@@ -8,7 +8,7 @@ source(here::here("utils.R"))
 #####################
 
 # I/O
-io$outdir <- paste0(io$basedir,"/results_all/stage_embryos"); dir.create(io$outdir, showWarnings = F)
+io$outdir <- file.path(io$basedir,"results/stage_embryos"); dir.create(io$outdir, showWarnings = F)
 
 # Options
 opts$classes <- c(
@@ -22,8 +22,8 @@ opts$classes <- c(
   "WT",
   "Dnmt3a_KO",
   "Dnmt3b_KO",
-  "Dnmt1_KO",
-  "Dnmt3ab_KO"
+  "Dnmt1_KO"
+  # "Dnmt3ab_KO"
 )
 
 opts$remove.ExE.celltypes <- TRUE

@@ -1,6 +1,6 @@
 source("/Users/argelagr/10x_gastrulation_DNMTs/settings.R")
 
-io$metadata <- "/Users/argelagr/data/10x_gastrulation_DNMTs/results_all/mapping/sample_metadata_after_mapping.txt.gz"
+io$metadata <- "/Users/argelagr/data/10x_gastrulation_DNMTs/results/mapping/sample_metadata_after_mapping.txt.gz"
 sample_metadata <- fread(io$metadata)
 
 sample_metadata[,class:=stringr::str_replace_all(batch,opts$batch.to.class)]

@@ -24,11 +24,11 @@ args <- p$parse_args(commandArgs(TRUE))
 #####################
 
 ## START TEST ##
-# args$metadata <- file.path(io$basedir,"results_all/mapping/sample_metadata_after_mapping.txt.gz")
+# args$metadata <- file.path(io$basedir,"results/mapping/sample_metadata_after_mapping.txt.gz")
 # args$sce <- file.path(io$basedir,"processed_all/SingleCellExperiment.rds")
 # args$group_by <- "class_sample_celltype"
 # args$normalisation_method <- "cpm"
-# args$outdir <- file.path(io$basedir,"results_all/pseudobulk")
+# args$outdir <- file.path(io$basedir,"results/pseudobulk")
 ## END TEST ##
 
 # I/O
@@ -53,6 +53,7 @@ dir.create(args$outdir, showWarnings=F)
 sample_metadata <- fread(args$metadata) %>%
   .[,dataset:=ifelse(grepl("Grosswendt",sample),"CRISPR","KO")] %>%
   .[,class_celltype:=sprintf("%s-%s",class,celltype.mapped)] %>%
+  .[,class_celltype_dataset:=sprintf("%s-%s-%s",class,celltype.mapped,dataset)] %>%
   .[,class_sample_celltype:=sprintf("%s-%s-%s",class,sample,celltype.mapped)] %>%
   # .[,class_celltype_dataset:=sprintf("%s-%s-%s",class,celltype.mapped,dataset)] %>%
   .[pass_rnaQC==TRUE & !is.na(eval(as.name(args$group_by)))]

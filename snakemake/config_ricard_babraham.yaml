@@ -180,7 +180,7 @@ params:
         celltype_label: "celltype.mapped"
 
     sex_assignment:
-        chrY_ratio_threshold: 0.001
+        chrY_ratio_threshold: 0.25
     # plot_mapping_results
 
 ###########

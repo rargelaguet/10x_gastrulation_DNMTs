@@ -12,8 +12,8 @@ source(here::here("differential/analysis/utils.R"))
 
 # I/O
 io$imprinted.genes <- "/Users/argelagr/data/mm10_regulation/imprinting/parsed/mousebook_imprinted_genes.txt.gz"
-io$indir <- paste0(io$basedir,"/results_all/differential")
-io$outdir <- paste0(io$basedir,"/results_all/imprinting")
+io$indir <- paste0(io$basedir,"/results/differential")
+io$outdir <- paste0(io$basedir,"/results/imprinting")
 
 # Options
 # opts$classes <- c(

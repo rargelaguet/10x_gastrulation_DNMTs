@@ -6,7 +6,7 @@ source(here::here("utils.R"))
 #####################
 
 io$imprinted.genes <- "/Users/argelagr/data/mm10_regulation/imprinting/parsed/mousebook_imprinted_genes.txt.gz"
-io$outdir <- paste0(io$basedir,"/results_all/imprinting"); dir.create(io$outdir, showWarnings = F)
+io$outdir <- paste0(io$basedir,"/results/imprinting"); dir.create(io$outdir, showWarnings = F)
 
 # Define cell types to plot
 opts$celltypes <- c(

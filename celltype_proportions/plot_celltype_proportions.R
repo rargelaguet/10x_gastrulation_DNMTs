@@ -20,9 +20,9 @@ args <- p$parse_args(commandArgs(TRUE))
 #####################
 
 ## START TEST ##
-# args$metadata <- file.path(io$basedir,"results_all/mapping/sample_metadata_after_mapping.txt.gz")
-# args$celltype_label <- "celltype.mapped"
-# args$outdir <- file.path(io$basedir,"results_all/celltype_proportions")
+args$metadata <- file.path(io$basedir,"results/mapping/sample_metadata_after_mapping.txt.gz")
+args$celltype_label <- "celltype.mapped"
+args$outdir <- file.path(io$basedir,"results/celltype_proportions/test")
 ## END TEST ##
 
 # I/O
@@ -57,22 +57,22 @@ if (opts$remove_ExE_cells) {
 ################
 
 to.plot <- sample_metadata %>%
-  .[,N:=.N,by="sample"] %>%
+  .[,N:=.N,by="alias"] %>%
   # .[,celltype:=stringr::str_replace_all(celltype,opts$aggregate.celltypes)] %>%
-  .[,.(N=.N, celltype_proportion=.N/unique(N)),by=c("sample","celltype")] %>%
-  setorder(sample)  %>% .[,sample:=factor(sample,levels=opts$samples)]
+  .[,.(N=.N, celltype_proportion=.N/unique(N)),by=c("alias","celltype")] %>%
+  setorder(alias)  %>% .[,alias:=factor(alias,levels=unname(opts$sample2alias))]
 
 # Define colours and cell type order
 opts$celltype.colors <- opts$celltype.colors[names(opts$celltype.colors) %in% unique(to.plot$celltype)]
 to.plot[,celltype:=factor(celltype, levels=rev(names(opts$celltype.colors)))]
 
-samples.to.plot <- unique(to.plot$sample)
+samples.to.plot <- unique(to.plot$alias)
 
 for (i in samples.to.plot) {
-  p <- ggplot(to.plot[sample==i], aes(x=celltype, y=N)) +
+  p <- ggplot(to.plot[alias==i], aes(x=celltype, y=N)) +
     geom_bar(aes(fill=celltype), stat="identity", color="black") +
     scale_fill_manual(values=opts$celltype.colors) +
-    facet_wrap(~sample, nrow=1, scales="fixed") +
+    facet_wrap(~alias, nrow=1, scales="fixed") +
     coord_flip() +
     labs(y="Number of cells") +
     theme_bw() +
@@ -97,7 +97,7 @@ for (i in samples.to.plot) {
 
 to.plot <- sample_metadata %>%
   .[,N:=.N,by="class"] %>%
-  .[,.(N=.N, celltype_proportion=.N/unique(N)),by=c("class","sample","celltype")] 
+  .[,.(N=.N, celltype_proportion=.N/unique(N)),by=c("class","alias","celltype")] 
 
 # Define colours and cell type order
 opts$celltype.colors <- opts$celltype.colors[names(opts$celltype.colors) %in% unique(to.plot$celltype)]
@@ -110,23 +110,23 @@ for (i in classes.to.plot) {
   p <- ggplot(to.plot[class==i], aes(x=celltype, y=N)) +
     geom_bar(aes(fill=celltype), stat="identity", color="black") +
     scale_fill_manual(values=opts$celltype.colors) +
-    facet_wrap(~sample, nrow=1, scales="fixed") +
+    facet_wrap(~alias, nrow=1, scales="fixed") +
     coord_flip() +
     labs(y="Number of cells") +
     theme_bw() +
     theme(
       legend.position = "none",
       strip.background = element_blank(),
-      strip.text = element_text(color="black", size=rel(0.8)),
+      strip.text = element_text(color="black", size=rel(0.65)),
       axis.title.x = element_text(color="black", size=rel(0.9)),
       axis.title.y = element_blank(),
-      axis.text.y = element_text(size=rel(1), color="black"),
-      axis.text.x = element_text(size=rel(1), color="black")
+      axis.text.y = element_text(size=rel(0.9), color="black"),
+      axis.text.x = element_text(size=rel(0.75), color="black")
     )
   
-  if (length(unique(to.plot[class==i,sample]))>=4) { width <- 12 } else { width <- 9 }
+  if (length(unique(to.plot[class==i,alias]))>=6) { width <- 15 } else { width <- 8 }
   
-  pdf(file.path(args$outdir,sprintf("per_class/celltype_proportions_%s_horizontal_barplots.pdf",i)), width=9, height=5)
+  pdf(file.path(args$outdir,sprintf("per_class/celltype_proportions_%s_horizontal_barplots.pdf",i)), width=width, height=4)
   print(p)
   dev.off()
 }
@@ -136,13 +136,13 @@ for (i in classes.to.plot) {
 ######################
 
 to.plot <- sample_metadata %>%
-  .[,N:=.N,by="sample"] %>%
-  .[,.(N=.N, celltype_proportion=.N/unique(N)),by=c("sample","celltype","class")] %>%
-  setorder(sample)  %>% .[,sample:=factor(sample,levels=opts$samples)]
+  .[,N:=.N,by="alias"] %>%
+  .[,.(N=.N, celltype_proportion=.N/unique(N)),by=c("alias","celltype","class")] %>%
+  setorder(alias)  %>% .[,alias:=factor(alias,levels=unname(opts$sample2alias))]
 
-p <- ggplot(to.plot, aes(x=sample, y=celltype_proportion)) +
+p <- ggplot(to.plot, aes(x=alias, y=celltype_proportion)) +
   geom_bar(aes(fill=celltype), stat="identity", color="black") +
-  facet_wrap(~class, scales = "free_x") +
+  facet_wrap(~class, scales = "free_x", nrow=1) +
   scale_fill_manual(values=opts$celltype.colors) +
   theme_classic() +
   theme(
@@ -155,36 +155,7 @@ p <- ggplot(to.plot, aes(x=sample, y=celltype_proportion)) +
     axis.line = element_blank()
   )
 
-pdf(sprintf("%s/celltype_proportions_stacked_barplots.pdf",args$outdir), width=9, height=7)
-print(p)
-dev.off()
-
-
-##############
-## Boxplots ##
-##############
-
-to.plot <- sample_metadata %>%
-  .[,N:=.N,by="sample"] %>%
-  .[,.(N=.N, celltype_proportion=.N/unique(N)),by=c("sample","celltype","class")] %>%
-  setorder(sample)  %>% .[,sample:=factor(sample,levels=opts$samples)]
-
-p <- ggplot(to.plot, aes(x=sample, y=celltype_proportion)) +
-  geom_bar(aes(fill=celltype), stat="identity", color="black") +
-  facet_wrap(~class, scales = "free_x") +
-  scale_fill_manual(values=opts$celltype.colors) +
-  theme_classic() +
-  theme(
-    legend.position = "none",
-    axis.title = element_blank(),
-    axis.text.y = element_blank(),
-    # axis.text.x = element_text(color="black", size=rel(0.75)),
-    axis.text.x = element_blank(),
-    axis.ticks = element_blank(),
-    axis.line = element_blank()
-  )
-
-pdf(sprintf("%s/celltype_proportions_stacked_barplots.pdf",args$outdir), width=9, height=7)
+pdf(sprintf("%s/celltype_proportions_stacked_barplots.pdf",args$outdir), width=12, height=5)
 print(p)
 dev.off()
 

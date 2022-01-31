@@ -22,8 +22,8 @@ args <- p$parse_args(commandArgs(TRUE))
 ## START TEST ##
 # args$samples <- opts$samples
 # args$sce <- paste0(io$basedir,"/processed_all/SingleCellExperiment.rds")
-# args$metadata <- file.path(io$basedir,"results_all/mapping/sample_metadata_after_mapping.txt.gz")
-# args$outdir <- paste0(io$basedir,"/results_all/sex_assignment")
+# args$metadata <- file.path(io$basedir,"results/mapping/sample_metadata_after_mapping.txt.gz")
+# args$outdir <- paste0(io$basedir,"/results/sex_assignment")
 # args$chrY_ratio_threshold <- 0.1
 ## END TEST ##
 
@@ -87,7 +87,7 @@ p <- ggbarplot(sex_assignment.dt, x="sample", y="ratioY", fill="sex", sort.val =
   guides(x = guide_axis(angle = 90)) +
   theme(
     legend.position = "right",
-    axis.text.x = element_text(colour="black",size=rel(0.6)),
+    axis.text.x = element_text(colour="black",size=rel(0.5)),
     axis.text.y = element_text(colour="black",size=rel(0.8))
     # axis.text.x = element_blank(),
     # axis.ticks.x = element_blank()
@@ -128,15 +128,17 @@ dev.off()
 to.plot <- dt[symbol=="Xist"] %>% 
   merge(sex_assignment.dt[,c("sex","sample")], by="sample")
 
-p <- ggbarplot(to.plot, x="sample", y="expr", fill="sex") +
+p <- ggbarplot(to.plot, x="sample", y="expr") +
+  facet_wrap(~sex, nrow=1) +
   labs(x="", y="Xist expression") +
   guides(x = guide_axis(angle = 90)) +
   theme(
+    legend.text = element_blank(),
     axis.text.x = element_text(colour="black",size=rel(0.5)),
     axis.text.y = element_text(colour="black",size=rel(0.8))
   )
 
-pdf(file.path(args$outdir,"Xist_expr.pdf"))
+pdf(file.path(args$outdir,"Xist_expr.pdf"), width=10, height=5)
 print(p)
 dev.off()
 

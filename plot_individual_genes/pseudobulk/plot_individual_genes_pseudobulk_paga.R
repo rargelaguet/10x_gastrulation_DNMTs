@@ -8,9 +8,9 @@ source(here::here("utils.R"))
 #####################
 
 # I/O
-io$outdir <- file.path(io$basedir,"results_all/individual_genes/pseudobulk/paga"); dir.create(io$outdir, showWarnings = F)
-io$sce.pseudobulk <- file.path(io$basedir,"results_all/pseudobulk/SingleCellExperiment_pseudobulk_class_celltype.rds")
-# io$sce.pseudobulk <- file.path(io$basedir,"results_all/pseudobulk/SingleCellExperiment_pseudobulk_class_celltype_dataset.rds")
+io$outdir <- file.path(io$basedir,"results/individual_genes/pseudobulk/paga"); dir.create(io$outdir, showWarnings = F)
+io$sce.pseudobulk <- file.path(io$basedir,"results/pseudobulk/SingleCellExperiment_pseudobulk_class_celltype.rds")
+# io$sce.pseudobulk <- file.path(io$basedir,"results/pseudobulk/SingleCellExperiment_pseudobulk_class_celltype_dataset.rds")
 
 # Define options
 opts$celltypes = c(

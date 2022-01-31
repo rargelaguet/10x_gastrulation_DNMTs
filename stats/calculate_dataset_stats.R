@@ -7,16 +7,16 @@ source(here::here("settings.R"))
 #####################
 
 # I/O
-io$metadata <- file.path(io$basedir,"results_all/sex_assignment/sample_metadata_after_sex_assignment.txt.gz")
-io$outdir <- file.path(io$basedir,"results_all/dataset_stats"); dir.create(io$outdir, showWarnings = F)
+io$metadata <- file.path(io$basedir,"results/sex_assignment/sample_metadata_after_sex_assignment.txt.gz")
+io$outdir <- file.path(io$basedir,"results/dataset_stats"); dir.create(io$outdir, showWarnings = F)
 
 # Options
 opts$classes <- c(
     "WT",
     "Dnmt3a_KO",
     "Dnmt3b_KO",
-    "Dnmt1_KO",
-    "Dnmt3ab_KO"
+    "Dnmt1_KO"
+    # "Dnmt3ab_KO"
 )
 
 ###############
@@ -52,7 +52,9 @@ dev.off()
 ## Plot number of embryos per class and data set ##
 ###################################################
 
-to.plot <- metadata %>% .[,.(N=as.factor(length(unique(alias)))),by=c("class","dataset")]
+to.plot <- metadata %>% 
+    .[,.(N=length(unique(alias))), by=c("class","dataset")] %>%
+    .[,N:=factor(N, levels=1:max(N))]
 
 p <- ggbarplot(to.plot, x="class", y="N", fill="dataset", position=position_dodge(width = 0.75)) +
     labs(x="", y="Number of embryos") +
@@ -72,7 +74,9 @@ dev.off()
 ## Plot number of embryos per class, split by sex ##
 ####################################################
 
-to.plot <- metadata %>% .[,.(N=as.factor(length(unique(alias)))),by=c("class","sex")]
+to.plot <- metadata %>% 
+    .[,.(N=length(unique(alias))),by=c("class","sex")] %>%
+    .[,N:=factor(N, levels=1:max(N))]
 
 p <- ggbarplot(to.plot, x="class", y="N", fill="sex", position=position_dodge(width = 0.75)) +
     labs(x="", y="Number of embryos") +

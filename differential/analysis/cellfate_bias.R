@@ -12,8 +12,8 @@ source(here::here("differential/analysis/utils.R"))
 ##############
 
 # I/O
-io$indir <- file.path(io$basedir,"results_all/differential")
-io$outdir <- file.path(io$basedir,"results_all/differential/pdf/cellfate_bias"); dir.create(io$outdir, showWarnings = F)
+io$indir <- file.path(io$basedir,"results/differential")
+io$outdir <- file.path(io$basedir,"results/differential/pdf/cellfate_bias"); dir.create(io$outdir, showWarnings = F)
 
 # Options
 opts$min.cells <- 50
@@ -30,7 +30,8 @@ diff.dt %>% .[, sig := (padj_fdr<=0.01 & abs(logFC)>=1.5)]
 ## Load marker genes ##
 #######################
 
-opts$min.marker.score <- 0.85
+opts$min.marker.score <- 0.75
+# opts$min.marker.score <- 0.85
 
 marker_genes.dt <- fread(io$atlas.marker_genes) %>%
   .[score>=opts$min.marker.score] %>% 
@@ -64,13 +65,13 @@ to.plot <- diff_markers.dt %>%
     marker_genes.dt[,c("gene","celltype")] %>% setnames("celltype","celltype_marker"), by = "gene", allow.cartesian=TRUE
   ) %>% .[,sum(sig), by=c("celltype","celltype_marker","class","sign")]
 
-to.plot <- to.plot[class%in%c("Dnmt1_KO","Dnmt3ab_KO")]
-to.plot <- to.plot[celltype_marker!="Notochord"]
+# to.plot <- to.plot[class%in%c("Dnmt1_KO","Dnmt3ab_KO")]
+# to.plot <- to.plot[celltype_marker!="Notochord"]
 
 # to.plot[class=="Dnmt1_KO"] %>% View
 # tmp <- diff_markers.dt[class=="Dnmt1_KO" & sig==T] %>% merge(marker_genes.dt[,c("gene","celltype")] %>% setnames("celltype","celltype_marker"), by = "gene", allow.cartesian=TRUE)
 
-to.plot <- to.plot[V1>=3]
+# to.plot <- to.plot[V1>=3]
 
 p <- ggplot(to.plot, aes(x=celltype, y=V1)) +
   geom_bar(aes(fill = celltype_marker), color="black", stat="identity") + 

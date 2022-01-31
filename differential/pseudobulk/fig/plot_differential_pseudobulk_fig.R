@@ -6,8 +6,8 @@ source(here::here("utils.R"))
 #####################
 
 # I/O
-io$indir <- file.path(io$basedir,"results_all/differential/pseudobulk")
-io$outdir <- file.path(io$basedir,"results_all/differential/pseudobulk/pdf/fig"); dir.create(io$outdir, showWarnings = F)
+io$indir <- file.path(io$basedir,"results/differential/pseudobulk")
+io$outdir <- file.path(io$basedir,"results/differential/pseudobulk/pdf/fig"); dir.create(io$outdir, showWarnings = F)
 
 # Options
 opts$ko.classes <- c(

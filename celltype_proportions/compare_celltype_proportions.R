@@ -19,9 +19,9 @@ args <- p$parse_args(commandArgs(TRUE))
 #####################
 
 ## START TEST ##
-# args$metadata <- file.path(io$basedir,"results_all/mapping/sample_metadata_after_mapping.txt.gz")
+# args$metadata <- file.path(io$basedir,"results/mapping/sample_metadata_after_mapping.txt.gz")
 # args$celltype_label <- "celltype.mapped"
-# args$outdir <- file.path(io$basedir,"results_all/celltype_proportions/comparisons/test")
+# args$outdir <- file.path(io$basedir,"results/celltype_proportions/comparisons/test")
 ## END TEST ##
 
 # I/O
@@ -29,6 +29,7 @@ dir.create(args$outdir, showWarnings = F)
 dir.create(file.path(args$outdir,"boxplots"), showWarnings = F)
 dir.create(file.path(args$outdir,"boxplots/per_class"), showWarnings = F)
 dir.create(file.path(args$outdir,"boxplots/per_sample"), showWarnings = F)
+dir.create(file.path(args$outdir,"boxplots/per_dataset"), showWarnings = F)
 dir.create(file.path(args$outdir,"polar_plots"), showWarnings = F)
 dir.create(file.path(args$outdir,"polar_plots/per_class"), showWarnings = F)
 dir.create(file.path(args$outdir,"polar_plots/per_dataset"), showWarnings = F)
@@ -83,8 +84,8 @@ opts$celltypes = c(
   "Surface_ectoderm",
   "Visceral_endoderm",
   "ExE_endoderm",
-  "ExE_ectoderm",
-  "Parietal_endoderm"
+  "ExE_ectoderm"
+  # "Parietal_endoderm"
 )
 
 opts$rename_celltypes <- c(
@@ -123,8 +124,8 @@ if (opts$remove.blood) {
 
 if (opts$remove.ExE.celltypes) {
   sample_metadata <- sample_metadata %>%
-    # .[!celltype.mapped%in%c("Visceral_endoderm","ExE_endoderm","ExE_ectoderm","Parietal_endoderm")] %>%
-    .[!celltype.mapped%in%c("ExE_ectoderm","Parietal_endoderm")]
+    .[!celltype.mapped%in%c("Visceral_endoderm","ExE_endoderm","ExE_ectoderm","Parietal_endoderm")] %>%
+    # .[!celltype.mapped%in%c("ExE_ectoderm","Parietal_endoderm")]
 }
 
 # if (opts$remove.small.lineages) {
@@ -134,13 +135,14 @@ if (opts$remove.ExE.celltypes) {
 # }
 
 if (opts$remove.small.embryos) {
-  opts$min.cells <- 1500
-  sample_metadata <- sample_metadata %>%
-    .[,N:=.N,by="alias"] %>% .[N>opts$min.cells] %>% .[,N:=NULL]
+  opts$min.cells <- 1000
+  tmp <- sample_metadata %>% .[,.(N=.N),by="alias"] %>% .[N<opts$min.cells] 
+  sample_metadata <- sample_metadata[!alias%in%tmp$alias]
+  print("Samples filtered because of small numbers of cells:"); print(tmp)
 }
 
 # Print statistics
-print(table(sample_metadata$sample))
+print(table(sample_metadata$alias))
 print(table(sample_metadata$celltype.mapped))
 
 ####################################
@@ -166,10 +168,10 @@ wt_proportions.dt <- sample_metadata %>%
 #   .[,.(proportion=.N/unique(ncells), N=.N),by=c("celltype.mapped","sample","class")]
 ko_proportions_per_sample.dt <- sample_metadata %>%
   .[class%in%opts$ko.classes] %>%
-  setkey(celltype.mapped,sample) %>%
-  .[CJ(celltype.mapped,sample, unique = TRUE), .N, by = .EACHI] %>%
-  merge(unique(sample_metadata[,c("sample","class")]), by="sample") %>%
-  .[,ncells:=sum(N), by="sample"] %>% .[,proportion:=(N+1)/ncells]
+  setkey(celltype.mapped,alias) %>%
+  .[CJ(celltype.mapped,alias, unique = TRUE), .N, by = .EACHI] %>%
+  merge(unique(sample_metadata[,c("alias","class")]), by="alias") %>%
+  .[,ncells:=sum(N), by="alias"] %>% .[,proportion:=(N+1)/ncells]
 
 # Calculate celltype proportions for KO classes
 # ko_proportions_per_class.dt <- sample_metadata %>%
@@ -201,10 +203,10 @@ proportions_per_class.dt <- merge(
 
 ylimits <- max(abs(proportions_per_sample.dt[!is.infinite(diff_proportion),diff_proportion]))
 
-for (i in unique(proportions_per_sample.dt$sample)) {
+for (i in unique(proportions_per_sample.dt$alias)) {
   
   to.plot <- proportions_per_sample.dt %>%
-    .[sample==i] %>% 
+    .[alias==i] %>% 
     .[N.ko+N.wt>=25]
   
   celltype.order <- to.plot %>%
@@ -243,12 +245,12 @@ for (i in unique(proportions_per_sample.dt$class)) {
   
   celltypes.to.plot <- proportions_per_sample.dt %>%
     .[class==i,.(N=sum(N.ko)+sum(N.wt)),by=c("class","celltype.mapped")] %>% 
-    # .[N>=50,celltype.mapped] %>% as.character
-    .[N>=5,celltype.mapped] %>% as.character
+    .[N>=50,celltype.mapped] %>% as.character
+    # .[N>=5,celltype.mapped] %>% as.character
   
   to.plot <- proportions_per_sample.dt %>%
     .[class==i & celltype.mapped%in%celltypes.to.plot] %>%
-    merge(unique(sample_metadata[,c("sample","dataset")]),by="sample")
+    merge(unique(sample_metadata[,c("alias","dataset")]),by="alias")
   
   celltype.order <- to.plot %>%
     .[,mean(diff_proportion),by="celltype.mapped"] %>% setorder(-V1) %>% .$celltype.mapped
@@ -295,7 +297,7 @@ for (i in unique(proportions_per_sample.dt$class)) {
   
   to.plot <- proportions_per_sample.dt %>%
     .[class==i & celltype.mapped%in%celltypes.to.plot] %>%
-    merge(unique(sample_metadata[,c("sample","dataset")]),by="sample")
+    merge(unique(sample_metadata[,c("alias","dataset")]),by="alias")
   
   celltype.order <- to.plot %>%
     .[,mean(diff_proportion),by="celltype.mapped"] %>% setorder(-V1) %>% .$celltype.mapped
@@ -340,10 +342,10 @@ to.plot.wt_line <- data.table(
 # ylimits <- max(abs(proportions_per_sample.dt[!is.infinite(diff_proportion),diff_proportion]))
 ylimits <- 6
 
-for (i in unique(proportions_per_sample.dt$sample)) {
+for (i in unique(proportions_per_sample.dt$alias)) {
   
   to.plot <- proportions_per_sample.dt %>%
-    .[sample==i] %>% 
+    .[alias==i] %>% 
     .[N.ko+N.wt>=25] %>%
     .[diff_proportion>=ylimits,diff_proportion:=ylimits] %>%
     .[diff_proportion<=(-ylimits),diff_proportion:=(-ylimits)]
@@ -386,7 +388,7 @@ for (i in unique(proportions_per_class.dt$class)) {
   
   celltypes.to.plot <- proportions_per_sample.dt %>%
     .[class==i,.(N=sum(N.ko)+sum(N.wt)),by=c("class","celltype.mapped")] %>% 
-    .[N>=25,celltype.mapped] %>% as.character
+    .[N>=50,celltype.mapped] %>% as.character
   
   to.plot <- proportions_per_sample.dt %>%
     .[class==i & celltype.mapped%in%celltypes.to.plot]  %>%

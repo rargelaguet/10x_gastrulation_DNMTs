@@ -16,9 +16,9 @@ p$add_argument('--outdir',          type="character",                           
 args <- p$parse_args(commandArgs(TRUE))
 
 ## START TEST ##
-args$query_metadata <- file.path(io$basedir,"results_all/mapping/sample_metadata_after_mapping.txt.gz")
+args$query_metadata <- file.path(io$basedir,"results/mapping/sample_metadata_after_mapping.txt.gz")
 args$atlas_metadata <- file.path(io$atlas.basedir,"sample_metadata.txt.gz")
-args$outdir <- file.path(io$basedir,"results_all/mapping/pdf")
+args$outdir <- file.path(io$basedir,"results/mapping/pdf")
 ## END TEST ##
 
 dir.create(args$outdir, showWarnings = F)

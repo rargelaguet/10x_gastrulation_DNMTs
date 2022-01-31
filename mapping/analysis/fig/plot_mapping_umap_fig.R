@@ -3,9 +3,9 @@ here::i_am("mapping/analysis/plot_mapping_umap.R")
 source(here::here("settings.R"))
 source(here::here("mapping/analysis/plot_utils.R"))
 
-io$query_metadata <- file.path(io$basedir,"results_all/mapping/sample_metadata_after_mapping.txt.gz")
+io$query_metadata <- file.path(io$basedir,"results/mapping/sample_metadata_after_mapping.txt.gz")
 io$atlas_metadata <- file.path(io$atlas.basedir,"sample_metadata.txt.gz")
-io$outdir <- file.path(io$basedir,"results_all/mapping/pdf/fig"); dir.create(io$outdir, showWarnings = F)
+io$outdir <- file.path(io$basedir,"results/mapping/pdf/fig"); dir.create(io$outdir, showWarnings = F)
 
 #####################
 ## Define settings ##

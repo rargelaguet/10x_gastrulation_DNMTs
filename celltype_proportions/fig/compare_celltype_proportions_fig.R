@@ -7,8 +7,8 @@ source(here::here("utils.R"))
 ## Define settings ##
 #####################
 
-io$metadata <- file.path(io$basedir,"results_all/mapping/sample_metadata_after_mapping.txt.gz")
-io$outdir <- file.path(io$basedir,"results_all/celltype_proportions/comparisons/fig"); dir.create(io$outdir, showWarnings = F)
+io$metadata <- file.path(io$basedir,"results/mapping/sample_metadata_after_mapping.txt.gz")
+io$outdir <- file.path(io$basedir,"results/celltype_proportions/comparisons/fig"); dir.create(io$outdir, showWarnings = F)
 
 ####################
 ## Define options ##

@@ -8,7 +8,7 @@ source(here::here("utils.R"))
 #####################
 
 # I/O ##
-io$outdir <- file.path(io$basedir,"results_all/individual_genes")
+io$outdir <- file.path(io$basedir,"results/individual_genes")
 
 ## Define options ##
 

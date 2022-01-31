@@ -7,7 +7,7 @@ source(here::here("settings.R"))
 #####################
 
 io$script <- here::here("differential/differential.R")
-io$outdir <- file.path(io$basedir,"results_all/differential"); dir.create(io$outdir, showWarnings=F)
+io$outdir <- file.path(io$basedir,"results/differential"); dir.create(io$outdir, showWarnings=F)
 
 # Rename celltypes
 opts$rename_celltypes <- c(
@@ -23,20 +23,8 @@ opts$rename_celltypes <- c(
   # "Visceral_endoderm" = "ExE_endoderm"
 )
 
-# opts$ko.classes <- c(
-#   "E8.5_Dnmt3aKO_Dnmt3bWT",
-#   "E8.5_Dnmt3aHET_Dnmt3bKO",
-#   "E8.5_Dnmt3aHET_Dnmt3bWT",
-#   "E8.5_Dnmt3aKO_Dnmt3bHET",
-#   "E8.5_Dnmt3aKO_Dnmt3bKO",
-#   "E8.5_Dnmt3aWT_Dnmt3bKO"
-#   # "E8.5_Dnmt1KO"
-# )
 opts$ko.classes <- c(
   "Dnmt3a_KO", 
-  # "Dnmt3a_HET_Dnmt3b_KO", 
-  # "Dnmt3a_HET_Dnmt3b_WT", 
-  # "Dnmt3a_KO_Dnmt3b_HET", 
   "Dnmt3ab_KO", 
   "Dnmt3b_KO",
   "Dnmt1_KO"
@@ -67,7 +55,7 @@ opts$min.cells <- 50
 # j <- "Blood_progenitors"; i <- "Dnmt1_KO"
 for (i in opts$ko.classes) {
   
-  # Define cell types to use 
+  # Only consider cell types with sufficient observations in KO cells
   celltypes.to.use <- sample_metadata %>% .[class==i,.N,by="celltype.mapped"] %>% .[N>=opts$min.cells,celltype.mapped]
   
   for (j in celltypes.to.use) {

@@ -18,9 +18,9 @@ args <- p$parse_args(commandArgs(TRUE))
 ###################
 
 ## START TEST ##
-# args$metadata <- file.path(io$basedir,"results_all/mapping/sample_metadata_after_mapping.txt.gz")
-# args$mapping_mnn <- file.path(io$basedir,sprintf("results_all/mapping/trajectories/NMP/mapping_mnn_%s.txt.gz",opts$samples))
-# args$outfile <- file.path(io$basedir,"results_all/mapping/trajectories/NMP/sample_metadata_after_mapping.txt.gz")
+# args$metadata <- file.path(io$basedir,"results/mapping/sample_metadata_after_mapping.txt.gz")
+# args$mapping_mnn <- file.path(io$basedir,sprintf("results/mapping/trajectories/NMP/mapping_mnn_%s.txt.gz",opts$samples))
+# args$outfile <- file.path(io$basedir,"results/mapping/trajectories/NMP/sample_metadata_after_mapping.txt.gz")
 ## END TEST ##
 
 stopifnot(file.exists(args$mapping_mnn))

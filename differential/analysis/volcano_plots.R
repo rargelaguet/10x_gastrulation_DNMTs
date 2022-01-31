@@ -12,8 +12,8 @@ source(here::here("differential/analysis/utils.R"))
 ##############
 
 # I/O
-io$indir <- file.path(io$basedir,"results_all/differential")
-io$outdir <- file.path(io$basedir,"results_all/differential/pdf/volcano_plots"); dir.create(io$outdir, showWarnings = F, recursive = T)
+io$indir <- file.path(io$basedir,"results/differential")
+io$outdir <- file.path(io$basedir,"results/differential/pdf/volcano_plots"); dir.create(io$outdir, showWarnings = F, recursive = T)
 
 # Options
 opts$min.cells <- 50

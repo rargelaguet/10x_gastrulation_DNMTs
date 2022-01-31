@@ -6,8 +6,8 @@ source(here::here("utils.R"))
 #####################
 
 # I/O
-io$sce.pseudobulk <- file.path(io$basedir,"results_all/pseudobulk/SingleCellExperiment_pseudobulk_class_celltype.rds")
-io$outdir <- file.path(io$basedir,"results_all/differential/pseudobulk"); dir.create(io$outdir, showWarnings = F)
+io$sce.pseudobulk <- file.path(io$basedir,"results/pseudobulk/SingleCellExperiment_pseudobulk_class_celltype.rds")
+io$outdir <- file.path(io$basedir,"results/differential/pseudobulk"); dir.create(io$outdir, showWarnings = F)
 
 # Options
 opts$min.cells <- 25

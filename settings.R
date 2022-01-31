@@ -33,8 +33,8 @@ if (grepl("ricard",Sys.info()['nodename'])) {
 }
 
 io$metadata <- paste0(io$basedir,"/sample_metadata.txt.gz")
-io$seurat <- paste0(io$basedir,"/processed_all/seurat.rds")
-io$sce <- paste0(io$basedir,"/processed_all/SingleCellExperiment.rds")
+io$seurat <- paste0(io$basedir,"/processed/seurat.rds")
+io$sce <- paste0(io$basedir,"/processed/SingleCellExperiment.rds")
 # io$sex <- paste0(io$basedir,"/results/sex/sex_assignment.txt.gz")
 
 # Atlas information

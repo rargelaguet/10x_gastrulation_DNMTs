@@ -9,7 +9,7 @@ source(here::here("utils.R"))
 
 # I/O
 io$outfile <- "/Users/argelagr/data/shiny_dnmt_tet/SingleCellExperiment_pseudobulk_class_celltype_dataset.rds"
-io$sce.pseudobulk <- file.path(io$basedir,"results_all/pseudobulk/SingleCellExperiment_pseudobulk_class_celltype_dataset.rds")
+io$sce.pseudobulk <- file.path(io$basedir,"results/pseudobulk/SingleCellExperiment_pseudobulk_class_celltype_dataset.rds")
 
 # Define options
 opts$celltypes = c(
