@@ -50,7 +50,7 @@ opts$threshold_fdr <- 0.01
 opts$min.logFC <- 1
 
 # For a given gene, the minimum fraction of cells that must express it in at least one group
-opts$min_detection_rate_per_group <- 0.40
+opts$min_detection_rate_per_group <- 0.25
 
 # Rename celltypes
 opts$rename_celltypes <- c(

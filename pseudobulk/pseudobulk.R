@@ -43,7 +43,7 @@ dir.create(args$outdir, showWarnings=F)
 #   "Blood_progenitors_2" = "Blood_progenitors",
 #   "Anterior_Primitive_Streak" = "Primitive_Streak"
 # )
-# .[,celltype.mapped:=stringr::str_replace_all(celltype.mapped,opts$rename_celltypes)] %>%
+
 
 ###############
 ## Load data ##
@@ -52,6 +52,7 @@ dir.create(args$outdir, showWarnings=F)
 # Load cell metadata
 sample_metadata <- fread(args$metadata) %>%
   .[,dataset:=ifelse(grepl("Grosswendt",sample),"CRISPR","KO")] %>%
+  # .[,celltype.mapped:=stringr::str_replace_all(celltype.mapped,opts$rename_celltypes)] %>%
   .[,class_celltype:=sprintf("%s-%s",class,celltype.mapped)] %>%
   .[,class_celltype_dataset:=sprintf("%s-%s-%s",class,celltype.mapped,dataset)] %>%
   .[,class_sample_celltype:=sprintf("%s-%s-%s",class,sample,celltype.mapped)] %>%

@@ -8,7 +8,7 @@ source(here::here("utils.R"))
 #####################
 
 # I/O
-io$outdir <- file.path(io$basedir,"results/individual_genes/pseudobulk/per_sample"); dir.create(io$outdir, showWarnings = F)
+io$outdir <- file.path(io$basedir,"results/individual_genes/pseudobulk/per_sample"); dir.create(io$outdir, showWarnings = F, recursive = T)
 # io$sce.pseudobulk <- file.path(io$basedir,"results/pseudobulk/SingleCellExperiment_pseudobulk_class_celltype_dataset.rds")
 io$sce.pseudobulk <- file.path(io$basedir,"results/pseudobulk/SingleCellExperiment_pseudobulk_class_sample_celltype.rds")
 
@@ -108,9 +108,9 @@ sce <- sce[,stats.dt$id]
 
 # genes.to.plot <- c("Bhmt", "Spic", "Trim43a", "Pramel6", "Nanog", "Khdc3", "Tfap2c", "Calcoco2", "Dppa3", "Dppa4", "Esrrb", "Crxos")
 # genes.to.plot <- c("Bex1", "Cldn6", "Dstn", "Esrrb", "Etv5", "Fbxo15", "Fgf4", "Pou5f1", "Gdf3", "Idh1", "Jarid2", "Klf2", "Klf4", "Klf5", "Lats2", "Lgals1", "Kdm1a", "Myh9", "Nanog", "Nr0b1", "Pdk1", "Peg3", "Pfkp", "Phldb2", "Plk2", "Rif1", "Nacc1", "Zfp281", "Zfp42", "Sall1", "Sall4", "Sox2", "Spp1", "Dppa3", "Tagln", "Tbx3", "Tcl1", "Tdgf1", "Sfrp1", "Tdh", "Tead1", "Tet1", "Tet2", "Tfcp2l1", "Thbs1", "Tuba1a", "Tubb6", "Upp1", "Utf1", "Wbp5", "Foxa2", "Cer1", "T", "Nodal", "Lef1", "Fgf5")
-# genes.to.plot <- c("Dnmt3b", "Gng3", "Nr0b1", "Pecam1")
+genes.to.plot <- c("Ascl2")
 # genes.to.plot <- fread("/Users/argelagr/data/10x_gastrulation_DNMTs/results/differential/Dnmt1_KO/Neural_crest_WT_vs_Dnmt1_KO.txt.gz") %>% .[padj_fdr<0.01 & abs(logFC)>1.5,gene]
-genes.to.plot <- grep("^Hox",rownames(sce),value=T)
+# genes.to.plot <- grep("^Hox",rownames(sce),value=T)
 # genes.to.plot <- fread(io$atlas.marker_genes)[,gene] %>% unique %>% head(n=3)
 # genes.to.plot <- fread(io$atlas.marker_genes) %>% .[grep("Neural_crest",celltype),gene] %>% unique
 

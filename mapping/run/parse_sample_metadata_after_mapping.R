@@ -75,7 +75,6 @@ to.save <- sample_metadata %>% merge(mapping_mnn.dt, by="cell", all.x=TRUE)
 
 # to.save %>% .[,celltype.mapped:=stringr::str_replace_all(celltype.mapped,opts$rename.celltypes)]
 
-
 to.save %>%
   .[,celltype_class:=as.character(NA)] %>%
   .[!is.na(celltype.mapped),celltype_class:=sprintf("%s_%s",celltype.mapped,class)]

@@ -158,7 +158,7 @@ if (length(args$batch_correction)>0) {
   pca <- multiBatchPCA(sce_filt, batch = colData(sce_filt)[[args$batch_correction]], d = args$npcs)
   pca.corrected <- reducedMNN(pca)$corrected[colnames(sce),]
   colnames(pca.corrected) <- paste0("PC",1:ncol(pca.corrected))
-  reducedDim(sce_filt, "PCA") <- pca.corrected
+  reducedDim(sce_filt, "PCA") <- pca.corrected[colnames(sce),]
 } else {
   outfile <- sprintf("%s/%s_pca_features%d_pcs%d.txt.gz",args$outdir, paste(args$samples,collapse="-"), args$features, args$npcs)
   sce_filt <- runPCA(sce_filt, ncomponents = args$npcs, ntop=args$features)

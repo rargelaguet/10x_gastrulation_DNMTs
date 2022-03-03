@@ -14,9 +14,6 @@ opts$min.cells <- 25
 
 opts$ko.classes <- c(
   "Dnmt3a_KO", 
-  # "Dnmt3a_HET_Dnmt3b_KO", 
-  # "Dnmt3a_HET_Dnmt3b_WT", 
-  # "Dnmt3a_KO_Dnmt3b_HET", 
   "Dnmt3ab_KO", 
   "Dnmt3b_KO",
   "Dnmt1_KO"

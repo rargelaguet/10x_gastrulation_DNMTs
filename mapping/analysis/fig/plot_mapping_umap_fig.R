@@ -25,7 +25,7 @@ opts$alpha.nomapped <- 0.35
 
 opts$samples <- c(
   "WT_1", "WT_2", "WT_3", "WT_4", "WT_6",
-  "Dnmt3a_KO_1", "Dnmt3a_KO_12", "Dnmt3a_KO_2", "Dnmt3a_KO_Dnmt3b_HET_1", "Dnmt3a_KO_Dnmt3b_HET_2",
+  "Dnmt3a_KO_1", "Dnmt3a_KO_12", "Dnmt3a_KO_2", "Dnmt3a_KO_13", "Dnmt3a_KO_14",
   "Dnmt3b_KO_1", "Dnmt3b_KO_2", "Dnmt3b_KO_6", "Dnmt3b_KO_7", "Dnmt3b_KO_9", 
   "Dnmt1_KO_10", "Dnmt1_KO_15", "Dnmt1_KO_2", "Dnmt1_KO_3", "Dnmt1_KO_9"
   # "Dnmt3ab_KO_1", "Dnmt3ab_KO_2"
@@ -38,7 +38,6 @@ opts$samples <- c(
 
 sample_metadata <- fread(io$query_metadata) %>%
   .[,alias:=factor(alias,levels=opts$samples)] %>%
-  .[class=="Dnmt3a_KO_Dnmt3b_HET",class:="Dnmt3a_KO"] %>%
   .[pass_rnaQC==TRUE & alias%in%opts$samples & !is.na(closest.cell)]
 
 stopifnot("closest.cell"%in%colnames(sample_metadata))
@@ -155,5 +154,3 @@ for (i in args$classes) {
   print(p)
   dev.off()
 }
-# Completion token
-file.create(file.path(io$outdir,"completed.txt"))

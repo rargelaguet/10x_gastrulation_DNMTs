@@ -124,7 +124,7 @@ if (opts$remove.blood) {
 
 if (opts$remove.ExE.celltypes) {
   sample_metadata <- sample_metadata %>%
-    .[!celltype.mapped%in%c("Visceral_endoderm","ExE_endoderm","ExE_ectoderm","Parietal_endoderm")] %>%
+    .[!celltype.mapped%in%c("Visceral_endoderm","ExE_endoderm","ExE_ectoderm","Parietal_endoderm")]
     # .[!celltype.mapped%in%c("ExE_ectoderm","Parietal_endoderm")]
 }
 

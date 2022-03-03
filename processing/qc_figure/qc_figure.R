@@ -5,13 +5,23 @@ source(here::here("settings.R"))
 #####################
 
 # I/O
-io$outdir <- paste0(io$basedir,"/results_new/qc/figure"); dir.create(io$outdir, showWarnings = F)
+io$outdir <- paste0(io$basedir,"/results/qc/figure"); dir.create(io$outdir, showWarnings = F)
 
 # Options
-opts$min_nFeature_RNA <- 1000
+opts$classes <- c(
+    "WT", 
+    "Dnmt3a_KO", 
+    "Dnmt3b_KO",
+    # "Dnmt3ab_KO",
+    "Dnmt1_KO"
+)
+
+opts$min_nFeature_RNA <- 1500
 opts$max_nFeature_RNA <- 10000
 opts$mit_percent_RNA <- 15
 opts$rib_percent_RNA <- 40
+
+opts$classes.colors <- opts$classes.colors[opts$classes]
 
 ###################
 ## Load metadata ##
@@ -68,7 +78,7 @@ to.plot.jitter <- to.plot %>% .[sample.int(n=nrow(.), size=nrow(.)/10)]
 p <- ggplot(to.plot, aes_string(x="alias", y="value", fill="class")) +
     ggrastr::geom_jitter_rast(aes(color=class), alpha=0.5, width=0.15, size=0.05, data=to.plot.jitter) +
     geom_boxplot(outlier.shape=NA, coef=1, alpha=0.9) +
-    geom_hline(aes(yintercept=value), linetype="dashed", data=tmp) +
+    # geom_hline(aes(yintercept=value), linetype="dashed", data=tmp) +
     facet_wrap(~variable, scales="free_y", labeller = as_labeller(facet.labels), nrow=1) +
     # scale_fill_brewer(palette="Dark2") +
     # scale_color_brewer(palette="Dark2") +
@@ -109,7 +119,7 @@ p <- ggbarplot(to.plot, x="alias", y="V1", fill="class") +
         axis.text.x = element_text(colour="black",size=rel(0.50), angle=20, hjust=1, vjust=1),
     )
 
-pdf(file.path(io$outdir,"qc_metrics_barplot.pdf"), width=8, height=6)
+pdf(file.path(io$outdir,"qc_metrics_barplot.pdf"), width=8, height=4.5)
 print(p)
 dev.off()
 

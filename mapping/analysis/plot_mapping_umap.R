@@ -34,7 +34,7 @@ opts$remove_ExE_cells <- FALSE
 opts$subset_atlas <- TRUE
 
 # Dot size
-opts$size.mapped <- 0.18
+opts$size.mapped <- 0.25
 opts$size.nomapped <- 0.1
 
 # Transparency
@@ -156,26 +156,31 @@ for (i in classes.to.plot) {
 ## Plot WT and KO together ##
 #############################
 
-# Subsample query cells to have the same N per class
-# sample_metadata_subset <- sample_metadata %>% .[,.SD[sample.int(n=.N, size=4500)], by=c("stage","class2")]
+opts$size.mapped <- 0.14
+opts$size.nomapped <- 0.8
 
 # i <- "E7.5"
-for (i in args$classes) {
+for (i in classes.to.plot) {
+  
+  # Subset cells to have the same N per class
+  ncells <- min(sample_metadata[class%in%c(i,"WT"),.N,by="class"][["N"]])
+  sample_metadata_subset <- sample_metadata %>% .[class%in%c("WT",i)] %>% .[,.SD[sample.int(n=.N, size=ncells)], by="class"]
   
   to.plot <- umap.dt %>% copy %>%
-    .[,index.wt:=match(cell, sample_metadata[class=="WT" & stage==i,closest.cell] )] %>%
-    .[,index.ko:=match(cell, sample_metadata[class==i & stage==i,closest.cell] )] %>%
+    .[,index.wt:=match(cell, sample_metadata[class=="WT",closest.cell] )] %>%
+    .[,index.ko:=match(cell, sample_metadata[class==i,closest.cell] )] %>%
     .[,mapped.wt:=c(0,-10)[as.numeric(as.factor(!is.na(index.wt)))]] %>%
     .[,mapped.ko:=c(0,10)[as.numeric(as.factor(!is.na(index.ko)))]] %>%
     .[,mapped:=factor(mapped.wt + mapped.ko, levels=c("0","-10","10"))] %>%
-    .[,mapped:=plyr::mapvalues(mapped, from = c("0","-10","10"), to = c("Atlas","WT",i))] %>% setorder(mapped)
+    .[,mapped:=plyr::mapvalues(mapped, from = c("0","-10","10"), to = c("Atlas",i,"WT"))] %>% setorder(mapped)
   
   p <- plot.dimred.wtko(to.plot, wt.label = "WT", ko.label = i, nomapped.label = "Atlas") +
-    theme(legend.position = "top", axis.line = element_blank())
+    theme(legend.position = "none", axis.line = element_blank())
   
-  pdf(sprintf("%s/per_class/umap_mapped_%s_WT_and_KO.pdf",args$outdir,i), width=5.5, height=6.5)
+  pdf(sprintf("%s/per_class/umap_mapped_%s_WT_and_KO.pdf",args$outdir,i), width=5.5, height=5)
   print(p)
   dev.off()
 }
+
 # Completion token
 file.create(file.path(args$outdir,"completed.txt"))

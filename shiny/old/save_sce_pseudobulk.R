@@ -1,4 +1,4 @@
-here::i_am("plot_individual_genes/pseudobulk/plot_individual_genes_pseudobulk.R")
+here::i_am("shiny/save_sce_pseudobulk.R")
 
 source(here::here("settings.R"))
 source(here::here("utils.R"))
@@ -12,7 +12,7 @@ io$outfile <- "/Users/argelagr/data/shiny_dnmt_tet/SingleCellExperiment_pseudobu
 io$sce.pseudobulk <- file.path(io$basedir,"results/pseudobulk/SingleCellExperiment_pseudobulk_class_celltype_dataset.rds")
 
 # Define options
-opts$celltypes = c(
+opts$celltypes <- c(
   "Epiblast",
   "Primitive_Streak",
   "Caudal_epiblast",
@@ -53,14 +53,11 @@ opts$celltypes = c(
 )
 
 opts$classes <- c(
-  # "Dnmt3a_HET_Dnmt3b_KO",
-  # "Dnmt3a_HET_Dnmt3b_WT",
-  # "Dnmt3a_KO_Dnmt3b_HET",
   "WT",
   "Dnmt3a_KO",
   "Dnmt3b_KO",
-  "Dnmt1_KO",
-  "Dnmt3ab_KO"
+  "Dnmt1_KO"
+  # "Dnmt3ab_KO"
 )
 
 # opts$rename_celltypes <- c(

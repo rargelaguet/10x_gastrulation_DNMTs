@@ -17,8 +17,8 @@ io$outdir <- file.path(io$basedir,"results/celltype_proportions/comparisons/fig"
 opts$ko.classes <- c(
   "Dnmt3a_KO", 
   "Dnmt3b_KO",
-  "Dnmt1_KO",
-  "Dnmt3ab_KO"
+  "Dnmt1_KO"
+  # "Dnmt3ab_KO"
 )
 
 opts$wt.classes <- c("WT")
@@ -110,7 +110,7 @@ if (opts$remove.ExE.celltypes) {
 # }
 
 if (opts$remove.small.embryos) {
-  opts$min.cells <- 1500
+  opts$min.cells <- 1000
   sample_metadata <- sample_metadata %>%
     .[,N:=.N,by="alias"] %>% .[N>opts$min.cells] %>% .[,N:=NULL]
 }
@@ -162,6 +162,9 @@ proportions_per_class.dt <- merge(
 ## Boxplots per class ##  
 #######################
 
+# Define order based on Dnmt1 KO
+celltype.order <- proportions_per_class.dt[class=="Dnmt1_KO"] %>% setorder(-diff_proportion) %>% .$celltype.mapped %>% as.character
+
 # For viz purposes
 proportions_per_sample.dt[diff_proportion>=6.5,diff_proportion:=6.5]
 # ylimits <- max(abs(proportions_per_sample.dt$diff_proportion)) + 0.25
@@ -177,8 +180,7 @@ for (i in opts$ko.classes) {
     .[class==i & celltype.mapped%in%celltypes.to.plot] %>%
     merge(unique(sample_metadata[,c("sample","dataset")]),by="sample")
   
-  celltype.order <- to.plot %>%
-    .[,mean(diff_proportion),by="celltype.mapped"] %>% setorder(-V1) %>% .$celltype.mapped
+  # celltype.order <- to.plot %>% .[,mean(diff_proportion),by="celltype.mapped"] %>% setorder(-V1) %>% .$celltype.mapped
   to.plot <- to.plot %>% .[,celltype.mapped:=factor(celltype.mapped,levels=celltype.order)]
   
   # text.dt <- proportions_per_class.dt %>% 

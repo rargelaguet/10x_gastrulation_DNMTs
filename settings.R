@@ -318,13 +318,6 @@ opts$classes <- c(
 
 
 opts$classes.colors <- c(
-  # "E12.5_Dnmt3aWT_Dnmt3bHET",
-  # "E12.5_Dnmt3b_KO",
-  # "E12.5_Dnmt3a_HET_Dnmt3b_WT",
-  # "E12.5_Dnmt3a_KO",
-  # "Dnmt3a_HET_Dnmt3b_KO" = "", 
-  # "Dnmt3a_HET_Dnmt3b_WT" = "", 
-  # "Dnmt3a_KO_Dnmt3b_HET" = "", 
   "WT" = "#ffffb3", 
   "Dnmt3a_KO" = "#8dd3c7", 
   "Dnmt3b_KO" = "#fb8072", 

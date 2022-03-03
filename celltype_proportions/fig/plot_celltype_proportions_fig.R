@@ -72,7 +72,7 @@ opts$celltypes = c(
 
 opts$samples <- c(
   "WT_1", "WT_2", "WT_3", "WT_4", "WT_6",
-  "Dnmt3a_KO_1", "Dnmt3a_KO_12", "Dnmt3a_KO_2", "Dnmt3a_KO_Dnmt3b_HET_1", "Dnmt3a_KO_Dnmt3b_HET_2",
+  "Dnmt3a_KO_1", "Dnmt3a_KO_12", "Dnmt3a_KO_2", "Dnmt3a_KO_13", "Dnmt3a_KO_14",
   "Dnmt3b_KO_1", "Dnmt3b_KO_2", "Dnmt3b_KO_6", "Dnmt3b_KO_7", "Dnmt3b_KO_9", 
   "Dnmt1_KO_10", "Dnmt1_KO_15", "Dnmt1_KO_2", "Dnmt1_KO_3", "Dnmt1_KO_9"
   # "Dnmt3ab_KO_1", "Dnmt3ab_KO_2"
@@ -86,7 +86,6 @@ sample_metadata <- fread(args$metadata) %>%
   # .[pass_rnaQC==TRUE & doublet_call==FALSE & !is.na(eval(as.name(args$celltype_label)))] %>%
   .[pass_rnaQC==TRUE & alias%in%opts$samples & celltype.mapped%in%opts$celltypes] %>%
   .[,alias:=factor(alias,levels=opts$samples)] %>%
-  .[class=="Dnmt3a_KO_Dnmt3b_HET",class:="Dnmt3a_KO"] %>%
   setnames("celltype.mapped","celltype")
 
 if (opts$remove_ExE_cells) {
@@ -107,8 +106,6 @@ to.plot <- sample_metadata %>%
 opts$celltype.colors <- opts$celltype.colors[names(opts$celltype.colors) %in% unique(to.plot$celltype)]
 to.plot[,celltype:=factor(celltype, levels=rev(names(opts$celltype.colors)))]
 
-# classes.to.plot <- unique(to.plot$class)
-
 p <- ggplot(to.plot, aes(x=celltype, y=N)) +
   geom_bar(aes(fill=celltype), stat="identity", color="black",) +
   scale_fill_manual(values=opts$celltype.colors, drop=F) +
@@ -126,8 +123,6 @@ p <- ggplot(to.plot, aes(x=celltype, y=N)) +
     axis.text.x = element_text(size=rel(1), color="black")
   )
   
-# if (length(unique(to.plot[class==i,alias]))>2) { width <- 12 } else { width <- 6 }
-
 pdf(file.path(args$outdir,"celltype_proportions_horizontal_barplots.pdf"), width=10, height=14)
 print(p)
 dev.off()

@@ -13,9 +13,6 @@ io$outdir <- file.path(io$basedir,"results/differential/pseudobulk/pdf"); dir.cr
 # Options
 opts$ko.classes <- c(
   "Dnmt3a_KO", 
-  # "Dnmt3a_HET_Dnmt3b_KO", 
-  # "Dnmt3a_HET_Dnmt3b_WT", 
-  # "Dnmt3a_KO_Dnmt3b_HET", 
   "Dnmt3b_KO",
   "Dnmt1_KO"
   # "Dnmt3ab_KO"
@@ -98,7 +95,7 @@ diff.dt <- diff.dt %>%
   .[,.(expr_ko=mean(expr_ko), expr_wt=mean(expr_wt), diff=mean(diff)), by=c("celltype","class","gene")]
 
 # save
-# fwrite(diff.dt, file.path(io$outdir,"diff_pseudobulk.txt.gz"))
+fwrite(diff.dt, file.path(io$outdir,"diff_pseudobulk.txt.gz"))
 
 ######################
 ## Heatmap per gene ##

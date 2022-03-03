@@ -143,14 +143,14 @@ plotting_fn <- function(sce, gene, classes, celltypes, max.expr=NULL, add_number
   return(p)
 }
 
-plotting_fn(sce, gene = "Rhox5", celltypes = c("Cardiomyocytes", "Spinal_cord","ExE_endoderm","ExE_ectoderm"), classes = opts$classes)
+# plotting_fn(sce, gene = "Rhox5", celltypes = c("Cardiomyocytes", "Spinal_cord","ExE_endoderm","ExE_ectoderm"), classes = opts$classes)
 
 ####################
 ## Plot ExE genes ##
 ####################
 
 genes.to.plot <- c("Rhox5","Rhox6","Rhox9","Trap1a","Xlr3a")
-celltypes.to.plot <- c("Cardiomyocytes", "Spinal_cord","ExE_endoderm","ExE_ectoderm")
+celltypes.to.plot <- c("Forebrain_Midbrain_Hindbrain","Spinal_cord","ExE_endoderm","ExE_ectoderm")
 
 for (gene in genes.to.plot) {
   pdf(sprintf("%s/%s_ExE_barplot_pseudobulk_per_sample.pdf",io$outdir,gene), width=6, height=2)
@@ -167,8 +167,9 @@ for (gene in genes.to.plot) {
 ## Plot Pluripotency genes ##
 #############################
 
-genes.to.plot <-  c("Pou5f1", "Utf1", "Pim2", "Slc7a3", "Fgf5","Gng3","Dnmt3b")
-celltypes.to.plot <- c("Forebrain_Midbrain_Hindbrain", "Spinal_cord","Mesenchyme","Cardiomyocytes")
+genes.to.plot <-  c("Pou5f1", "Utf1", "Pim2", "Slc7a3", "Fgf5","Gng3","Dnmt3b","Nanog")
+# celltypes.to.plot <- c("Forebrain_Midbrain_Hindbrain", "Spinal_cord","Mesenchyme","Cardiomyocytes")
+celltypes.to.plot <- c("Forebrain_Midbrain_Hindbrain","Spinal_cord","NMP","Gut")
 
 for (gene in genes.to.plot) {
   pdf(sprintf("%s/%s_pluripotency_barplot_pseudobulk_per_sample.pdf",io$outdir,gene), width=6, height=2)
@@ -187,7 +188,7 @@ for (gene in genes.to.plot) {
 ####################
 
 genes.to.plot <- c("Hoxc9","Hoxc8","Hoxb9","Hoxa9")
-celltypes.to.plot <- c( "NMP", "Somitic_mesoderm","Intermediate_mesoderm","Haematoendothelial_progenitors")
+celltypes.to.plot <- c("NMP", "Somitic_mesoderm","Intermediate_mesoderm","ExE_mesoderm")
 
 for (gene in genes.to.plot) {
   pdf(sprintf("%s/%s_hox_barplot_pseudobulk_per_sample.pdf",io$outdir,gene), width=6, height=2)

@@ -1,3 +1,5 @@
+here::i_am("shiny/save_expr_matrix.R")
+
 library(HDF5Array)
 
 source(here::here("settings.R"))
@@ -8,7 +10,7 @@ source(here::here("utils.R"))
 #####################
 
 # I/O ##
-io$sce <- file.path(io$basedir,"processed_all/SingleCellExperiment.rds")
+io$sce <- file.path(io$basedir,"processed/SingleCellExperiment.rds")
 io$outdir <- "/Users/argelagr/data/shiny_dnmt_tet"
 
 ## Define options ##
@@ -57,21 +59,13 @@ opts$celltypes = c(
 )
 
 # Define classes to plot
-# opts$classes <- c(
-#   # "E12.5_Dnmt3aWT_Dnmt3bHET",
-#   # "E12.5_Dnmt3b_KO",
-#   # "E12.5_Dnmt3a_HET_Dnmt3b_WT",
-#   # "E12.5_Dnmt3a_KO",
-#   "Dnmt3a_KO", 
-#   "WT", 
-#   "Dnmt3a_HET_Dnmt3b_KO", 
-#   # "Dnmt3a_HET_Dnmt3b_WT", 
-#   "Dnmt3a_KO_Dnmt3b_HET", 
-#   "Dnmt3ab_KO", 
-#   "Dnmt3b_KO",
-#   "Dnmt1_KO"
-# )
-opts$classes <- c("WT", "Dnmt1_KO") # for testing
+opts$classes <- c(
+  "WT",
+  "Dnmt3a_KO",
+  "Dnmt3b_KO",
+  "Dnmt1_KO"
+  # "Dnmt3ab_KO"
+)
 
 # opts$rename_celltypes <- c(
 #   "Erythroid3" = "Erythroid",
@@ -87,7 +81,7 @@ opts$classes <- c("WT", "Dnmt1_KO") # for testing
 ##########################
 
 sample_metadata <- fread(io$metadata) %>% 
-  .[,dataset:=ifelse(grepl("Grosswendt",sample),"Grosswendt","This data set")] %>%
+  .[,dataset:=ifelse(grepl("Grosswendt",sample),"CRISPR","KO")] %>%
   # .[,celltype.mapped:=stringr::str_replace_all(celltype.mapped,opts$rename_celltypes)] %>%
   .[pass_rnaQC==TRUE & celltype.mapped%in%opts$celltypes & class%in%opts$classes]
 
@@ -119,7 +113,7 @@ sce <- sce[sparseMatrixStats::rowVars(logcounts(sce))>0,]
 ##########
 
 # Save metadata
-cols <- c(c("cell", "sample", "nFeature_RNA", "mit_percent_RNA", "rib_percent_RNA", "stage", "class", "alias", "dataset", "celltype.mapped", "celltype.score", "closest.cell"))
+cols <- c(c("cell","alias","class","dataset","stage","nFeature_RNA", "mit_percent_RNA", "rib_percent_RNA", "celltype.mapped", "celltype.score", "closest.cell"))
 sample_metadata_to_save <- sample_metadata[,..cols]
 fwrite(sample_metadata_to_save, file.path(io$outdir,"cell_metadata.txt.gz"), quote=F, sep="\t", na="NA")
 

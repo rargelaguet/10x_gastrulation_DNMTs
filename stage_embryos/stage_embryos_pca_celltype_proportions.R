@@ -26,7 +26,47 @@ opts$classes <- c(
   # "Dnmt3ab_KO"
 )
 
-opts$remove.ExE.celltypes <- TRUE
+opts$celltypes = c(
+  "Epiblast",
+  "Primitive_Streak",
+  "Caudal_epiblast",
+  # "PGC",
+  "Anterior_Primitive_Streak",
+  "Notochord",
+  "Def._endoderm",
+  "Gut",
+  "Nascent_mesoderm",
+  "Mixed_mesoderm",
+  "Intermediate_mesoderm",
+  "Caudal_Mesoderm",
+  "Paraxial_mesoderm",
+  "Somitic_mesoderm",
+  "Pharyngeal_mesoderm",
+  "Cardiomyocytes",
+  "Allantois",
+  "ExE_mesoderm",
+  "Mesenchyme",
+  "Haematoendothelial_progenitors",
+  "Endothelium",
+  "Blood_progenitors_1",
+  "Blood_progenitors_2",
+  "Erythroid1",
+  "Erythroid2",
+  "Erythroid3",
+  "NMP",
+  "Rostral_neurectoderm",
+  "Caudal_neurectoderm",
+  "Neural_crest",
+  "Forebrain_Midbrain_Hindbrain",
+  "Spinal_cord",
+  "Surface_ectoderm",
+  "Visceral_endoderm",
+  "ExE_endoderm",
+  "ExE_ectoderm"
+  # "Parietal_endoderm"
+)
+
+opts$remove.ExE.celltypes <- FALSE
 
 ##########################
 ## Load sample metadata ##
@@ -95,56 +135,56 @@ celltype_proportions.dt <- rbind(
 ## Plot atlas cells ##
 ######################
 
-celltype_proportions_atlas.mtx <- celltype_proportions_atlas.dt %>% 
-  dcast(alias~celltype, fill=0, value.var="celltype_proportion") %>% 
-  matrix.please
-
-# PCA
-atlas.pca <- prcomp(celltype_proportions_atlas.mtx, rank.=5)
-
-# Plot
-to.plot <- atlas.pca$x %>% as.data.table %>% 
-  .[,alias:=rownames(atlas.pca$x)] %>%
-  merge(sample_metadata_atlas.dt, by="alias")
-
-# Flip order of PC1 such that E6.5<E8.5
-tmp <- to.plot[,mean(PC1),by="stage"]
-if (tmp[stage=="E6.5",V1]>tmp[stage=="E8.5",V1]) { to.plot[,PC1:=-PC1] }
-
-p <- ggplot(to.plot, aes(x=PC1, y=PC2, fill=stage)) +
-  geom_point(stroke=0.5, color="black", size=4, shape=21) +
-  scale_fill_manual(values=opts$stage.colors) +
-  guides(fill=guide_legend(override.aes=list(shape=21))) +
-  guides(shape=guide_legend(override.aes=list(fill="black"))) +
-  theme_classic() +
-  theme(
-    legend.position = "right",
-    legend.title = element_blank(),
-    axis.text = element_text(color="black", size=rel(0.8))
-  )
-
-pdf(paste0(io$outdir,"/pca_celltype_proportions_atlas.pdf"), width=7, height=5)
-print(p)
-dev.off()
+# celltype_proportions_atlas.mtx <- celltype_proportions_atlas.dt %>% 
+#   dcast(alias~celltype, fill=0, value.var="celltype_proportion") %>% 
+#   matrix.please
+# 
+# # PCA
+# atlas.pca <- prcomp(celltype_proportions_atlas.mtx, rank.=5)
+# 
+# # Plot
+# to.plot <- atlas.pca$x %>% as.data.table %>% 
+#   .[,alias:=rownames(atlas.pca$x)] %>%
+#   merge(sample_metadata_atlas.dt, by="alias")
+# 
+# # Flip order of PC1 such that E6.5<E8.5
+# tmp <- to.plot[,mean(PC1),by="stage"]
+# if (tmp[stage=="E6.5",V1]>tmp[stage=="E8.5",V1]) { to.plot[,PC1:=-PC1] }
+# 
+# p <- ggplot(to.plot, aes(x=PC1, y=PC2, fill=stage)) +
+#   geom_point(stroke=0.5, color="black", size=4, shape=21) +
+#   scale_fill_manual(values=opts$stage.colors) +
+#   guides(fill=guide_legend(override.aes=list(shape=21))) +
+#   guides(shape=guide_legend(override.aes=list(fill="black"))) +
+#   theme_classic() +
+#   theme(
+#     legend.position = "right",
+#     legend.title = element_blank(),
+#     axis.text = element_text(color="black", size=rel(0.8))
+#   )
+# 
+# pdf(paste0(io$outdir,"/pca_celltype_proportions_atlas.pdf"), width=7, height=5)
+# print(p)
+# dev.off()
 
 
 ##########################
 ## Plot cells per class ##
 ##########################
 
-i <- "Dnmt1_KO"
 for (i in opts$classes) {
   
-  celltype_proportions_query.mtx <- celltype_proportions.dt[class%in%c(i,"Atlas")] %>% 
+  celltype_proportions.mtx <- celltype_proportions.dt[class%in%c(i,"Atlas")] %>% 
     dcast(alias~celltype, fill=0, value.var="celltype_proportion") %>% 
     matrix.please
   
   # PCA
-  query.pca <- prcomp(celltype_proportions_query.mtx, rank.=5)
+  pca <- prcomp(celltype_proportions.mtx, rank.=5)
+  var.explained <- round(100*(pca$sdev**2)/sum(pca$sdev**2),2)
   
   # Plot
-  to.plot <- query.pca$x %>% as.data.table %>% 
-    .[,alias:=rownames(query.pca$x)] %>%
+  to.plot <- pca$x %>% as.data.table %>% 
+    .[,alias:=rownames(pca$x)] %>%
     merge(sample_metadata_joint.dt, by="alias")
   
   # Flip order of PC1 such that E6.5<E8.5
@@ -157,9 +197,10 @@ for (i in opts$classes) {
     scale_fill_manual(values=opts$stage.colors) +
     guides(fill=guide_legend(override.aes=list(shape=21))) +
     guides(shape=guide_legend(override.aes=list(fill="black"))) +
+    labs(x=sprintf("PC1 (%.2f%%)",var.explained[1]), y=sprintf("PC2 (%.2f%%)",var.explained[2])) +
     theme_classic() +
     theme(
-      legend.position = "top",
+      legend.position = "none",
       legend.title = element_blank(),
       axis.text = element_text(color="black", size=rel(0.8))
     )
@@ -170,22 +211,23 @@ for (i in opts$classes) {
     scale_alpha_manual(values=c(0.5,1)) +
     guides(fill=guide_legend(override.aes=list(shape=21))) +
     guides(shape=guide_legend(override.aes=list(fill="black"))) +
+    labs(x=sprintf("PC1 (%.2f%%)",var.explained[1]), y=sprintf("PC2 (%.2f%%)",var.explained[2])) +
     theme_classic() +
     theme(
-      legend.position = "top",
+      legend.position = "none",
       legend.title = element_blank(),
       axis.text = element_text(color="black", size=rel(0.8))
     )
   
-  pdf(file.path(io$outdir,sprintf("pca_celltype_proportions_%s.pdf",i)), width=12, height=5)
+  pdf(file.path(io$outdir,sprintf("pca_celltype_proportions_%s.pdf",i)), width=7.5, height=2.5)
   print(cowplot::plot_grid(plotlist=list(p1,p2)))
   dev.off()
 }
 
 
-####################################
-## Quantify stage for each sample ##
-####################################
+################################
+## Plot stage for each sample ##
+################################
 
 embryo_stage_list <- list()
 # i <- "Dnmt1_KO"
@@ -241,18 +283,22 @@ for (i in opts$classes) {
   
 }
 
-###########################################
-## Quantify average stage for each class ##
-###########################################
+###############################
+## Plot stage for each class ##
+###############################
 
-embryo_stage.dt <- rbindlist(embryo_stage_list)
+embryo_stage.dt <- rbindlist(embryo_stage_list) %>% .[,class:=factor(class,levels=opts$classes)]
 # fwrite(embryo_stage.dt, file.path(io$outdir,"embryo_staging.txt.gz", sep="\t", quote=F))
 
+tmp <- embryo_stage.dt[,.(value=mean(value), sd=sd(value)), by=c("stage","class")]
+
 p <- ggplot(embryo_stage.dt, aes_string(x="stage", y="value", fill="stage")) +
-  geom_boxplot(outlier.shape=NA, alpha=0.8) +
-  geom_jitter(size=0.75, shape=21, width=0.1, alpha=0.4) +
-  facet_wrap(~class, nrow=1) +
-  guides(x = guide_axis(angle = 90)) +
+  # geom_boxplot(outlier.shape=NA, alpha=0.8) +
+  geom_jitter(size=1.25, shape=21, width=0.1, alpha=0.75) +
+  geom_bar(stat="identity", color="black", width=0.80, data=tmp) +
+  geom_errorbar(aes(ymin=value-sd, ymax=value+sd), width=0.25, alpha=0.75, size=0.5, data=tmp) +
+  facet_wrap(~class, nrow=2) +
+  # guides(x = guide_axis(angle = 90)) +
   scale_fill_manual(values=opts$stage.colors) +
   labs(x="", y="Stage probability") +
   theme_classic() +
@@ -260,11 +306,11 @@ p <- ggplot(embryo_stage.dt, aes_string(x="stage", y="value", fill="stage")) +
     legend.position = "none",
     strip.background = element_blank(),
     strip.text = element_text(size=rel(1.20), color="black"),
-    axis.text.x = element_text(size=rel(0.75), color="black"),
-    axis.text.y = element_text(size=rel(0.75), color="black")
+    axis.text.x = element_text(size=rel(1.0), color="black"),
+    axis.text.y = element_text(size=rel(1), color="black")
   )
 
-pdf(file.path(io$outdir,"boxplots_embryo_stage_all_classes.pdf"), width=10, height=6)
+pdf(file.path(io$outdir,"boxplots_embryo_stage_all_classes.pdf"), width=8.5, height=6.5)
 print(p)
 dev.off()
 
