@@ -14,6 +14,10 @@ if (grepl("ricard",Sys.info()['nodename'])) {
   io$basedir <- "/Users/ricard/data/10x_gastrulation_DNMTs"
   io$atlas.basedir <- "/Users/ricard/data/gastrulation10x"
   io$gene_metadata <- "/Users/ricard/data/ensembl/mouse/v87/BioMart/all_genes/Mmusculus_genes_BioMart.87.txt"
+} else if (grepl("Ricards-MacBook-Pro.local",Sys.info()['nodename'])) {
+  io$basedir <- "/Users/rargelaguet/data/10x_gastrulation_DNMTs"
+  io$atlas.basedir <- "/Users/rargelaguet/data/gastrulation10x"
+  io$gene_metadata <- "/Users/rargelaguet/data/ensembl/mouse/v87/BioMart/all_genes/Mmusculus_genes_BioMart.87.txt"
 } else if (grepl("ebi",Sys.info()['nodename'])) {
   io$basedir <- "/hps/nobackup2/research/stegle/users/ricard/10x_gastrulation_DNMTs"
   io$atlas.basedir <- "/hps/nobackup2/research/stegle/users/ricard/gastrulation10x"
@@ -39,7 +43,8 @@ io$sce <- paste0(io$basedir,"/processed/SingleCellExperiment.rds")
 
 # Atlas information
 io$atlas.metadata <- paste0(io$atlas.basedir,"/sample_metadata.txt.gz")
-io$atlas.marker_genes <- paste0(io$atlas.basedir,"/results/marker_genes/all_stages/marker_genes.txt.gz")
+# io$atlas.marker_genes <- paste0(io$atlas.basedir,"/results/marker_genes/all_stages/marker_genes.txt.gz")
+io$atlas.marker_genes <- paste0(io$atlas.basedir,"/results/marker_genes/all_stages/marker_genes_upregulated_filtered.txt.gz")
 io$atlas.differential <- paste0(io$atlas.basedir,"/results/differential")
 # io$atlas.average_expression_per_celltype <- paste0(io$atlas.basedir,"/results/marker_genes/avg_expr_per_celltype_and_gene.txt.gz")
 io$atlas.sce <- paste0(io$atlas.basedir,"/processed/SingleCellExperiment.rds")

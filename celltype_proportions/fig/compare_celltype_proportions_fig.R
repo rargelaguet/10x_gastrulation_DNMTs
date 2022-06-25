@@ -170,6 +170,7 @@ proportions_per_sample.dt[diff_proportion>=6.5,diff_proportion:=6.5]
 # ylimits <- max(abs(proportions_per_sample.dt$diff_proportion)) + 0.25
 ylimits <- 6.75
 
+# i <- "Dnmt1_KO"
 for (i in opts$ko.classes) {
   
   celltypes.to.plot <- proportions_per_sample.dt %>%
@@ -188,8 +189,9 @@ for (i in opts$ko.classes) {
   #   .[,celltype.mapped:=factor(celltype.mapped,levels=celltype.order)]
   
   p <- ggplot(to.plot, aes(x=celltype.mapped, y=diff_proportion)) +
-    geom_point(aes(fill = celltype.mapped), shape=21, size=1.25) +
+    geom_point(aes(fill = celltype.mapped), shape=21, size=1.25, stroke=0.1) +
     geom_boxplot(aes(fill = celltype.mapped), alpha=0.75) +
+    facet_wrap(~dataset) +
     # geom_text(y=-ylimits, aes(label=N.wt), size=2.5, data=text.dt) +
     # geom_text(y=ylimits, aes(label=N.ko), size=2.5, data=text.dt) +
     coord_flip(ylim=c(-ylimits,ylimits)) +
@@ -205,7 +207,48 @@ for (i in opts$ko.classes) {
       axis.text.x = element_text(color="black")
     )
   
-  pdf(file.path(io$outdir,sprintf("%s_boxplots.pdf",i)), width=6, height=7)
+  # pdf(file.path(io$outdir,sprintf("%s_boxplots.pdf",i)), width=6, height=7)
+  pdf(file.path(io$outdir,sprintf("%s_boxplots_per_dataset.pdf",i)), width=9, height=5)
   print(p)
   dev.off()
 }
+
+########################################
+## Plot correlation between data sets ##  
+########################################
+
+wt_proportions_dataset.dt <- sample_metadata %>%
+  .[class%in%opts$wt.classes] %>%
+  .[,ncells:=.N,by="dataset"] %>%
+  .[,.(proportion=.N/unique(ncells), N=round(.N/length(unique(sample)))), by=c("celltype.mapped","dataset")]
+
+ko_proportions_per_class_dataset.dt <- sample_metadata %>%
+  .[!class%in%opts$wt.classes] %>%
+  setkey(celltype.mapped,class,dataset) %>%
+  .[CJ(celltype.mapped,class,dataset,unique = TRUE), .N, by = .EACHI] %>%
+  .[,ncells:=sum(N), by=c("class","dataset")] %>% .[,proportion:=(N+1)/ncells]
+
+to.plot <- merge(
+  ko_proportions_per_class_dataset.dt, 
+  wt_proportions_dataset.dt, 
+  by = c("celltype.mapped","dataset"), allow.cartesian=T, suffixes = c(".ko",".wt")) %>% 
+  .[,N:=N.ko+N.wt] %>% .[N>=50] %>%
+  .[,c("diff_proportion"):=list(log2(proportion.ko/proportion.wt))] %>%
+  dcast(celltype.mapped+class~dataset,value.var="diff_proportion")
+
+
+p <- ggscatter(to.plot, x="CRISPR", y="KO", fill="celltype.mapped", shape=21, size=4,
+               add="reg.line", add.params = list(color="black", fill="lightgray"), conf.int=TRUE) +
+  scale_fill_manual(values=opts$celltype.colors) +
+  stat_cor(method = "pearson") +
+  facet_wrap(~class, scales="fixed") +
+  theme_classic() +
+  labs(y="log2 difference in proportions (CRISPR)", x="log2 difference in proportions (KO)") +
+  theme(
+    legend.position = "none",
+    axis.text = element_text(color="black", size=rel(0.90))
+  )
+
+pdf(file.path(io$outdir,"scatterplot_diff_proportions.pdf"), width=8.5, height=5)
+print(p)
+dev.off()

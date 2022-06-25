@@ -36,13 +36,13 @@ args <- p$parse_args(commandArgs(TRUE))
 #####################
 
 ## START TEST ##
-# args$sce <- file.path(io$basedir,"processed_all/SingleCellExperiment.rds")
+# args$sce <- file.path(io$basedir,"processed/SingleCellExperiment.rds")
 # args$metadata <- file.path(io$basedir,"results/mapping/sample_metadata_after_mapping.txt.gz")
 # args$classes <- opts$classes[2]; #"E8.5_Dnmt3aKO_Dnmt3bWT"
 # args$features <- 2500
 # args$npcs <- 30
 # args$colour_by <- c("celltype.mapped","nFeature_RNA","sample","dataset")
-# args$vars_to_regress <- c("nFeature_RNA")
+# args$vars_to_regress <- NULL
 # args$batch_correction <- "dataset"
 # args$remove_ExE_cells <- TRUE
 # args$n_neighbors <- 25
