@@ -7,25 +7,21 @@ source(here::here("utils.R"))
 ##############
 
 # Load settings
-# source("/Users/ricard/10x_gastrulation_DNMTs/settings.R")
 source(here::here("differential/analysis/utils.R"))
 
 # I/O
-io$imprinted.genes <- "/Users/argelagr/data/mm10_regulation/imprinting/parsed/mousebook_imprinted_genes.txt.gz"
 io$indir <- paste0(io$basedir,"/results/differential")
-io$outdir <- paste0(io$basedir,"/results/imprinting")
+io$outdir <- paste0(io$basedir,"/results/differential/imprinting"); dir.create(io$outdir, showWarnings = F)
 
-# Options
-# opts$classes <- c(
-#   # "Dnmt3a_HET_Dnmt3b_KO",
-#   # "Dnmt3a_HET_Dnmt3b_WT",
-#   # "Dnmt3a_KO_Dnmt3b_HET",
-#   "WT",
-#   "Dnmt3a_KO",
-#   "Dnmt3b_KO",
-#   "Dnmt1_KO",
-#   "Dnmt3ab_KO"
-# )
+# Define classes to plot
+opts$classes <- c(
+  "WT", 
+  "Dnmt3a_KO", 
+  "Dnmt3b_KO",
+  "Dnmt1_KO"
+  # "Dnmt3ab_KO"
+)
+
 opts$min.cells <- 30
 
 #############################################
@@ -75,7 +71,6 @@ print(p)
 dev.off()
 
 
-
 ###################################
 ## Heatmaps, one class at a time ##
 ###################################
@@ -84,15 +79,19 @@ opts$max.logFC <- 4; opts$min.logFC <- -4
 
 for (i in opts$ko.classes) {
   
-  to.plot <- diff_imprinted.dt[class==i] %>%
+  tmp <- diff_imprinted.dt[class==i] %>%
     .[logFC>opts$max.logFC,logFC:=opts$max.logFC] %>%
     .[logFC<opts$min.logFC,logFC:=opts$min.logFC]
   
+  to.plot <- expand.grid(X = unique(diff_imprinted.dt$gene), Y = unique(diff_imprinted.dt$celltype)) %>% 
+    as.data.table %>% setnames(c("gene","celltype")) %>%
+    merge(tmp, by=c("gene","celltype"), all.x=T)
+  
   p <- ggplot(to.plot, aes(x=gene, y=celltype, fill=logFC)) +
-    geom_tile() +
+    geom_tile(color="black") +
     # viridis::scale_fill_viridis() +
     # scale_fill_gradientn(colours = terrain.colors(10)) +
-    scale_fill_gradient2(low = "red", mid = "white", high = "blue", midpoint = 0, limits=c(opts$min.logFC-0.01,opts$max.logFC+0.01)) +
+    scale_fill_gradient2(low = "red", mid = "white", high = "blue", midpoint = 0, limits=c(opts$min.logFC-0.01,opts$max.logFC+0.01), na.value = 'white') +
     labs(x="", y="") +
     guides(x = guide_axis(angle = 90)) +
     theme_classic() +

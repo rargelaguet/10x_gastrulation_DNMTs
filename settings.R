@@ -26,9 +26,9 @@ if (grepl("ricard",Sys.info()['nodename'])) {
   io$basedir <- "/Users/argelagr/data/10x_gastrulation_DNMTs"
   io$atlas.basedir <- "/Users/argelagr/data/gastrulation10x"
   io$gene_metadata <- "/Users/argelagr/data/ensembl/mouse/v87/BioMart/all_genes/Mmusculus_genes_BioMart.87.txt"
+  io$imprinted.genes <- "/Users/argelagr/data/mm10_regulation/imprinting/parsed/mousebook_imprinted_genes.txt.gz"
 } else if (Sys.info()[['nodename']]=="Stephens-MacBook-Pro.local") {
   io$basedir <- "/Users/sclark/data/10x_gastrulation_DNMTs/"
-  
 } else if (grepl("pebble|headstone", Sys.info()['nodename'])) {
   if (grepl("argelag", Sys.info()['effective_user'])) {
     io$basedir <- "/bi/group/reik/ricard/data/10x_gastrulation_DNMTs"
