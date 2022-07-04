@@ -52,6 +52,7 @@ linMap <- function(x, from, to) return( (x - min(x)) / max(x - min(x)) * (to - f
 
 ggplot_theme_NoAxes <- function() {
   theme(
+    axis.line = element_blank(),
     axis.title = element_blank(),
     axis.text = element_blank(),
     axis.ticks = element_blank()

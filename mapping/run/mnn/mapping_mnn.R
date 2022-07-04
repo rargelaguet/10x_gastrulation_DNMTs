@@ -1,12 +1,12 @@
-suppressPackageStartupMessages(library(scran))
-suppressPackageStartupMessages(library(scater))
-suppressPackageStartupMessages(library(batchelor))
-
 here::i_am("mapping/run/mnn/mapping_mnn.R")
 
 # Load default settings
 source(here::here("settings.R"))
 source(here::here("utils.R"))
+
+suppressPackageStartupMessages(library(scran))
+suppressPackageStartupMessages(library(scater))
+suppressPackageStartupMessages(library(batchelor))
 
 ######################
 ## Define arguments ##
@@ -39,19 +39,18 @@ io$path2query <- io$basedir
 source(here::here("mapping/run/mnn/mapping_functions.R"))
 
 ## START TEST ##
-# args$atlas_stages <- c("E6.5","E6.75","E7.0","E7.25","E7.5","E7.75","E8.0","E8.25","E8.5")
-# args$query_samples <- opts$samples
-# args$query_sce <- io$rna.sce
-# args$query_sce <- paste0(io$basedir,"/processed/rna/SingleCellExperiment.rds")
-# args$atlas_sce <- io$rna.atlas.sce
-# args$query_metadata <- paste0(io$basedir,"/results/qc/sample_metadata_after_qc.txt.gz")
-# args$atlas_metadata <- io$rna.atlas.metadata
-# args$test <- FALSE
-# args$npcs <- 50
-# args$n_neighbours <- 25
-# args$use_marker_genes <- FALSE
-# args$cosine_normalisation <- FALSE
-# args$outdir <- paste0(io$basedir,"/results/mapping/test")
+args$atlas_stages <- c("E6.5","E6.75","E7.0","E7.25","E7.5","E7.75","E8.0","E8.25","E8.5")
+args$query_samples <- "SIGAH10_Dnmt3ab_WT_L002"# opts$samples[1]
+args$query_sce <- paste0(io$basedir,"/processed/SingleCellExperiment.rds")
+args$atlas_sce <- io$atlas.sce
+args$query_metadata <- paste0(io$basedir,"/results/qc/sample_metadata_after_qc.txt.gz")
+args$atlas_metadata <- io$atlas.metadata
+args$test <- FALSE
+args$npcs <- 50
+args$n_neighbours <- 25
+args$use_marker_genes <- FALSE
+args$cosine_normalisation <- FALSE
+args$outdir <- paste0(io$basedir,"/results/mapping/test")
 ## END TEST ##
 
 if (isTRUE(args$test)) print("Test mode activated...")
@@ -167,6 +166,54 @@ mapping  <- mapWrap(
   cosineNorm = args$cosine_normalisation,
   order = NULL
 )
+
+################
+## joint UMAP ##
+################
+
+# umap.mtx <- uwot::umap(rbind(mapping$pca_atlas_corrected, mapping$pca_query_corrected), n_neighbors=25, min_dist=0.50, metric="cosine")
+# umap.dt <- umap.mtx %>% round(3) %>% as.data.table(keep.rownames = T) %>% setnames("rn","cell")
+# 
+# tmp <- rbind(
+#   meta_atlas[,c("cell","celltype")] %>% .[,class:="atlas"],
+#   mapping$mapping[,c("cell","celltype.mapped")] %>% as.data.table %>% setnames("celltype.mapped","celltype") %>% .[,class:="query"]
+# )
+# 
+# to.plot <- umap.dt %>%
+#   .[,cell:=c(meta_atlas$cell,meta_query$cell)] %>%
+#   merge(tmp,by="cell")
+# 
+# to.plot.subset <- rbind(
+#   to.plot[class=="query"],
+#   to.plot[class=="atlas"][sample.int(.N, size=5e4)]
+# ) %>% .[,class:=factor(class,levels=c("query","atlas"))] %>% setorder(-class)
+# 
+# p1 <- ggplot(to.plot.subset, aes(x=V1, y=V2, fill=class, size=class, alpha=class)) +
+#   ggrastr::geom_point_rast(shape=21, stroke=0.1, raster.dpi=150) +
+#   scale_size_manual(values=c("query"=1, "atlas"=0.5)) +
+#   scale_alpha_manual(values=c("query"=0.9, "atlas"=0.65)) +
+#   scale_fill_manual(values=c("atlas"="gray60", "query"="red")) +
+#   theme_classic() +
+#   ggplot_theme_NoAxes() +
+#   theme(
+#     legend.position="none"
+#   )
+# 
+# p2 <- ggplot(to.plot.subset, aes(x=V1, y=V2, fill=celltype, size=class)) +
+#   ggrastr::geom_point_rast(size=1, shape=21, stroke=0.1) +
+#   scale_fill_manual(values=opts$celltype.colors) +
+#   scale_size_manual(values=c("query"=1, "atlas"=0.5)) +
+#   theme_classic() +
+#   ggplot_theme_NoAxes() +
+#   theme(
+#     legend.position="none"
+#   )
+# 
+# p <- cowplot::plot_grid(plotlist=list(p1,p2), nrow=1)
+# 
+# pdf(file.path(io$basedir,"results/mapping/pdf/fig/mapping_joint_umap.pdf"), width=12, height=5)
+# print(p)
+# dev.off()
 
 
 ##########

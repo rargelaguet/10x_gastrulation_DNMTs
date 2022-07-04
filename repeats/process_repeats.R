@@ -65,7 +65,6 @@ repeats_long.dt <- merge(repeats_wide.dt,cell_metadata.dt[,cell_metadata.keys,wi
   melt(id.vars=c("barcode","alias","celltype.mapped","dataset","class","celltype_class"), measure.vars=repeats_names, variable.name="repeat_class", value.name="nreads") %>%
   .[,.(nreads=sum(nreads)),by=c(cell_metadata.keys[2:length(cell_metadata.keys)],"repeat_class")]
 
-
 ###############
 ## Normalise ##
 ###############
@@ -73,6 +72,8 @@ repeats_long.dt <- merge(repeats_wide.dt,cell_metadata.dt[,cell_metadata.keys,wi
 repeats_long.dt <- repeats_long.dt %>% 
   merge(total_reads.dt,by=c("alias")) %>% 
   .[,expr:=log2(1+(1e6*(nreads/total_reads))) %>% round(2)]
+
+fwrite(repeats_long.dt, file.path(io$outdir,"repeats_expr.txt.gz"))
 
 ######################
 ## Compare WT vs KO ##
