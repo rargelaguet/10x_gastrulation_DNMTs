@@ -1,5 +1,3 @@
-here::i_am("pseudobulk/pseudobulk.R")
-
 source(here::here("settings.R"))
 source(here::here("utils.R"))
 source(here::here("pseudobulk/utils.R"))
@@ -12,7 +10,7 @@ io$outfile <- "/Users/argelagr/data/shiny_dnmt_tet/SingleCellExperiment_shiny.rd
 
 # Options
 opts$group_by <- "class_sample_celltype_dataset"
-opts$normalisation_method <- "cpm"
+
 opts$rename_celltypes <- c(
   "Erythroid3" = "Erythroid",
   "Erythroid2" = "Erythroid",
@@ -113,27 +111,12 @@ stopifnot(unique(sce_pseudobulk$dataset)%in%c("KO","CRISPR"))
 ## Normalisation ##
 ###################
 
-if (opts$normalisation_method=="deseq2") {
-  
-  suppressPackageStartupMessages(library(DESeq2))
-  dds <- DESeqDataSet(sce_pseudobulk, design=~1)
-  dds <- varianceStabilizingTransformation(dds)
-  logcounts(sce_pseudobulk) <- assay(dds)
-  
-} else if (opts$normalisation_method=="cpm") {
-  
-  logcounts(sce_pseudobulk) <- log2(1e6*(sweep(counts(sce_pseudobulk),2,colSums(counts(sce_pseudobulk)),"/"))+1)
-  # logcounts(sce_pseudobulk) <- edgeR::cpm(counts(sce_pseudobulk), log=TRUE, prior.count = 1)
-  
-} else {
-  stop("Normalisation method not recognised")
-}
+logcounts(sce_pseudobulk) <- log2(1e6*(sweep(counts(sce_pseudobulk),2,colSums(counts(sce_pseudobulk)),"/"))+1)
 
 # Remove counts assay
 assays(sce_pseudobulk)["counts"] <- NULL
 
 # Save
-# saveRDS(sce_pseudobulk, file.path(io$outdir,sprintf("SingleCellExperiment_pseudobulk_%s.rds",opts$group_by)))
 saveRDS(sce_pseudobulk, io$outfile)
 
 #####################

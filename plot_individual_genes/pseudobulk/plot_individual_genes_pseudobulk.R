@@ -106,16 +106,11 @@ genes.to.plot <- c("Hoxb9","Hoxc8","Hoxc9","Hoxa9")
 
 genes.to.plot <- genes.to.plot[genes.to.plot%in%rownames(sce)]
 
-for (i in 1:length(genes.to.plot)) {
+for (i in genes.to.plot) {
   
-  gene <- genes.to.plot[i]
-  
-  print(sprintf("%s/%s: %s",i,length(genes.to.plot),gene))
-  outfile <- sprintf("%s/%s_barplot_pseudobulk.pdf",io$outdir,gene)
-
   to.plot <- data.table(
     sample = colnames(sce),
-    expr = logcounts(sce)[gene,],
+    expr = logcounts(sce)[i,],
     class = sce$class,
     celltype = sce$celltype,
     dataset = sce$dataset
@@ -144,7 +139,7 @@ for (i in 1:length(genes.to.plot)) {
         # legend.text = element_text(size=rel(0.85))
       )
   }
-  pdf(outfile, width=17, height=9)
+  pdf(sprintf("%s/%s_barplot_pseudobulk.pdf",io$outdir,i), width=17, height=9)
   print(cowplot::plot_grid(plotlist=p_list, ncol = 2))
   dev.off()
 }
@@ -179,3 +174,49 @@ for (i in 1:length(genes.to.plot)) {
 # pdf(file.path(io$outdir,"logFC_heatmap_pseudobulk_ExE_genes.pdf"), width=8, height=5)
 # print(p)
 # dev.off()
+
+
+############################
+## Do not split data sets ##
+############################
+
+io$sce.pseudobulk <- file.path(io$basedir,"results/pseudobulk/SingleCellExperiment_pseudobulk_class_celltype.rds")
+
+sce <- readRDS(io$sce.pseudobulk)
+
+genes.to.plot <- c("Hoxb9","Hoxc8","Hoxc9","Hoxa9")
+celltypes.to.plot <- c("Neural_crest")
+
+i <- "Tfap2a"
+
+for (i in genes.to.plot) {
+  
+  to.plot <- data.table(
+    sample = colnames(sce),
+    expr = logcounts(sce)[i,],
+    celltype = factor(sce$celltype,levels=opts$celltypes)
+  )
+  
+  p <- ggplot(to.plot, aes(x=class, y=expr, fill=class)) +
+    geom_bar(stat="identity", color="black", width=0.75) +
+    facet_wrap(~celltype, scales="fixed") +
+    # scale_fill_brewer(palette="Dark2") +
+    scale_fill_manual(values=opts$classes.colors) +
+    theme_classic() +
+    labs(x="",y=sprintf("%s expression",gene), title=j) +
+    guides(x = guide_axis(angle = 90)) +
+    theme(
+      plot.title = element_text(hjust = 0.5),
+      strip.text = element_text(size=rel(0.85)),
+      axis.text.x = element_text(colour="black",size=rel(0.9)),
+      axis.text.y = element_text(colour="black",size=rel(0.9)),
+      axis.ticks.x = element_blank(),
+      axis.title.y = element_text(colour="black",size=rel(1.0)),
+      legend.position = "none"
+      # legend.title = element_blank(),
+      # legend.text = element_text(size=rel(0.85))
+    )
+  pdf(sprintf("%s/%s_barplot_pseudobulk.pdf",io$outdir,i), width=6, height=4)
+  print(cowplot::plot_grid(plotlist=p_list, ncol = 2))
+  dev.off()
+}

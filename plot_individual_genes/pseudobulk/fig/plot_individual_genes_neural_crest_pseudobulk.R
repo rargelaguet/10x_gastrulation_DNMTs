@@ -27,7 +27,7 @@ opts$classes <- c(
   "Dnmt1_KO"
 )
 
-opts$min.cells <- 30
+opts$min.cells <- 10
 
 ###############
 ## Load data ##
@@ -56,7 +56,6 @@ stats.dt <- data.table(class=sce$class, celltype=sce$celltype, sample=sce$sample
 sce <- sce[,stats.dt$id]
 
 table(stats.dt$class,stats.dt$celltype)
-stop("Not enough replicates...")
 
 #######################
 ## Plotting function ##
