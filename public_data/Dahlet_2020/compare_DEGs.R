@@ -7,6 +7,8 @@ library(ggVennDiagram)
 library(VennDiagram)
 library(ggpubr)
 library(org.Mm.eg.db)
+library(ggrastr)
+library(ggrepel)
 
 # this script makes some comparisons between our DEGs and those reported by Dahlet et al 2020
 
@@ -16,7 +18,16 @@ our_files <- "~/data/Dahlet_2020/10x_Dnmts_results/differential/"
 
 plots_out_dir <- "/Users/sclark/Google Drive/My Drive/projects/babraham/dnmt_tet/plots/dahlet2020/exp/"
 
+epi_genes <- c(
+  "Pou5f1", "Utf1", "Slc7a3", "Fgf5", "Pim2"
+)
+exe_genes <- c(
+  "Rhox5", "Krt8", "Apoe", "Ascl2", "Trap1a" , "Xlr3a"
+)
 
+hox_genes <- c(
+  "Hoxc9", "Hoxc8", "Hoxb9" , "Hoxa9"
+)
 
 # load ensembl IDs to enable merging
 
@@ -79,49 +90,99 @@ overlap[dahlet_sig == T]
 overlap[dahlet_sig == T & dahlet_updown == "upregulated", .(mean(logFC, na.rm = T), mean(padj_fdr, na.rm = T)), type]
 overlap[dahlet_sig == T & dahlet_updown == "downregulated", .(mean(logFC, na.rm = T), mean(padj_fdr, na.rm = T)), type]
 
+overlap[, dot_alpha := 0.5]
+overlap[abs(logFC)>2.5 | abs(dahlet_logFC)>2.5, dot_alpha := 2]
+
+overlap[, show_gene := FALSE]
+overlap[gene %in% c(exe_genes, hox_genes, epi_genes) & sig == TRUE, show_gene := TRUE]
+
+# reduce the number of dots to plot
+
+toplot <- rbind(
+  overlap[abs(logFC)<1][sample.int(.N/2)],
+  overlap[abs(logFC)>=1]
+)
+
+
 types <- overlap[, unique(type)]
 types_sub <- types[1:16]
 types_sub=types
 
 types_sub <- c(
-  "Gut",
-  "ExE_ectoderm" ,
-  "Rostral_neurectoderm",
-  "Haematoendothelial_progenitors",
+  # "Gut",
+  # "ExE_ectoderm" ,
+  # "Rostral_neurectoderm",
+  # "Haematoendothelial_progenitors",
   "Surface_ectoderm"
 )
 
-(scatterplot <- ggplot(overlap[type %in% types_sub], aes(dahlet_logFC, logFC)) +
-  geom_point(alpha=0.1, size = 0.5) +
+(scatterplot <- ggplot(toplot[type %in% types_sub], aes(dahlet_logFC, logFC)) +
+  geom_point(size = 0.5, aes(alpha = dot_alpha)) +
   geom_smooth(method = "lm", colour = "black", size = 0.5) +
+  geom_text_repel(data = toplot[type %in% types_sub][show_gene == TRUE], aes(label = gene)) + 
   theme_cowplot() +
   facet_wrap(~type2, ncol = 1) +
   theme(strip.background =element_rect(fill="white")) +
-  labs(x = "Dahlet et al 2020", y = "This Study") +
+  guides(alpha = FALSE) +
+  labs(x = "Dahlet et al 2020 (log2 fold change)", y = "This Study (log2 fold change)") +
   stat_cor(method = "pearson")
   )
 
-# ggplot(overlap[type %in% types], aes(dahlet_logFC, logFC)) +
+(scatterplot <- ggplot(toplot[], aes(dahlet_logFC, logFC)) +
+    geom_point(size = 0.5, aes(alpha = dot_alpha)) +
+    geom_smooth(method = "lm", colour = "black", size = 0.5) +
+    geom_text_repel(data = toplot[][show_gene == TRUE], aes(label = gene)) + 
+    theme_cowplot() +
+    facet_wrap(~type2, ncol = 5) +
+    theme(strip.background =element_rect(fill="white")) +
+    guides(alpha = FALSE) +
+    labs(x = "Dahlet et al 2020 (log2 fold change)", y = "This Study (log2 fold change)") +
+    stat_cor(method = "pearson")
+)
+
+# (scatterplot <- ggplot(overlap[], aes(dahlet_logFC, logFC)) +
 #     geom_point(alpha=0.1, size = 0.5) +
 #     geom_smooth(method = "lm", colour = "black", size = 0.5) +
 #     theme_cowplot() +
-#     facet_wrap(~type2) +
+#     facet_wrap(~type2, ncol = 1) +
 #     theme(strip.background =element_rect(fill="white")) +
-#     labs(x = "Dahlet et al 2020", y = "This Study") +
-#     stat_cor(method = "pearson")
-
-
-# (scatterall <- ggplot(overlap, aes(dahlet_logFC, logFC)) +
-#     geom_point(alpha=0.1, size = 0.5) +
-#     geom_smooth(method = "lm", colour = "black", size = 0.5) +
-#     theme_cowplot() +
 #     labs(x = "Dahlet et al 2020", y = "This Study") +
 #     stat_cor(method = "pearson")
 # )
 
+
+
+(scatterplot <- rasterize(scatterplot, layers='Point', dpi=150))
+
 outfile <- "/Users/sclark/Google Drive/My Drive/projects/babraham/dnmt_tet/plots/dahlet2020/exp/scatter.pdf"
 
-save_plot(outfile, scatterplot, base_height = 8, base_width = 3)
+save_plot(outfile, scatterplot, base_height = 25, base_width = 25)
+
+# same plots as individual pdfs
+
+scatterplots <- map(types[!is.na(types)], ~{
+  p <- ggplot(toplot[type %in% .x], aes(dahlet_logFC, logFC)) +
+     geom_point(size = 0.5, aes(alpha = dot_alpha)) +
+     geom_smooth(method = "lm", colour = "black", size = 0.5) +
+     geom_text_repel(data = toplot[type %in% .x][show_gene == TRUE], aes(label = gene)) + 
+     theme_cowplot() +
+     facet_wrap(~type2, ncol = 1) +
+     theme(strip.background =element_rect(fill="white")) +
+     guides(alpha = FALSE) +
+     labs(x = "Dahlet et al 2020 (log2 fold change)", y = "This Study (log2 fold change)") +
+     stat_cor(method = "pearson")
+  
+  rasterize(p, layers='Point', dpi=150)
+})
+ outfiles <- paste0(
+   "/Users/sclark/Google Drive/My Drive/projects/babraham/dnmt_tet/plots/dahlet2020/exp/scatter/",
+   types[!is.na(types)],
+   ".pdf"
+ )
+ dir.create(dirname(outfiles[1]))
+ 
+ walk2(outfiles, scatterplots, save_plot)
+
 # what is the overlap in sig hits?
 
 # some gene ids do not match between the two datasets
@@ -163,16 +224,7 @@ overlap[sig ==T & dahlet_sig == F][order(-rank(abs(logFC)))]
 
 
 # subset to genes we mention in the text
-epi_genes <- c(
-  "Pou5f1", "Utf1", "Slc7a3", "Fgf5", "Pim2"
-)
-exe_genes <- c(
-  "Rhox5", "Krt8", "Apoe", "Ascl2", "Trap1a" , "Xlr3a"
-)
 
-hox_genes <- c(
-  "Hoxc9", "Hoxc8", "Hoxb9" , "Hoxa9"
-)
 
 
 overlap[sig ==T & dahlet_sig == F][gene %in% c(epi_genes, exe_genes, hox_genes)][,table(sign(logFC))]
