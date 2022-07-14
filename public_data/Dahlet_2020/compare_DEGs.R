@@ -14,7 +14,7 @@ library(ggrepel)
 
 
 dahlet_file <- "~/data/Dahlet_2020/sup_tables/41467_2020_16919_MOESM5_ESM.xlsx"
-our_files <- "~/data/Dahlet_2020/10x_Dnmts_results/differential/"
+our_files <- "~/data/10x_gastrulation_DNMTs/results/differential/"
 
 plots_out_dir <- "/Users/sclark/Google Drive/My Drive/projects/babraham/dnmt_tet/plots/dahlet2020/exp/"
 
@@ -94,13 +94,13 @@ overlap[, dot_alpha := 0.5]
 overlap[abs(logFC)>2.5 | abs(dahlet_logFC)>2.5, dot_alpha := 2]
 
 overlap[, show_gene := FALSE]
-overlap[gene %in% c(exe_genes, hox_genes, epi_genes) & sig == TRUE, show_gene := TRUE]
+overlap[gene %in% c(exe_genes[1:2], hox_genes[1:2], epi_genes[1:2]), show_gene := TRUE]
 
 # reduce the number of dots to plot
 
 toplot <- rbind(
-  overlap[abs(logFC)<1][sample.int(.N/2)],
-  overlap[abs(logFC)>=1]
+  overlap[abs(logFC)<1 & show_gene == F][sample.int(.N/2)],
+  overlap[abs(logFC)>=1 | show_gene == T]
 )
 
 
@@ -109,11 +109,12 @@ types_sub <- types[1:16]
 types_sub=types
 
 types_sub <- c(
-  # "Gut",
-  # "ExE_ectoderm" ,
-  # "Rostral_neurectoderm",
-  # "Haematoendothelial_progenitors",
-  "Surface_ectoderm"
+   "Gut",
+   "ExE_ectoderm" ,
+   "Rostral_neurectoderm",
+   "Haematoendothelial_progenitors",
+  "Surface_ectoderm",
+  "Somitic_mesoderm"  
 )
 
 (scatterplot <- ggplot(toplot[type %in% types_sub], aes(dahlet_logFC, logFC)) +
@@ -121,7 +122,7 @@ types_sub <- c(
   geom_smooth(method = "lm", colour = "black", size = 0.5) +
   geom_text_repel(data = toplot[type %in% types_sub][show_gene == TRUE], aes(label = gene)) + 
   theme_cowplot() +
-  facet_wrap(~type2, ncol = 1) +
+  facet_wrap(~type2, ncol = 2) +
   theme(strip.background =element_rect(fill="white")) +
   guides(alpha = FALSE) +
   labs(x = "Dahlet et al 2020 (log2 fold change)", y = "This Study (log2 fold change)") +
@@ -156,7 +157,7 @@ types_sub <- c(
 
 outfile <- "/Users/sclark/Google Drive/My Drive/projects/babraham/dnmt_tet/plots/dahlet2020/exp/scatter.pdf"
 
-save_plot(outfile, scatterplot, base_height = 25, base_width = 25)
+save_plot(outfile, scatterplot, base_height = 12, base_width = 12)
 
 # same plots as individual pdfs
 
@@ -182,6 +183,8 @@ scatterplots <- map(types[!is.na(types)], ~{
  dir.create(dirname(outfiles[1]))
  
  walk2(outfiles, scatterplots, save_plot)
+ 
+ stop()
 
 # what is the overlap in sig hits?
 
@@ -218,31 +221,18 @@ save_plot(outfile, vennplot)
 
 
 # find examples of genes DE in our analysis but not in the bulk
-overlap[sig ==T & dahlet_sig == F][order(-rank(abs(logFC)))]
+overlap[sig == T, nhits := .N, gene]
 
+cell_spec_hits <- overlap[sig ==T & dahlet_sig == F & nhits == 1 & abs(dahlet_logFC) < 0.1]
 
+cell_spec_hits[, table(type)]
 
+nc_genes <- cell_spec_hits[type == "Neural_crest"][order(padj_fdr)][1:10][, gene]
 
 # subset to genes we mention in the text
 
 
-
-overlap[sig ==T & dahlet_sig == F][gene %in% c(epi_genes, exe_genes, hox_genes)][,table(sign(logFC))]
-
-overlap[sig ==T & dahlet_sig == F][gene %in% c(epi_genes, exe_genes, hox_genes)][order(-rank(abs(logFC)))]
-overlap[sig ==T & dahlet_sig == F][gene %in% c(epi_genes, exe_genes, hox_genes)][order(-rank(abs(logFC)))][1:30]
-
-hits <- overlap[sig ==T & dahlet_sig == F][gene %in% c(epi_genes, exe_genes, hox_genes)] 
-
-hits[, .N, gene][order(-rank(N))]
-
-#  top hits are Rhox5 and Trap1a so lets plot these
-
-genes_toplot <- c(
-  "Rhox5",
-  "Trap1a"#,
-  #"Xlr3a"
-)
+d1_label <- "Dnmt1\nKO"
 
 dahlet_exp <- read_xlsx(dahlet_file, sheet = 2) %>%
   setDT() %>% 
@@ -254,14 +244,11 @@ dahlet_exp <- read_xlsx(dahlet_file, sheet = 2) %>%
   .[, type := factor(type, levels = c("WT", "D1KO"))] %>% 
   .[, sample := gsub("fpkm_", "", sample)] %>% 
   .[, sample := factor(sample, levels = c("WT_1", "WT_2", "WT_3", "D1KO_1", "D1KO_2", "D1KO_3"))] %>% 
-  .[, log2_exp := log2(exp+1)]
+  .[, log2_exp := log2(exp+1)] %>% 
+  .[type == "WT", type2 := "WT"] %>% 
+  .[type == "D1KO", type2 := d1_label]
 
-ggplot(dahlet_exp[gene %in% genes_toplot], aes(sample, log2_exp, colour = type, fill = type)) +
-  geom_bar(stat = "identity") +
-  facet_wrap(~gene) +
-  theme_cowplot() +
-  guides(fill = FALSE, colour = FALSE) +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
 
 # for a sup fig, lets plot all the same genes we plot in fig2:
 
@@ -337,13 +324,13 @@ plot_bars_by_sample <- function(genes){
 
 plot_bars <- function(genes){
   toplot <- dahlet_exp[gene %in% genes]
-  to.plot.means <- toplot[,.(log2_exp=mean(log2_exp),sd=sd(log2_exp)), .(type, gene)]
+  to.plot.means <- toplot[,.(log2_exp=mean(log2_exp),sd=sd(log2_exp)), .(type, type2, gene)]
   
   max <- to.plot.means[, max(log2_exp)]
   
   p.vals <- dnmt1_dahlet[gene %in% genes] %>% 
-    .[, c("group1", "group2", "y.position") := .("WT", "D1KO", max * 1.2)] %>% 
-    .[, p := paste("p =", format(dahlet_padj, digits = 3))]
+    .[, c("group1", "group2", "y.position") := .("WT", d1_label, max * 1.2)] %>% 
+    .[, p := paste("p =", signif(dahlet_padj, digits = 2))]
   
   palette <- c(
     "#FCF8CD",
@@ -351,16 +338,25 @@ plot_bars <- function(genes){
     
   )
   
-  ggplot(to.plot.means, aes(type, log2_exp)) +
-    geom_bar(stat = "identity", colour = "black", aes(fill = type)) +
+  ggplot(to.plot.means, aes(type2, log2_exp)) +
+    geom_bar(stat = "identity", colour = "black", aes(fill = type2)) +
     geom_jitter(size=1, alpha=0.90, width=0.15, shape=21, data = toplot) +
     geom_errorbar(aes(ymin=log2_exp-sd, ymax=log2_exp+sd), width=0.25, alpha=0.75, size=0.5) +
     stat_pvalue_manual(data = p.vals, size = 2.5) +
     facet_wrap(~gene, nrow = 1) +
     theme_cowplot() +
-    guides(fill = FALSE, colour = FALSE) +
-    theme(strip.background =element_rect(fill="white")) +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+    #guides(fill = FALSE, colour = FALSE) +
+    #theme(strip.background =element_rect(fill="white")) +
+    #theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+    theme(
+      strip.text = element_text(size=rel(0.85)),
+      strip.background = element_blank(),
+      axis.text.x = element_text(colour="black",size=rel(0.75)),
+      axis.text.y = element_text(colour="black",size=rel(0.8)),
+      axis.ticks.x = element_blank(),
+      axis.title.y = element_text(colour="black",size=rel(1.0)),
+      legend.position = "none"
+    ) +
     labs(x = "Genotype", y = "log2 FPKM", fill = "") +
     scale_fill_manual(values=palette) 
 }
@@ -369,22 +365,17 @@ plot_bars <- function(genes){
 (pluriplot <- plot_bars(pluri_genes))
 (exeplot <- plot_bars(exe_genes))
 
-plots <- map(list(hox_genes, pluri_genes, exe_genes), plot_bars)
+(nc_plt <- plot_bars(nc_genes))
+
+plots <- plot_grid(hoxplot, pluriplot, exeplot, ncol = 1)
 
 
+outfile <- "/Users/sclark/Google Drive/My Drive/projects/babraham/dnmt_tet/plots/dahlet2020/exp/barplots.pdf"
 
 
+save_plot(outfile, plots, base_height = 12, base_width = 7)
 
 
-
-outfiles <- paste0(
-  "/Users/sclark/Google Drive/My Drive/projects/babraham/dnmt_tet/plots/dahlet2020/exp/",
-  c("hox.pdf", "pluri.pdf", "exe.pdf")
-  
-)
-dirname(outfiles)[1] %>% dir.create(recursive = T)
-
-walk2(outfiles, plots, save_plot)
 
 
 
