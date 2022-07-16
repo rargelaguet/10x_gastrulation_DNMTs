@@ -25,9 +25,9 @@ opts$rename_celltypes <- c(
 cell_metadata.dt <- fread(io$metadata) %>%
   .[pass_rnaQC==TRUE & class%in%opts$classes & !is.na(celltype.mapped)] %>%
   .[,celltype.mapped:=stringr::str_replace_all(celltype.mapped,opts$rename_celltypes)] %>%
-  .[,c("cell", "celltype.mapped","class", "alias","closest.cell")] %>%
-  setnames(c("celltype.mapped","alias"),c("celltype","sample")) %>%
   .[,dataset:=ifelse(grepl("Grosswendt",sample),"CRISPR","KO")] %>%
+  .[,c("cell", "celltype.mapped","class", "alias","dataset","closest.cell")] %>%
+  setnames(c("celltype.mapped","alias"),c("celltype","sample")) %>%
   .[,class_celltype:=sprintf("%s-%s",class,celltype)] %>%
   .[,class_celltype_dataset:=sprintf("%s-%s-%s",class,celltype,dataset)] %>%
   .[,class_sample_celltype_dataset:=sprintf("%s-%s-%s-%s",class,sample,celltype,dataset)]# %>%
@@ -35,10 +35,11 @@ cell_metadata.dt <- fread(io$metadata) %>%
 table(cell_metadata.dt$sample)
 table(cell_metadata.dt$class)
 table(cell_metadata.dt$celltype)
+table(cell_metadata.dt$dataset)
 
 colnames(cell_metadata.dt)
 
-sum(is.na(cell_metadata.dt$celltype))
+stopifnot(sum(is.na(cell_metadata.dt$celltype))==0)
 
 ##########
 ## Save ##

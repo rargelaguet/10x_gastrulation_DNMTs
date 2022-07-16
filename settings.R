@@ -14,7 +14,7 @@ if (grepl("ricard",Sys.info()['nodename'])) {
   io$basedir <- "/Users/ricard/data/10x_gastrulation_DNMTs"
   io$atlas.basedir <- "/Users/ricard/data/gastrulation10x"
   io$gene_metadata <- "/Users/ricard/data/ensembl/mouse/v87/BioMart/all_genes/Mmusculus_genes_BioMart.87.txt"
-} else if (grepl("rargelaguet.local",Sys.info()['nodename'])) {
+} else if (grepl("rargelaguet",Sys.info()['nodename'])) {
   io$basedir <- "/Users/rargelaguet/data/10x_gastrulation_DNMTs"
   io$atlas.basedir <- "/Users/rargelaguet/data/gastrulation10x"
   io$gene_metadata <- "/Users/rargelaguet/data/ensembl/mouse/v87/BioMart/all_genes/Mmusculus_genes_BioMart.87.txt"

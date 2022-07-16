@@ -1,1 +1,0 @@
-Heatmap of differential expression values, compared to wt
