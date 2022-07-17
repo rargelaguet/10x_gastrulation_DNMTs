@@ -50,5 +50,5 @@ Interactive R shiny app is available [here](https://www.bioinformatics.babraham.
 Contact
 -------
 
-For questions on the computational analysis: Ricard Argelaguet (ricard.argelaguet@gmail.com). For questions on the experimental work: Tim Lohoff (tlohoff431@gmail.com) or Stephen Clark (Stephen.Clark@babraham.ac.uk)
+For questions on the computational analysis: Ricard Argelaguet (ricard.argelaguet@gmail.com). For questions on the experimental work: Tim Lohoff (tlohoff431@gmail.com) or Stephen Clark (sclark@altoslabs.com)
 
