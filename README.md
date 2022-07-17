@@ -10,7 +10,7 @@ The source code for the second part of the paper, where we explore the Tet TKO e
 
 Experimental design
 --------
-We generated Dnmt1<sup>-/-</sup>, Dnmt3a<sup>-/-</sup> and Dnmt3b<sup>-/-</sup> embryos together with matching wildtypes from heterozygous matings. We collected embryos at E8.5, when progenitor cells for all major organs have formed and methylation mutants are not yet lethal, and performed scRNA-seq. To increase the statistical power of our analysis we combined our data set of KO embryos with a [published data set](https://www.nature.com/articles/s41586-020-2552-x) where Dnmt1, Dnmt3a and Dnmt3b were disrupted using zygotic CRISPR-Cas9 injection and also profiled using scRNA-seq at E8.5. In total, our analysis comprises  51,811 cells from 17 WT embryos, 45,579 cells from 14 Dnmt3a<sup>-/-</sup> embryos, 55,237 cells from 12 Dnmt3b<sup>-/-</sup> embryos and 25,185 cells from 15 Dnmt1<sup>-/-</sup> embryos. We assigned celltype labels by mapping the RNA expression profiles to a [comprehensive reference atlas that spans E6.5 to E8.5](https://www.nature.com/articles/s41586-019-0933-9)
+We generated *Dnmt1*<sup>-/-</sup>, *Dnmt3a*<sup>-/-</sup> and *Dnmt3b*<sup>-/-</sup> embryos together with matching wildtypes from heterozygous matings. We collected embryos at E8.5, when progenitor cells for all major organs have formed and methylation mutants are not yet lethal, and performed scRNA-seq. To increase the statistical power of our analysis we combined our data set of KO embryos with a [published data set](https://www.nature.com/articles/s41586-020-2552-x) where *Dnmt1*, *Dnmt3a* and *Dnmt3b* were disrupted using CRISPR-Cas9 and also profiled using scRNA-seq at E8.5. In total, our analysis comprises 51,811 cells from 17 WT embryos, 45,579 cells from 14 *Dnmt3a*<sup>-/-</sup> embryos, 55,237 cells from 12 *Dnmt3b*<sup>-/-</sup> embryos and 25,185 cells from 15 *Dnmt1*<sup>-/-</sup> embryos. We assigned celltype labels by mapping the RNA expression profiles to a [reference atlas that spans E6.5 to E8.5](https://www.nature.com/articles/s41586-019-0933-9)
 
 
 Key results
@@ -41,6 +41,11 @@ Data
 -------
 Raw data is available at [GEO](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE204908).  
 Parsed data can be downloaded [in progress...](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE204908).  
+
+
+R Shiny app
+-------
+Interactive R shiny app is available [here](https://www.bioinformatics.babraham.ac.uk/shiny/dnmt_ko_embryo_scrna/).  
 
 Contact
 -------
