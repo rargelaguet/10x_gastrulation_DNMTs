@@ -28,7 +28,7 @@ plotting_fn2 <- function(dt, gene, classes, celltypes, max.expr=NULL) {
     # geom_violin(scale = "width", alpha=0.8) +
     # geom_boxplot(width=0.5, outlier.shape=NA, alpha=0.8) +
     # stat_summary(fun.data = give.n, geom = "text", size=3) +
-    geom_jitter(size=1, shape=21, stroke=0.15, alpha=0.8, data=to.plot, width=0.1) +
+    geom_jitter(size=1, shape=21, stroke=0.15, alpha=0.8, data=to.plot, width=0.1, aes(fill = class)) +
     geom_errorbar(aes(ymin=expr-sd, ymax=expr+sd), width=0.25, alpha=0.75, size=0.5) +
     scale_fill_manual(values=opts$classes.colors) +
     facet_wrap(~celltype, scales="fixed", nrow=1) +

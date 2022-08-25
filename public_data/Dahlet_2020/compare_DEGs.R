@@ -94,7 +94,7 @@ overlap[, dot_alpha := 0.5]
 overlap[abs(logFC)>2.5 | abs(dahlet_logFC)>2.5, dot_alpha := 2]
 
 overlap[, show_gene := FALSE]
-overlap[gene %in% c(exe_genes[1:2], hox_genes[1:2], epi_genes[1:2]), show_gene := TRUE]
+overlap[gene %in% c(exe_genes[1:4], hox_genes[1:4], epi_genes[1:4]), show_gene := TRUE]
 
 # reduce the number of dots to plot
 
@@ -165,7 +165,7 @@ scatterplots <- map(types[!is.na(types)], ~{
   p <- ggplot(toplot[type %in% .x], aes(dahlet_logFC, logFC)) +
      geom_point(size = 0.5, aes(alpha = dot_alpha)) +
      geom_smooth(method = "lm", colour = "black", size = 0.5) +
-     geom_text_repel(data = toplot[type %in% .x][show_gene == TRUE], aes(label = gene)) + 
+     geom_label_repel(data = toplot[type %in% .x][show_gene == TRUE], size = 3, aes(label = gene)) + 
      theme_cowplot() +
      facet_wrap(~type2, ncol = 1) +
      theme(strip.background =element_rect(fill="white")) +
@@ -175,7 +175,9 @@ scatterplots <- map(types[!is.na(types)], ~{
   
   rasterize(p, layers='Point', dpi=150)
 })
- outfiles <- paste0(
+ 
+scatterplots[1]
+outfiles <- paste0(
    "/Users/sclark/Google Drive/My Drive/projects/babraham/dnmt_tet/plots/dahlet2020/exp/scatter/",
    types[!is.na(types)],
    ".pdf"

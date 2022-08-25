@@ -89,9 +89,15 @@ opts$min.cells <- 50
 # load metadata for filtering out celltypes with low numbers of cells
 
 meta <- fread(io$metadata) %>% 
-  .[,celltype.mapped:=stringr::str_replace_all(celltype.mapped,opts$rename_celltypes)]
+  .[,celltype.mapped:=stringr::str_replace_all(celltype.mapped,opts$rename_celltypes)] %>% 
+  .[, barcode2 := gsub("\\-.*", "", barcode)]
 
-celltypes <- meta[!is.na(celltype.mapped), .N, celltype.mapped][N > opts$min.cells, celltype.mapped]
+n_celltypes <- meta[!is.na(celltype.mapped) & dataset == "KO", .N, .(celltype.mapped, class)] %>% 
+  dcast(celltype.mapped ~ class, value.var = "N") %>% 
+  .[, Dnmt1 := ifelse(WT < Dnmt1_KO, WT, Dnmt1_KO)] %>% 
+  .[, Dnmt3a := ifelse(WT < Dnmt3a_KO, WT, Dnmt3a_KO)] %>% 
+  .[, Dnmt3b := ifelse(WT < Dnmt3b_KO, WT, Dnmt3b_KO)] %>% 
+  melt(id.vars = "celltype.mapped", measure.vars = c("Dnmt1", "Dnmt3a", "Dnmt3b"), variable.name = "class", value.name = "min_cells")
 
 ######################
 ## Load repeat data ##
@@ -100,7 +106,40 @@ celltypes <- meta[!is.na(celltype.mapped), .N, celltype.mapped][N > opts$min.cel
 exp <- fread(paste0(io$basedir, "/repeats/repeats_expr.txt.gz")) %>% 
   .[,celltype.mapped:=stringr::str_replace_all(celltype.mapped,opts$rename_celltypes)] %>% 
   .[celltype.mapped %in% celltypes] %>% 
-  .[repeat_class %in% opts$repeat_classes]
+  .[repeat_class %in% opts$repeat_classes] %>% 
+  setkey(alias, celltype.mapped)
+
+# code to double check expression values are correct
+# exp_raw <- dir("~/data/10x_gastrulation_DNMTs/repeats/10X_cellwise_repeat_content/", full = TRUE) %>% 
+#   set_names(basename(.) %>%strsplit("_") %>% map_chr(~paste(.x[1], .x[2], .x[3], sep = "_")) %>% gsub("_CB", "", .) ) %>% 
+#   map2(names(.), ~fread(.x)[, alias := .y]) %>% 
+#   rbindlist() %>% 
+#   setnames(colnames(.)[1 : (ncol(.) - 1)], c(colnames(.)[2 : (ncol(.) - 1)], "remove")) %>% 
+#   .[, barcode2 := gsub("CB:", "", `cell barcode`)] %>% 
+#   merge(meta[, .(alias, barcode2, class, celltype.mapped)], by = c("alias", "barcode2"))
+# 
+# exp_by_alias <- exp_raw[, map(.SD, sum), by = c("alias", "celltype.mapped"), .SDcol = c(opts$repeat_classes, "total reads")] %>% 
+#   melt(id.vars = c("alias", "celltype.mapped", "total reads")) %>% 
+#   .[!is.na(celltype.mapped)] %>% 
+#   setkey(alias, celltype.mapped) %>% 
+#   .[, expr := log2(1e6 * value / `total reads`)]
+
+# exp_raw_long <- melt(exp_raw[, .SD, .SDcol = c("barcode2","alias", "celltype.mapped", "total reads", opts$repeat_classes)], id.vars = c("barcode2","alias", "celltype.mapped", "total reads")) %>% 
+#     .[!is.na(celltype.mapped)] %>%
+#     setkey(alias, celltype.mapped) %>%
+#     .[, expr := log2(1e6 * value / `total reads`)]
+# 
+# exp_raw_long[alias == "Dnmt1_KO_1" & celltype.mapped == "NMP", summary(expr) %>% as.list, variable]
+# exp_raw_long[alias == "WT_2" & celltype.mapped == "NMP", summary(expr) %>% as.list, variable]
+# exp_raw_long[alias == "Dnmt1_KO_1" & celltype.mapped == "ExE_ectoderm", summary(expr) %>% as.list, variable]
+# exp_raw_long[alias == "WT_2" & celltype.mapped == "ExE_ectoderm", summary(expr) %>% as.list, variable]
+# 
+# 
+# exp_per_class[class == "Dnmt1_KO" & celltype.mapped == "NMP"]
+# exp_per_class[class == "WT" & celltype.mapped == "NMP"]
+# exp_per_class[class == "Dnmt1_KO" & celltype.mapped == "NMP"]
+# exp_per_class[class == "Dnmt1_KO" & celltype.mapped == "NMP"]
+
 
 # compute expression after merging by class (i.e. WT, Dnmt1_KO etc.)
 
@@ -128,8 +167,20 @@ diff.dt <- dcast(exp_per_class, celltype.mapped + repeat_class ~ class, value.va
   .[, gene := repeat_class]
 
 
+# filter for number of cells
+
+diff.dt.filt <- merge(diff.dt, n_celltypes, by = c("celltype.mapped", "class")) %>% 
+  .[min_cells >= opts$min.cells]
+
+# optionally, we might want to keep all plots the same with respect to which celltypes are plotted
+celltype_filter <- n_celltypes[min_cells >= opts$min.cells]  %>% 
+  .[, .N, celltype.mapped] %>% 
+  .[N == 3, celltype.mapped]
+
+opts$celltypes <- opts$celltypes[opts$celltypes %in% celltype_filter]
+
 # # filter out lowly expressed
-diff.dt[max_expr < opts$min.exp, logFC := 0]
+diff.dt.filt[max_expr < opts$min.exp, logFC := 0]
 
 ###################################
 ## Heatmaps, one class at a time ##
@@ -138,15 +189,17 @@ diff.dt[max_expr < opts$min.exp, logFC := 0]
 
 
 opts$max.logFC <- 15; opts$min.logFC <- -15
-opts$ko.classes <- diff.dt[,unique(class)]
+opts$ko.classes <- rev(diff.dt[,unique(class)])
+
+
 
 for (i in opts$ko.classes) {
   
-  tmp <- diff.dt[class==i] %>%
+  tmp <- diff.dt.filt[class==i] %>%
     .[logFC>opts$max.logFC,logFC:=opts$max.logFC] %>%
     .[logFC<opts$min.logFC,logFC:=opts$min.logFC]
   
-  to.plot <- expand.grid(X = unique(diff.dt$gene), Y = unique(diff.dt$celltype)) %>% 
+  to.plot <- expand.grid(X = unique(tmp$gene), Y = unique(tmp$celltype)) %>% 
     as.data.table %>% setnames(c("gene","celltype")) %>%
     merge(tmp, by=c("gene","celltype"), all.x=T)
   
@@ -161,7 +214,8 @@ for (i in opts$ko.classes) {
   # to.plot <- to.plot[!gene %in% remove]
   
   # reorder celltyeps
-  to.plot[, celltype := factor(celltype, levels = rev(opts$celltypes))]
+  to.plot <- to.plot[, celltype := factor(celltype, levels = rev(opts$celltypes))] %>% 
+    .[!is.na(celltype)]
   
   # format repeat name
   to.plot[, gene := gsub("_", "\n", gene)]
@@ -184,4 +238,4 @@ for (i in opts$ko.classes) {
   print(p)
   dev.off()
 }
-
+p

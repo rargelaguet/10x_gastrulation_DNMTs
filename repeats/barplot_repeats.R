@@ -77,13 +77,16 @@ genes.to.plot <- genes.to.use
 #   "ExE_endoderm"
 # )
 
+# which celltypes have good coverage in Dnmt1 KO?
+sample_metadata[, .N, .(celltype.mapped, dataset, class)][N>50][class=="Dnmt1_KO" & dataset=="KO"][, celltype.mapped]
+
 celltypes.to.plot <- c(
   "ExE_ectoderm",
-  "NMP",
-  "Allantois",
-  "Visceral_endoderm",
+  "Erythroid",
+  "Rostral_neurectoderm",
+  "ExE_endoderm",
   "Gut",
-  "Spinal_cord"
+  "Surface_ectoderm"
 )
 
 for (i in genes.to.plot) {

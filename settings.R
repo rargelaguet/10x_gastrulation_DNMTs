@@ -29,6 +29,7 @@ if (grepl("ricard",Sys.info()['nodename'])) {
   io$imprinted.genes <- "/Users/argelagr/data/mm10_regulation/imprinting/parsed/mousebook_imprinted_genes.txt.gz"
 } else if (Sys.info()[['nodename']]=="Stephens-MacBook-Pro.local") {
   io$basedir <- "/Users/sclark/data/10x_gastrulation_DNMTs/"
+  io$atlas.basedir <- io$basedir
 } else if (grepl("pebble|headstone", Sys.info()['nodename'])) {
   if (grepl("argelag", Sys.info()['effective_user'])) {
     io$basedir <- "/bi/group/reik/ricard/data/10x_gastrulation_DNMTs"
