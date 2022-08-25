@@ -56,12 +56,12 @@ table(repeats.dt$repeat_class)
 ##########
 
 celltypes.to.plot <- c("ExE_endoderm","Mesenchyme","Haematoendothelial_progenitors","Surface_ectoderm")
+celltypes.to.plot <- opts$celltypes
 elements.to.plot <- unique(repeats.dt$repeat_class)
 
 for (i in elements.to.plot) {
   
   to.plot <- repeats.dt[repeat_class==i & celltype.mapped%in%celltypes.to.plot] %>% 
-    .[celltype.mapped%in%celltypes.to.plot] %>%
     merge(class_metadata.dt,by=c("class","celltype.mapped"))
   
   give_n <- function(x){ return(c(y = max(to.plot$expr), label = length(x))) }
@@ -71,9 +71,10 @@ for (i in elements.to.plot) {
   p <- ggplot(to.plot, aes(x=class, y=expr)) +
     geom_boxplot(aes(fill = class), alpha=0.75) +
     geom_jitter(aes(fill=class), shape=21, size=1.5, alpha=0.75, width=0.05, stroke=0.15, show.legend = F) +
-    facet_wrap(~celltype.mapped, scales="fixed", nrow=1) +
+    # facet_wrap(~celltype.mapped, scales="fixed", nrow=1) +
+    facet_wrap(~celltype.mapped, scales="fixed") +
     scale_fill_manual(values=opts$classes.colors[unique(to.plot$class)]) +
-    stat_compare_means(aes(label = as_name(paste0("p = ", ..p.format..))), comparisons = my_comparisons, method="t.test", size=3) +
+    # stat_compare_means(aes(label = as_name(paste0("p = ", ..p.format..))), comparisons = my_comparisons, method="t.test", size=3) +
     theme_classic() +
     labs(x="", y="RNA expression (log2)") +
     theme(
@@ -84,7 +85,8 @@ for (i in elements.to.plot) {
       axis.ticks.x = element_blank()
     )
   
-  pdf(file.path(io$outdir,sprintf("%s_repeats_boxplots.pdf",i)), width=8, height=3)
+  # pdf(file.path(io$outdir,sprintf("%s_repeats_boxplots.pdf",i)), width=8, height=3)
+  pdf(file.path(io$outdir,sprintf("%s_repeats_boxplots.pdf",i)), width=10, height=10)
   print(p)
   dev.off()
 }

@@ -14,10 +14,11 @@ if (grepl("ricard",Sys.info()['nodename'])) {
   io$basedir <- "/Users/ricard/data/10x_gastrulation_DNMTs"
   io$atlas.basedir <- "/Users/ricard/data/gastrulation10x"
   io$gene_metadata <- "/Users/ricard/data/ensembl/mouse/v87/BioMart/all_genes/Mmusculus_genes_BioMart.87.txt"
-} else if (grepl("rargelaguet.local",Sys.info()['nodename'])) {
+} else if (grepl("rargelaguet",Sys.info()['nodename'])) {
   io$basedir <- "/Users/rargelaguet/data/10x_gastrulation_DNMTs"
   io$atlas.basedir <- "/Users/rargelaguet/data/gastrulation10x"
   io$gene_metadata <- "/Users/rargelaguet/data/ensembl/mouse/v87/BioMart/all_genes/Mmusculus_genes_BioMart.87.txt"
+  io$imprinted.genes <- "/Users/rargelaguet/data/mm10_regulation/imprinting/parsed/mousebook_imprinted_genes.txt.gz"
 } else if (grepl("ebi",Sys.info()['nodename'])) {
   io$basedir <- "/hps/nobackup2/research/stegle/users/ricard/10x_gastrulation_DNMTs"
   io$atlas.basedir <- "/hps/nobackup2/research/stegle/users/ricard/gastrulation10x"
@@ -126,10 +127,8 @@ opts$celltype.colors = c(
   "Mesenchyme" = "#cc7818",
   "Haematoendothelial_progenitors" = "#FBBE92",
   "Endothelium" = "#ff891c",
-  "Blood_progenitors" = "#c9a997",
   "Blood_progenitors_1" = "#f9decf",
   "Blood_progenitors_2" = "#c9a997",
-  "Erythroid" = "#EF4E22",
   "Erythroid1" = "#C72228",
   "Erythroid2" = "#f79083",
   "Erythroid3" = "#EF4E22",
@@ -147,7 +146,8 @@ opts$celltype.colors = c(
   
   # Additional
   "Erythroid" = "#EF4E22",
-  "Blood_progenitors" = "#c9a997"
+  "Blood_progenitors" = "#c9a997",
+  "Brain" = "#647a4f"
 )
 
 opts$samples <- c(
