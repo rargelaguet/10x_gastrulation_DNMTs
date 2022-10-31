@@ -45,7 +45,7 @@ Parsed data can be downloaded [in progress...](https://www.ncbi.nlm.nih.gov/geo/
 
 R Shiny app
 -------
-Interactive R shiny app is available [here](https://www.bioinformatics.babraham.ac.uk/shiny/dnmt_ko_embryo_scrna/).  
+Interactive R shiny app is available [here](https://www.bioinformatics.babraham.ac.uk/shiny/shiny_dnmt/).  
 
 Contact
 -------
